@@ -19,7 +19,8 @@ Live detection: open **/compatibility** in any browser for that browser's actual
 | SharedArrayBuffer | With COOP/COEP | With COOP/COEP | With COOP/COEP | Single-thread FFmpeg |
 | AudioWorklet | Yes | Yes | Yes | — |
 
-Values in this table are expected behaviour. **Phase 8 replaces them with measured results** from Playwright runs on each engine.
+Values in this table are expected behaviour. Measured so far (2026-11-18, Windows 11): the full e2e suite passes on **Chrome** and **Edge**.
+Firefox and Safari are not yet measured. Phase 8 completes the matrix from Playwright runs on each engine.
 
 ## Mobile
 

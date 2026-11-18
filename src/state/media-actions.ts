@@ -6,7 +6,7 @@ import { mediaEngine, MediaError, classifyFile } from '@/media-engine';
 import { parseSubtitles } from '@/media-engine/subtitles/parse';
 import { settingsFromMedia } from '@/project/schema/factory';
 import type { Asset, Project } from '@/project/schema/types';
-import { fileFromHandle, fingerprintFile, getHandle, getThumbs, putThumbs, requestPersistence, saveHandle } from '@/storage/media-store';
+import { fileFromHandle, fingerprintFile, getHandle, getThumbs, getWaveform, putThumbs, putWaveform, requestPersistence, saveHandle } from '@/storage/media-store';
 import { createId } from '@/utils/id';
 import { fpsToRational } from '@/utils/time';
 import { useLibraryStore } from './library-store';
@@ -47,7 +47,7 @@ export async function importFiles(entries: ImportEntry[]): Promise<Array<{ name:
         useLibraryStore.getState().setFile(assetId, file);
         if (handle) void saveHandle(asset.fingerprint, handle);
         useLibraryStore.getState().removeImport(taskId);
-        void ensurePoster(existing ?? asset, file);
+        void ensurePoster(existing ?? asset, file).then(() => ensureAnalysis(existing ?? asset, file));
       } catch (e) {
         const err = e instanceof MediaError ? e.message : e instanceof Error ? e.message : String(e);
         failures.push({ name: file.name, error: err });
@@ -128,6 +128,58 @@ export async function ensurePoster(asset: Asset, file: File | undefined): Promis
   }
 }
 
+const STRIP_WIDTH = 112;
+const WAVE_PPS = 50;
+
+/**
+ * Timeline helpers for an asset: a filmstrip (video) and a waveform (audio). Loaded from the IndexedDB cache when
+ * present (so offline assets still show them), otherwise computed in the background when the file is available.
+ */
+export async function ensureAnalysis(asset: Asset, file: File | undefined): Promise<void> {
+  const lib = useLibraryStore.getState;
+  const info = asset.info;
+  if (!info || asset.kind === 'image' || asset.kind === 'subtitle') return;
+  const tasks: Promise<void>[] = [];
+  const v = info.video[0];
+  if (v && !lib().strips[asset.id]) {
+    tasks.push(
+      (async () => {
+        const key = `${asset.fingerprint}:strip`;
+        const cached = await getThumbs(key);
+        if (cached?.blobs.length) {
+          lib().setStrip(asset.id, cached.blobs, info.duration);
+          return;
+        }
+        if (!file || !v.decodable) return;
+        const count = Math.max(4, Math.min(60, Math.ceil(info.duration / 2)));
+        const thumbs = await mediaEngine.thumbnails(file, { count, width: STRIP_WIDTH }).result.catch(() => null);
+        if (!thumbs?.length) return;
+        lib().setStrip(asset.id, thumbs.map((t) => t.blob), info.duration);
+        void putThumbs(key, { blobs: thumbs.map((t) => t.blob), timestamps: thumbs.map((t) => t.timestamp), width: STRIP_WIDTH });
+      })(),
+    );
+  }
+  const a = info.audio[0];
+  if (a && !lib().waveforms[asset.id]) {
+    tasks.push(
+      (async () => {
+        const key = `${asset.fingerprint}:wave`;
+        const cached = await getWaveform(key);
+        if (cached) {
+          lib().setWaveform(asset.id, cached);
+          return;
+        }
+        if (!file || !a.decodable) return;
+        const wave = await mediaEngine.waveform(file, WAVE_PPS).result.catch(() => null);
+        if (!wave) return;
+        lib().setWaveform(asset.id, wave);
+        void putWaveform(key, wave);
+      })(),
+    );
+  }
+  await Promise.all(tasks);
+}
+
 /**
  * Try to restore file access for every offline asset from stored handles.
  * Pass interactive=true only from a click handler (may prompt for permission).
@@ -142,10 +194,10 @@ export async function reconnectMedia(project: Project, interactive: boolean): Pr
     const file = handle ? await fileFromHandle(handle, interactive) : null;
     if (file && file.size === asset.size && file.lastModified === asset.lastModified) {
       useLibraryStore.getState().setFile(asset.id, file);
-      void ensurePoster(asset, file);
+      void ensurePoster(asset, file).then(() => ensureAnalysis(asset, file));
     } else {
       offline++;
-      void ensurePoster(asset, undefined);
+      void ensurePoster(asset, undefined).then(() => ensureAnalysis(asset, undefined));
     }
   }
   return offline;
@@ -181,7 +233,7 @@ export async function relinkAsset(asset: Asset, file: File, handle?: FileSystemF
   useLibraryStore.getState().setFile(asset.id, file);
   useLibraryStore.getState().setError(asset.id, null);
   if (handle) void saveHandle(fp, handle);
-  void ensurePoster({ ...asset, fingerprint: fp }, file);
+  void ensurePoster({ ...asset, fingerprint: fp }, file).then(() => ensureAnalysis({ ...asset, fingerprint: fp }, file));
   return { warning };
 }
 

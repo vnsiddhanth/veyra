@@ -3,6 +3,14 @@
  * their thumbnail object URLs, and in-flight import jobs.
  */
 import { create } from 'zustand';
+import type { WaveformData } from '@/media-engine';
+
+/** Evenly spaced thumbnails across an asset's whole duration. */
+export interface Filmstrip {
+  urls: string[];
+  /** Seconds covered (thumbnail i sits at the centre of segment i). */
+  duration: number;
+}
 
 export type AssetStatus = 'online' | 'offline' | 'error';
 
@@ -16,12 +24,16 @@ export interface ImportTask {
 interface LibraryState {
   files: Record<string, File>;
   thumbs: Record<string, string[]>;
+  strips: Record<string, Filmstrip>;
+  waveforms: Record<string, WaveformData>;
   errors: Record<string, string>;
   imports: ImportTask[];
   selectedAssetId: string | null;
 
   setFile(assetId: string, file: File): void;
   setThumbs(assetId: string, blobs: Blob[]): void;
+  setStrip(assetId: string, blobs: Blob[], duration: number): void;
+  setWaveform(assetId: string, data: WaveformData): void;
   setError(assetId: string, message: string | null): void;
   forget(assetId: string): void;
   reset(): void;
@@ -37,6 +49,8 @@ function revoke(urls: string[] | undefined): void {
 export const useLibraryStore = create<LibraryState>((set, get) => ({
   files: {},
   thumbs: {},
+  strips: {},
+  waveforms: {},
   errors: {},
   imports: [],
   selectedAssetId: null,
@@ -48,6 +62,13 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     revoke(get().thumbs[assetId]);
     set((s) => ({ thumbs: { ...s.thumbs, [assetId]: blobs.map((b) => URL.createObjectURL(b)) } }));
   },
+  setStrip(assetId, blobs, duration) {
+    revoke(get().strips[assetId]?.urls);
+    set((s) => ({ strips: { ...s.strips, [assetId]: { urls: blobs.map((b) => URL.createObjectURL(b)), duration } } }));
+  },
+  setWaveform(assetId, data) {
+    set((s) => ({ waveforms: { ...s.waveforms, [assetId]: data } }));
+  },
   setError(assetId, message) {
     set((s) => {
       const errors = { ...s.errors };
@@ -58,19 +79,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
   forget(assetId) {
     revoke(get().thumbs[assetId]);
+    revoke(get().strips[assetId]?.urls);
     set((s) => {
       const files = { ...s.files };
       const thumbs = { ...s.thumbs };
+      const strips = { ...s.strips };
+      const waveforms = { ...s.waveforms };
       const errors = { ...s.errors };
       delete files[assetId];
       delete thumbs[assetId];
+      delete strips[assetId];
+      delete waveforms[assetId];
       delete errors[assetId];
-      return { files, thumbs, errors, selectedAssetId: s.selectedAssetId === assetId ? null : s.selectedAssetId };
+      return { files, thumbs, strips, waveforms, errors, selectedAssetId: s.selectedAssetId === assetId ? null : s.selectedAssetId };
     });
   },
   reset() {
     Object.values(get().thumbs).forEach(revoke);
-    set({ files: {}, thumbs: {}, errors: {}, imports: [], selectedAssetId: null });
+    Object.values(get().strips).forEach((s) => revoke(s.urls));
+    set({ files: {}, thumbs: {}, strips: {}, waveforms: {}, errors: {}, imports: [], selectedAssetId: null });
   },
   select(assetId) {
     set({ selectedAssetId: assetId });

@@ -1,0 +1,78 @@
+/**
+ * Scratch storage for processing outputs.
+ *
+ * Outputs are written to the Origin Private File System when the browser supports
+ * writable OPFS streams, so a multi-gigabyte export never has to fit in memory. Otherwise
+ * they fall back to an in-memory buffer. Files live in /outputs and are deleted when the
+ * user dismisses a result, on cancel/failure, and by a sweep of files older than a day.
+ */
+const DIR = 'outputs';
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+type OpfsDir = FileSystemDirectoryHandle & {
+  entries(): AsyncIterable<[string, FileSystemHandle]>;
+};
+
+async function outputsDir(): Promise<OpfsDir | null> {
+  try {
+    if (!navigator.storage?.getDirectory) return null;
+    const root = await navigator.storage.getDirectory();
+    return (await root.getDirectoryHandle(DIR, { create: true })) as OpfsDir;
+  } catch {
+    return null;
+  }
+}
+
+export interface ScratchFile {
+  name: string;
+  handle: FileSystemFileHandle;
+  writable: FileSystemWritableFileStream;
+}
+
+/** Create a writable OPFS scratch file, or null when OPFS writable streams are unavailable. */
+export async function createScratchFile(name: string): Promise<ScratchFile | null> {
+  const dir = await outputsDir();
+  if (!dir) return null;
+  try {
+    const handle = await dir.getFileHandle(name, { create: true });
+    if (typeof (handle as { createWritable?: unknown }).createWritable !== 'function') return null;
+    const writable = await handle.createWritable();
+    return { name, handle, writable };
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteScratchFile(name: string): Promise<void> {
+  const dir = await outputsDir();
+  try {
+    await dir?.removeEntry(name);
+  } catch {
+    /* already gone */
+  }
+}
+
+/** Remove outputs older than a day (left behind by closed tabs or crashes). */
+export async function sweepScratchFiles(): Promise<void> {
+  const dir = await outputsDir();
+  if (!dir) return;
+  const now = Date.now();
+  try {
+    for await (const [name, h] of dir.entries()) {
+      if (h.kind !== 'file') continue;
+      try {
+        const f = await (h as FileSystemFileHandle).getFile();
+        if (now - f.lastModified > MAX_AGE_MS) await dir.removeEntry(name);
+      } catch {
+        /* locked by another tab: leave it */
+      }
+    }
+  } catch {
+    /* iteration unsupported */
+  }
+}
+
+/** Is this File backed by our OPFS scratch area? (Name convention: outputs carry a job prefix.) */
+export function isScratchName(name: string): boolean {
+  return /^out_[a-z0-9_]+__/.test(name);
+}

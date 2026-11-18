@@ -111,3 +111,27 @@ export async function requestPersistence(): Promise<boolean> {
     return false;
   }
 }
+
+// ── Waveforms ─────────────────────────────────────────────────────────────
+
+export interface StoredWaveform {
+  peaks: Uint8Array;
+  peaksPerSecond: number;
+  duration: number;
+}
+
+export async function getWaveform(key: string): Promise<StoredWaveform | undefined> {
+  try {
+    return await idbGet<StoredWaveform>('thumbs', key);
+  } catch {
+    return undefined;
+  }
+}
+
+export async function putWaveform(key: string, value: StoredWaveform): Promise<void> {
+  try {
+    await idbPut('thumbs', value, key);
+  } catch {
+    /* cache only */
+  }
+}

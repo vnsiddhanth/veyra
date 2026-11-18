@@ -38,3 +38,21 @@ A usable basic editor exists after Phase 5 plus a minimal Phase 7 export (~5 mon
 10. Real metadata tools: metadata viewer, frame-rate inspector, resolution inspector, duration calculator, audio metadata viewer. ✔
 11. Subtitle import parsing (SRT/VTT) with tests. ✔
 12. Dev fixture generator. ✔
+
+## Phase 2 status (2026-11-18)
+
+Acceptance criterion **met in Chrome and Edge**: a real video is trimmed in the Trim tool and exported locally. The output is validated by
+the app, independently re-parsed in Node, and checked frame-exact by pixel comparison (`e2e/trim.spec.ts`).
+
+Done: conversion job (trim/transcode/remux/resize/crop/rotate/fps/codec/bitrate, 9 containers), OPFS output streaming,
+cancellation with cleanup, output validation, frame extraction, waveform peaks, filmstrips, Trim and Thumbnail tools,
+timeline filmstrips and waveforms (cached), Playwright suite (7 tests × Chrome/Edge).
+
+Carried into Phase 3:
+- **FFmpeg.wasm fallback (AVI/FLV/WMV, undecodable codecs).** Needs a licensing decision. The published `@ffmpeg/core` builds include
+  GPL components (x264/x265), which would make the distributed app GPL. Options: (a) accept GPL for the app, (b) build an LGPL-only core
+  (no x264, so decode/remux only and encode via WebCodecs), (c) skip FFmpeg and support only what Mediabunny + WebCodecs handle.
+  Recommendation: (b).
+- Firefox and WebKit e2e runs (need the Playwright browser download).
+- Save directly to a chosen file with `showSaveFilePicker` streaming.
+- Real-camera fixtures (VFR phone clip, HEVC, MKV).

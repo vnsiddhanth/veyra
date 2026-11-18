@@ -8,3 +8,11 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// Dev-only test hook: lets the browser console and Playwright drive the media engine directly.
+// Tree-shaken from production builds.
+if (import.meta.env.DEV) {
+  void import('./media-engine').then((engine) => {
+    (window as unknown as { __veyra: unknown }).__veyra = engine;
+  });
+}

@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 1).
+Last updated: 2026-11-18 (end of Phase 2).
 
 ## Phase 1 — Foundation
 
@@ -39,14 +39,30 @@ Last updated: 2026-11-18 (end of Phase 1).
 | Persistent storage request + quota display | Implemented | `src/storage/media-store.ts` | — | — | — | `persist()` on first project. Usage on /compatibility |
 | Clear all local data | Implemented | `src/pages/PrivacyPage.tsx` | — | — | — | Confirmation required |
 
+## Phase 2 — Media engine
+
+Verified = passes the Playwright suite on Chrome **and** Edge (Windows 11). Firefox/Safari are not yet run.
+
+| Feature | Status | Location | Dependencies | Tests | Known limitations | Acceptance criteria |
+|---|---|---|---|---|---|---|
+| Conversion job (trim, transcode, remux, resize, crop, rotate, fps, codec, bitrate; 9 containers) | Verified (trim, remux, rotate, WebM, M4A, WAV, MOV); other options Implemented | `src/media-engine/encode/convert.ts` | mediabunny, WebCodecs | `e2e/trim.spec.ts`, manual engine runs | No MP3 encode. AVI/FLV/WMV input needs the FFmpeg fallback (Phase 3) | Validated output, never a silent track drop |
+| Frame-accurate and fast (copy) trim | Verified | `convert.ts` copy policies | — | `e2e/trim.spec.ts` (pixel-exact first/last frame, Node re-parse) | — | Output frame 0 = source frame at start, last = frame before end |
+| OPFS output streaming + cleanup | Verified | `src/media-engine/encode/output-store.ts` | OPFS `createWritable` | `e2e/trim.spec.ts` (cancel leaves no file) | Safari path (sync access handles) untested; falls back to memory | No partial files after cancel or failure |
+| Output validation | Verified | `validateOutput` in `convert.ts` | — | e2e + manual (truncated input rejected) | Decode check samples first/last frame only, not every frame | Unvalidated output is never offered |
+| Cancellation | Verified | `pool.ts`, `convert.ts` | — | `e2e/trim.spec.ts` | — | Rejects with `cancelled` and cleans up |
+| Frame extraction | Verified | `src/media-engine/decode/frames.ts` | mediabunny | `e2e/tools.spec.ts` | — | Exact frame at full or chosen size |
+| Waveform peaks | Verified (manual) | `frames.ts`, `ClipContent.tsx` | mediabunny | Manual (click peaks at each second) | Canvas capped at 4096 px per clip (virtualisation in Phase 4) | Peaks match the audio envelope |
+| Filmstrips | Verified (manual) | `media-actions.ts`, `ClipContent.tsx` | — | Manual | — | Tiles follow sourceIn and speed |
+| Trim tool | Verified | `src/tools/trim/TrimTool.tsx` | — | `e2e/trim.spec.ts` | Saves via download (no streaming "Save as" yet) | **Phase 2 acceptance met** |
+| Thumbnail maker | Verified | `src/tools/thumbnail/ThumbnailTool.tsx` | — | `e2e/tools.spec.ts` | WebP is unavailable where the browser cannot encode it (reported, not faked) | PNG has the exact frame and dimensions |
+| Playwright suite | Verified | `e2e/`, `playwright.config.ts` | @playwright/test | 7 tests × 2 browsers | Firefox/WebKit need a browser download | Runs headless on installed browsers |
+
 ## Later phases (summary)
 
 | Area | Status | Phase |
 |---|---|---|
-| Conversion jobs (trim/convert/compress) via Mediabunny `Conversion`, output validation | Not started | 2 |
-| FFmpeg.wasm fallback (AVI/FLV/WMV, undecodable codecs) | Not started | 2–3 |
-| Waveforms, filmstrips | Not started | 2 |
-| Playwright real-browser suite (Chromium/Firefox/WebKit) | Not started | 2 |
+| FFmpeg.wasm fallback (AVI/FLV/WMV, undecodable codecs) | Not started (licensing decision pending) | 3 |
+| Firefox/WebKit e2e runs | Not started | 3 |
 | All processing tools in `src/tools/registry.ts` marked `planned` | Not started | 2–8 |
 | Interactive timeline (drag, trim handles, snapping, playhead, markers, multi-select, copy/paste) | Not started (model ops done) | 4 |
 | WebGL2 compositor, program monitor, audio clock | Not started | 5 |

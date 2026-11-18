@@ -82,3 +82,93 @@ export interface Thumbnail {
   width: number;
   height: number;
 }
+
+// ── Conversion / export ────────────────────────────────────────────────────
+
+export type OutputContainer = 'mp4' | 'mov' | 'webm' | 'mkv' | 'm4a' | 'ogg' | 'wav' | 'adts' | 'flac';
+export type QualityLevel = 'very-low' | 'low' | 'medium' | 'high' | 'very-high';
+
+/**
+ * How encoded media may be reused instead of re-encoded.
+ * - 'accurate': copy only when the result is frame-exact; otherwise re-encode (default)
+ * - 'fast': always copy when possible, expanding cuts outward to the nearest key frame
+ * - 'never': always re-encode
+ */
+export type CopyPolicy = 'accurate' | 'fast' | 'never';
+
+export interface ConvertVideoOptions {
+  discard?: boolean;
+  codec?: string;
+  width?: number;
+  height?: number;
+  fit?: 'fill' | 'contain' | 'cover';
+  rotate?: 0 | 90 | 180 | 270;
+  flip?: boolean;
+  crop?: { left: number; top: number; width: number; height: number };
+  frameRate?: number;
+  /** Bits per second, or a quality level scaled by Mediabunny to resolution/codec. */
+  bitrate?: number | QualityLevel;
+  keyFrameInterval?: number;
+}
+
+export interface ConvertAudioOptions {
+  discard?: boolean;
+  codec?: string;
+  bitrate?: number | QualityLevel;
+  sampleRate?: number;
+  numberOfChannels?: number;
+}
+
+export interface ConvertOptions {
+  container: OutputContainer;
+  /** Seconds, relative to the start of the source. */
+  trim?: { start: number; end: number };
+  video?: ConvertVideoOptions;
+  audio?: ConvertAudioOptions;
+  copy?: CopyPolicy;
+  /** Base name for the output file (extension is added). */
+  fileName: string;
+}
+
+export interface ValidationCheck {
+  name: string;
+  ok: boolean;
+  detail: string;
+}
+
+export interface ConvertResult {
+  /** The output. Backed by OPFS (on disk) when available, otherwise memory. */
+  file: File;
+  storage: 'opfs' | 'memory';
+  /** OPFS scratch entry to delete when the result is dismissed (null for memory outputs). */
+  scratchName: string | null;
+  info: MediaInfo;
+  checks: ValidationCheck[];
+  /** Tracks the conversion dropped, with a human-readable reason. */
+  dropped: string[];
+  elapsedMs: number;
+}
+
+export interface FrameOptions {
+  /** Seconds. */
+  timestamp: number;
+  format: 'png' | 'jpeg' | 'webp';
+  quality?: number;
+  /** Output width; height follows the display aspect ratio. Omit for full resolution. */
+  width?: number;
+}
+
+export interface FrameResult {
+  blob: Blob;
+  width: number;
+  height: number;
+  /** Timestamp of the decoded frame actually shown at the requested time. */
+  frameTimestamp: number;
+}
+
+export interface WaveformData {
+  /** Peak amplitude per bucket, 0–255 (max over all channels). */
+  peaks: Uint8Array;
+  peaksPerSecond: number;
+  duration: number;
+}

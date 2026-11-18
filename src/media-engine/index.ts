@@ -3,7 +3,8 @@
  */
 import { MediaError } from './core/errors';
 import { JobController, type Job } from './core/job';
-import type { MediaInfo, Thumbnail, ThumbnailOptions } from './core/types';
+import type { ConvertOptions, ConvertResult, FrameOptions, FrameResult, MediaInfo, Thumbnail, ThumbnailOptions, WaveformData } from './core/types';
+import { deleteScratchFile } from './encode/output-store';
 import { classifyFile, type Classification } from './import/classify';
 import { imageThumbnail, probeImage } from './import/image-probe';
 import { WorkerPool, type Priority } from './workers/pool';
@@ -78,5 +79,25 @@ export const mediaEngine = {
 
   imageThumbnail(file: File, width: number): Job<Blob | null> {
     return localJob(() => imageThumbnail(file, width));
+  },
+
+  /** Trim / transcode / remux one file. The result has been re-opened and validated. */
+  convert(file: Blob, options: ConvertOptions): Job<ConvertResult> {
+    return getPool().run('convert', { file, options }, 'interactive');
+  },
+
+  /** Decode one frame and encode it as an image. */
+  extractFrame(file: Blob, options: FrameOptions): Job<FrameResult> {
+    return getPool().run('frame', { file, options }, 'interactive');
+  },
+
+  /** Peak envelope of the primary audio track, for waveform display. */
+  waveform(file: Blob, peaksPerSecond = 50): Job<WaveformData> {
+    return getPool().run('waveform', { file, peaksPerSecond }, 'background');
+  },
+
+  /** Free the on-disk storage of a conversion result once the user is done with it. */
+  async releaseOutput(result: Pick<ConvertResult, 'scratchName'>): Promise<void> {
+    if (result.scratchName) await deleteScratchFile(result.scratchName);
   },
 };

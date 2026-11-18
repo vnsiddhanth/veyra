@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.0 — 2026-11-18 · Phase 2: Media engine
+
+### Added
+- `mediaEngine.convert`: trim, transcode, remux, resize, crop, rotate/flip, frame rate, codec and bitrate across MP4, MOV, WebM, MKV,
+  M4A, Ogg, WAV, AAC (ADTS) and FLAC. Has frame-accurate, fast (copy) and full-re-encode policies.
+- Outputs stream into the Origin Private File System (memory fallback). Partial files are removed on cancel or failure, dismissed results are released, and abandoned files are swept after 24 h.
+- Output validation: re-probe, track/duration/size/codec checks, and first/last-frame and audio decode. No unvalidated file is ever offered.
+- `extractFrame` (PNG/JPEG/WebP, refuses silent format fallback) and `waveform` (streamed peak envelope).
+- **Trim video** tool: frame-stepping player, filmstrip range bar with drag handles, I/O shortcuts, precision and format choice,
+  progress with ETA, cancel, verified result with checks.
+- **Thumbnail maker** tool: pick an exact frame and export a verified PNG/JPEG/WebP at chosen size.
+- Timeline: filmstrips on video clips and waveforms on audio clips, cached in IndexedDB so they show while media is offline.
+- Playwright e2e suite on installed Chrome and Edge, with committed deterministic fixtures and Node-side output inspection.
+- Dev-only `window.__veyra` engine hook (removed from production builds).
+
+### Fixed
+- Result download URLs were revoked under React StrictMode re-mounting (download "canceled").
+- Media cards: action buttons are now reachable without hover (shown when selected). Cards have their own accessible name.
+
 ## 0.1.0 — 2026-11-18 · Phase 1: Foundation
 
 ### Added

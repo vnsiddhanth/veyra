@@ -21,8 +21,10 @@ Every operation returns a `Job<T>` (`src/media-engine/core/job.ts`). Operations:
 | `probe(file)` | Implemented | worker | Mediabunny `Input` → `MediaInfo` |
 | `probeImage(file)` | Implemented | main | `createImageBitmap` (raster) / `<img>` (SVG, script-inert) |
 | `thumbnails(file, {count,width})` | Implemented | worker | Mediabunny `CanvasSink` → `OffscreenCanvas.convertToBlob` (JPEG) |
-| `waveform(file)` | Phase 2 | worker | `AudioSampleSink` → peak pyramid (min/max per 256 samples) |
-| `convert(file, opts)` | Phase 2 | worker | Mediabunny `Conversion` (trim, resize, crop, rotate, fps, codec, bitrate) |
+| `extractFrame(file, opts)` | Implemented | worker | `CanvasSink.getCanvas` → PNG/JPEG/WebP. Rejects silent PNG fallback |
+| `waveform(file, pps)` | Implemented | worker | `AudioSampleSink` streamed → 0–255 peak per bucket (default 50/s), transferred |
+| `convert(file, opts)` | Implemented | worker | Mediabunny `Conversion`: trim, resize, crop, rotate, flip, fps, codec, bitrate, container. Writes to OPFS. Output re-validated |
+| `releaseOutput(result)` | Implemented | main | Deletes the OPFS scratch file of a dismissed result |
 | `renderTimeline(project)` | Phase 7 | export worker | Compositor + encoders + muxer |
 | FFmpeg fallback | Phase 2–3 | dedicated worker | `@ffmpeg/ffmpeg`, lazy |
 
@@ -65,9 +67,21 @@ from packets as a fallback), size, overall bitrate, and per track:
 `getDecodableVideoCodecs` / audio equivalents at 1920×1080. The result is cached for the session.
 `/compatibility` renders the full matrix.
 
+## Conversion details (`encode/convert.ts`)
+
+- **Copy policy** (`ConvertOptions.copy`):
+  - `accurate` (default) uses `copy: { mode: 'preferred', boundaryTolerance: 0 }`. Encoded media is reused only when the cut is exact; otherwise the track is re-encoded.
+  - `fast` uses `boundaryPolicy: 'expand'`. It never re-encodes for a trim.
+  - `never` forces a full transcode.
+  - With MP4/MOV, Mediabunny keeps fast trims frame-exact by using an edit list over the preceding key frame. This is verified pixel-for-pixel in `e2e/trim.spec.ts`.
+- **Output target.** A writable OPFS stream (`outputs/out_<job>__<name>.<ext>`) is used where the browser supports it. Mediabunny's `{type:'write', data, position}` chunks are the same shape `FileSystemWritableFileStream.write` accepts. The fallback is `BufferTarget` (memory). Partial files are deleted on cancel or failure. Results are deleted when dismissed. Anything older than 24 h is swept when the worker starts.
+- **Validation (`validateOutput`).** The output is re-probed. Then the track presence, duration (±1 frame + 50 ms codec padding), requested size and codecs are checked. Finally the first and last video frames and the first audio sample must decode. Any failure means no output is returned. A much-too-short output is reported as damaged source input.
+- **Dropped tracks.** If the conversion cannot keep a video or audio track the user did not discard (no encoder, uncopyable codec), the job fails with the reason. It never silently drops audio.
+
 ## Known limitations (honest)
 
-- AVI/FLV/WMV/3GP containers are not demuxed by Mediabunny. They are detected and reported. Editing them needs the
-  FFmpeg fallback (Phase 2–3).
+- AVI/FLV/WMV containers are not demuxed by Mediabunny. They are detected and reported. Editing them needs the
+  FFmpeg fallback, which is deferred to Phase 3 (see DEVELOPMENT_ROADMAP.md for the licensing decision it needs).
+- MP3 encoding is not provided by WebCodecs in Chromium. MP3 output is not offered until a WASM encoder is added (Phase 3).
 - HEVC decode depends on OS/GPU support. ProRes decode is generally unavailable in browsers.
 - Duration from metadata can be missing for some WebM recordings. In that case it is computed from packets, which costs one index pass.

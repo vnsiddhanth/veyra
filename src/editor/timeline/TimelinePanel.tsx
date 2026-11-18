@@ -8,6 +8,7 @@ import { addTrack, projectDuration, removeTrack, renameTrack, setTrackFlags } fr
 import { cn } from '@/utils/id';
 import { flicksToSeconds, formatTimecode } from '@/utils/time';
 import { useEditorUi } from '../editor-ui-store';
+import { FilmstripTiles, Waveform } from './ClipContent';
 
 const HEADER_W = 148;
 const ROW_H = 44;
@@ -186,10 +187,15 @@ function TrackRow({ project, track, px, width }: { project: Project; track: Trac
 
 function ClipBlock({ clip, kind, px, project }: { clip: Clip; kind: TrackKind; px: number; project: Project }) {
   const selected = useEditorUi((s) => s.selectedClipIds.includes(clip.id));
-  const thumb = useLibraryStore((s) => (clip.assetId ? s.thumbs[clip.assetId]?.[0] : undefined));
+  const poster = useLibraryStore((s) => (clip.assetId ? s.thumbs[clip.assetId]?.[0] : undefined));
+  const strip = useLibraryStore((s) => (clip.assetId ? s.strips[clip.assetId] : undefined));
+  const wave = useLibraryStore((s) => (clip.assetId ? s.waveforms[clip.assetId] : undefined));
   const online = useLibraryStore((s) => (clip.assetId ? !!s.files[clip.assetId] : true));
   const left = flicksToSeconds(clip.start) * px;
   const w = Math.max(2, flicksToSeconds(clip.duration) * px);
+  const h = ROW_H - 8;
+  const sourceIn = flicksToSeconds(clip.sourceIn);
+  const span = flicksToSeconds(clip.duration) * clip.speed;
   return (
     <button
       type="button"
@@ -207,7 +213,13 @@ function ClipBlock({ clip, kind, px, project }: { clip: Clip; kind: TrackKind; p
         else ui.selectClips([clip.id]);
       }}
     >
-      {thumb && kind !== 'audio' && <img src={thumb} alt="" className="absolute inset-y-0 left-0 h-full w-auto opacity-60" draggable={false} />}
+      {kind === 'audio' ? (
+        wave && <Waveform data={wave} width={w} height={h} sourceIn={sourceIn} span={span} gain={clip.audio.gain} />
+      ) : strip ? (
+        <FilmstripTiles strip={strip} width={w} height={h} sourceIn={sourceIn} span={span} />
+      ) : (
+        poster && <img src={poster} alt="" className="absolute inset-y-0 left-0 h-full w-auto opacity-60" draggable={false} />
+      )}
       <span className="relative block truncate px-1.5 pt-0.5 text-2xs font-medium text-white drop-shadow">{clip.name}</span>
     </button>
   );

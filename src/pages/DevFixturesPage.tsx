@@ -31,7 +31,8 @@ async function generate(spec: FixtureSpec, onProgress: (p: number) => void): Pro
   const audioCodec = spec.container === 'mp4' ? 'aac' : 'opus';
   const canvas = new OffscreenCanvas(spec.width, spec.height);
   const ctx = canvas.getContext('2d')!;
-  const video = new mb.CanvasSource(canvas, { codec: videoCodec, bitrate: mb.QUALITY_MEDIUM, keyFrameInterval: 1 });
+  // Key frame every 2 s, like real camera footage, so fast (copy) trims really snap to key frames.
+  const video = new mb.CanvasSource(canvas, { codec: videoCodec, bitrate: mb.QUALITY_MEDIUM, keyFrameInterval: 2 });
   output.addVideoTrack(video, { frameRate: spec.fps });
   let audio: InstanceType<typeof mb.AudioBufferSource> | null = null;
   if (spec.audio && (await mb.canEncodeAudio(audioCodec))) {

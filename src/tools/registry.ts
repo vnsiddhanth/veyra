@@ -7,7 +7,7 @@ export type ToolCategory = 'compress' | 'convert' | 'edit' | 'audio' | 'visual' 
 export type ToolStatus = 'available' | 'planned';
 
 /** Which implementation renders the tool page. */
-export type ToolEngine = 'inspect' | 'none';
+export type ToolEngine = 'inspect' | 'trim' | 'thumbnail' | 'none';
 
 export interface ToolDef {
   slug: string;
@@ -69,7 +69,17 @@ export const TOOLS: ToolDef[] = [
   planned('change-resolution', 'Change resolution', 'Rescale to 360p up to 4K.', 'convert', 3, ['1080p', '720p', '4k']),
   planned('repair-video', 'Repair / remux video', 'Rewrite a damaged or oddly muxed file into a clean container without re-encoding.', 'convert', 3, ['fix', 'corrupt']),
   // Editing
-  planned('trim-video', 'Trim video', 'Cut the start and end off a video, frame-accurately.', 'edit', 2, ['cut', 'shorten'], true),
+  {
+    slug: 'trim-video',
+    title: 'Trim video',
+    summary: 'Cut the start and end off a video, frame-accurately or instantly without re-encoding.',
+    category: 'edit',
+    status: 'available',
+    phase: 2,
+    engine: 'trim',
+    keywords: ['cut', 'shorten', 'clip'],
+    popular: true,
+  },
   planned('split-video', 'Split video', 'Split a video into parts at chosen points or fixed lengths.', 'edit', 3, ['segments']),
   planned('merge-videos', 'Merge videos', 'Join several clips into one video.', 'edit', 3, ['join', 'combine'], true),
   planned('crop-video', 'Crop video', 'Crop to any region or a preset aspect ratio.', 'edit', 3, ['cut edges']),
@@ -92,8 +102,18 @@ export const TOOLS: ToolDef[] = [
   planned('add-watermark', 'Add watermark', 'Overlay your logo or text on a video.', 'visual', 5, ['logo']),
   planned('remove-overlay', 'Remove your own overlay', 'Re-export a project without an overlay you added earlier.', 'visual', 7, []),
   planned('add-transitions', 'Add transitions', 'Join clips with fades, wipes and slides.', 'visual', 5, ['fade']),
-  planned('thumbnail-maker', 'Thumbnail maker', 'Pick the best frame and export it as a still.', 'visual', 2, ['poster', 'cover'], true),
-  planned('extract-frames', 'Extract frames', 'Export frames as PNG/JPEG at an interval or every frame.', 'visual', 2, ['screenshots', 'images']),
+  {
+    slug: 'thumbnail-maker',
+    title: 'Thumbnail maker',
+    summary: 'Step to the exact frame you want and save it as PNG, JPEG or WebP.',
+    category: 'visual',
+    status: 'available',
+    phase: 2,
+    engine: 'thumbnail',
+    keywords: ['poster', 'cover', 'screenshot', 'still', 'frame grab'],
+    popular: true,
+  },
+  planned('extract-frames', 'Extract frames', 'Export frames as PNG/JPEG at an interval or every frame.', 'visual', 3, ['screenshots', 'images']),
   planned('gif-maker', 'GIF maker', 'Build GIFs from video or images, with size control.', 'visual', 3, ['animated']),
   planned('slideshow-maker', 'Slideshow maker', 'Turn photos into a video with transitions and music.', 'visual', 5, ['photos to video']),
   planned('images-to-video', 'Images to video', 'Create a video from an image sequence.', 'visual', 5, ['timelapse']),

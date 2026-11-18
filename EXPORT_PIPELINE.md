@@ -1,14 +1,14 @@
 # Export Pipeline
 
-Status: **design** (Phase 2 for single-file conversion, Phase 7 for timeline export).
+Status: **single-file conversion implemented and verified (Phase 2)**. Timeline export is design only (Phase 7).
 
 ## Single-file tools (Phase 2–3)
 
 `mediaEngine.convert(file, options)` → worker → Mediabunny `Conversion.init({ input, output, trim, video, audio })`.
 
 - Stream copy when no re-encode is needed (trim on key frames, remux, mute). Re-encode otherwise.
-- The output target is `StreamTarget` → a `FileSystemWritableFileStream` (Chromium save picker) when the user chose a
-  destination. Otherwise it is an OPFS file, otherwise `BufferTarget` (memory), with a warning shown above ~1.5 GB.
+- The output target is `StreamTarget` → an OPFS `FileSystemWritableFileStream`, so large exports never sit in RAM. The fallback is
+  `BufferTarget` (memory). *Planned:* stream directly to a user-chosen file via `showSaveFilePicker` (Chromium).
 - Progress comes from `conversion.onProgress`. It is real, never simulated.
 - Cancel calls `conversion.cancel()` and the partial output is deleted.
 

@@ -5,6 +5,8 @@ import { IconShield } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/primitives';
 import { BRAND } from '@/config/brand';
 import { InspectTool } from '@/tools/inspect/InspectTool';
+import { ThumbnailTool } from '@/tools/thumbnail/ThumbnailTool';
+import { TrimTool } from '@/tools/trim/TrimTool';
 import { CATEGORY_LABELS, findTool, relatedTools } from '@/tools/registry';
 import { NotFoundPage } from './NotFoundPage';
 
@@ -38,6 +40,10 @@ export default function ToolPage() {
 
       {tool.engine === 'inspect' ? (
         <InspectTool tool={tool} />
+      ) : tool.engine === 'trim' ? (
+        <TrimTool />
+      ) : tool.engine === 'thumbnail' ? (
+        <ThumbnailTool />
       ) : (
         <div className="rounded-lg border border-line bg-surface p-6">
           <h2 className="text-base font-semibold">This tool isn’t available yet</h2>

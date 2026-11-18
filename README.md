@@ -4,8 +4,9 @@ A free, local-first video editor and set of video tools that run entirely in the
 It has no uploads, no account, no watermark and no export limits. Media is processed on the user's device with WebCodecs and
 [Mediabunny](https://mediabunny.dev) in Web Workers.
 
-> **Status: Phase 1 (Foundation) complete.** Import, metadata inspection, previews, local projects with autosave and
-> recovery, and the inspector tools work today. Conversion/export tools and the interactive timeline are the next phases.
+> **Status: Phase 2 (Media engine) complete in Chrome/Edge.** The trim tool (frame-accurate or instant), thumbnail maker and inspector
+> tools work today, with validated local exports. The editor imports media, autosaves, recovers and shows filmstrips and waveforms.
+> More standalone tools (Phase 3) and the interactive timeline (Phase 4) are next.
 > See [FEATURE_MATRIX.md](FEATURE_MATRIX.md) for exactly what is implemented and verified.
 
 ## Quick start
@@ -14,6 +15,7 @@ It has no uploads, no account, no watermark and no export limits. Media is proce
 npm install
 npm run dev          # http://localhost:5173 (cross-origin isolated)
 npm test             # unit + integration tests (Vitest)
+npm run test:e2e     # real-browser media tests (Playwright, uses installed Chrome + Edge)
 npm run typecheck
 npm run build && npm run preview   # production build with CSP, http://localhost:4173
 ```

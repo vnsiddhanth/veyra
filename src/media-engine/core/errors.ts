@@ -7,6 +7,9 @@ export type MediaErrorCode =
   | 'not-media'
   | 'worker-crashed'
   | 'out-of-memory'
+  | 'no-encoder'
+  | 'validation-failed'
+  | 'storage'
   | 'unknown';
 
 /** Typed engine error with a user-presentable message. */

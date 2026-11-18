@@ -19,6 +19,19 @@
 
 ## Benchmarks
 
-No hardware benchmarks have been recorded yet. Phase 8 adds a benchmark page plus a Playwright suite with fixtures
+First measurements (Chrome, Windows 11, 12 logical cores, one run each, generated fixtures). These are indicative only:
+
+| Operation | Input | Time |
+|---|---|---|
+| Fast trim (copy) 2 s | 720p30 H.264/AAC | 0.11 s |
+| Frame-accurate trim 2 s (re-encode) | 720p30, 2 s GOP | ~2.8 s |
+| Remux MP4 → MOV | 720p30 5 s | 0.19 s |
+| Transcode → WebM VP9/Opus 480p | 720p30 5 s | 2.9 s |
+| Rotate 90° (re-encode) | 720p30 5 s | 3.8 s |
+| Extract audio → M4A (copy) | 5 s | 0.03 s |
+
+Re-encoding includes the validation pass, which decodes the first and last frames.
+
+No broader hardware benchmarks have been recorded yet. Phase 8 adds a benchmark page plus a Playwright suite with fixtures
 (short/long, 1080p/4K, 30/60/120 fps, VFR, multi-audio) that records decode fps, export fps and peak memory per browser.
 Results will be published here as measured, per device. There is no fixed promise.

@@ -185,6 +185,7 @@ function AssetCard({ asset }: { asset: Asset }) {
         role="button"
         tabIndex={0}
         aria-pressed={selected}
+        aria-label={`${asset.name}${status === 'offline' && asset.kind !== 'subtitle' ? ' (offline)' : ''}`}
         onClick={() => selectAsset(asset.id)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') selectAsset(asset.id);
@@ -212,7 +213,7 @@ function AssetCard({ asset }: { asset: Asset }) {
               <IconAlert size={10} />
             </span>
           )}
-          <div className="absolute right-0.5 top-0.5 hidden gap-0.5 group-hover:flex group-focus-within:flex">
+          <div className={cn('absolute right-0.5 top-0.5 gap-0.5 group-hover:flex group-focus-within:flex', selected ? 'flex' : 'hidden')}>
             {status === 'online' && asset.kind !== 'subtitle' && (
               <IconButton
                 label="Append to timeline"

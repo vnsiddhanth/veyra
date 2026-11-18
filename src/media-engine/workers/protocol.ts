@@ -1,10 +1,22 @@
 /** Typed message protocol between the main thread and media workers. */
 import type { SerializedMediaError } from '../core/errors';
-import type { MediaInfo, Thumbnail, ThumbnailOptions } from '../core/types';
+import type {
+  ConvertOptions,
+  ConvertResult,
+  FrameOptions,
+  FrameResult,
+  MediaInfo,
+  Thumbnail,
+  ThumbnailOptions,
+  WaveformData,
+} from '../core/types';
 
 export interface JobMap {
   probe: { input: { file: Blob }; output: MediaInfo };
   thumbnails: { input: { file: Blob; options: ThumbnailOptions }; output: Thumbnail[] };
+  convert: { input: { file: Blob; options: ConvertOptions }; output: ConvertResult };
+  frame: { input: { file: Blob; options: FrameOptions }; output: FrameResult };
+  waveform: { input: { file: Blob; peaksPerSecond: number }; output: WaveformData };
 }
 
 export type JobType = keyof JobMap;
