@@ -56,3 +56,16 @@ Carried into Phase 3:
 - Firefox and WebKit e2e runs (need the Playwright browser download).
 - Save directly to a chosen file with `showSaveFilePicker` streaming.
 - Real-camera fixtures (VFR phone clip, HEVC, MKV).
+
+## Phase 3 status (2026-11-18)
+
+Acceptance criterion **met in Chrome and Edge**: every tool in the registry except the subtitle editor, soft subtitles, stabilisation and the
+overlay-removal workflow produces a validated output. Each tool is covered by an e2e test that re-parses the output in Node
+(`e2e/tools-phase3.spec.ts`). Speed, reverse and merge are also checked frame-by-frame.
+
+Decisions:
+- **FFmpeg.wasm: option (c), not shipped.** Mediabunny + WebCodecs cover MP4/MOV/WebM/MKV/MP3/WAV/FLAC/Ogg/AAC. An LGPL-only FFmpeg
+  core would need a custom Emscripten build; it can be added later as an optional lazy worker without changing the engine API.
+- **Render engine built early.** The compositor, frame streams and mixer were written in Phase 3 because merge, speed, overlays and
+  slideshow need them. Phases 5–7 reuse them for the program monitor and timeline export.
+- Firefox/WebKit runs are still pending (Phase 8).

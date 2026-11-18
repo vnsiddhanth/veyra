@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 2).
+Last updated: 2026-11-18 (end of Phase 3).
 
 ## Phase 1 — Foundation
 
@@ -57,13 +57,33 @@ Verified = passes the Playwright suite on Chrome **and** Edge (Windows 11). Fire
 | Thumbnail maker | Verified | `src/tools/thumbnail/ThumbnailTool.tsx` | — | `e2e/tools.spec.ts` | WebP is unavailable where the browser cannot encode it (reported, not faked) | PNG has the exact frame and dimensions |
 | Playwright suite | Verified | `e2e/`, `playwright.config.ts` | @playwright/test | 7 tests × 2 browsers | Firefox/WebKit need a browser download | Runs headless on installed browsers |
 
+## Phase 3 — Standalone tools
+
+Verified = the tool's e2e test passes on Chrome **and** Edge and the output is re-parsed in Node.
+
+| Feature | Status | Location | Tests | Known limitations |
+|---|---|---|---|---|
+| Render engine (evaluate, compositor, pixel FX, frame streams, mixer, export job) | Verified via tools | `src/render` | `evaluate.test.ts`, merge/speed/reverse/text/filters e2e | Canvas 2D compositing; per-pixel effects need WebGL2 (reported if missing) |
+| Compress / compress to size | Verified | `src/tools/convert` | e2e | Target size can be missed for extremely low targets (reported, never hidden) |
+| Convert (MP4/WebM/MOV/MKV), change fps, resolution, resize, aspect (pad/crop/blur), crop, rotate/flip, mute, repair | Verified (convert, resize, aspect, crop, rotate, mute); others Implemented | `ConvertTool.tsx` | e2e | Frame-rate change drops/repeats frames (no interpolation) |
+| Video to audio / audio converter / extract audio (incl. MP3) | Verified (MP3) | `ConvertTool.tsx` | e2e | — |
+| Split | Verified | `src/tools/split` | e2e, `tools-logic.test.ts` | Fast mode snaps to key frames (stated in UI) |
+| Merge / add transitions | Verified (crossfade, frame check) | `src/tools/compose/MergeTool.tsx` | e2e | Mixed sizes are letterboxed |
+| Change speed / reverse | Verified (frame-exact) | `SpeedTool.tsx` | e2e | Reverse decodes each frame from its key frame (slow for long files). Reversed audio ≤ 10 min |
+| Replace / add audio | Verified (replace) | `AudioTrackTool.tsx` | e2e | — |
+| Remove silence | Implemented | `SilenceTool.tsx` | `tools-logic.test.ts` | Peak-based detection (no speech model) |
+| Add text / watermark / burn subtitles / filters / adjust colours | Verified (text, filters) | `DecorTool.tsx` | e2e | Fonts limited to system families |
+| Video to GIF / GIF maker | Verified (video) | `src/tools/gif` | e2e | ≤ 900 frames; no dithering |
+| Extract frames (ZIP) | Verified | `src/tools/frames` | e2e, `zip.test.ts` | ≤ 5,000 images; no ZIP64 (4 GB) |
+| Slideshow / images to video | Implemented | `SlideshowTool.tsx` | — | — |
+| FFmpeg.wasm fallback | Not shipped (decision) | — | — | AVI/FLV/WMV unsupported |
+
 ## Later phases (summary)
 
 | Area | Status | Phase |
 |---|---|---|
-| FFmpeg.wasm fallback (AVI/FLV/WMV, undecodable codecs) | Not started (licensing decision pending) | 3 |
 | Firefox/WebKit e2e runs | Not started | 3 |
-| All processing tools in `src/tools/registry.ts` marked `planned` | Not started | 2–8 |
+| Remaining tools (subtitle editor, soft subtitles, stabilise, overlay removal) | Not started | 6–8 |
 | Interactive timeline (drag, trim handles, snapping, playhead, markers, multi-select, copy/paste) | Not started (model ops done) | 4 |
 | WebGL2 compositor, program monitor, audio clock | Not started | 5 |
 | Effects, transitions, text, keyframe UI, color, masks, chroma key | Not started (schema ready) | 5–6 |

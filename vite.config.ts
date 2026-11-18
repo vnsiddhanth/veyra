@@ -43,6 +43,8 @@ export default defineConfig({
   server: { headers: isolationHeaders },
   preview: { headers: isolationHeaders },
   worker: { format: 'es' },
+  // Pre-bundle media deps so the dev server never reloads the page mid-session when a worker first imports them.
+  optimizeDeps: { include: ['mediabunny', 'gifenc', '@mediabunny/mp3-encoder'] },
   build: { target: 'es2022', sourcemap: true },
   test: {
     environment: 'node',

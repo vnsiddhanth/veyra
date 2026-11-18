@@ -1,6 +1,6 @@
 # Export Pipeline
 
-Status: **single-file conversion implemented and verified (Phase 2)**. Timeline export is design only (Phase 7).
+Status: single-file conversion verified (Phase 2). The project renderer (`src/render/render-project.ts`) is implemented and verified through the Phase 3 tools. The editor export UI arrives in Phase 7.
 
 ## Single-file tools (Phase 2–3)
 

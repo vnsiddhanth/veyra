@@ -85,7 +85,7 @@ export interface Thumbnail {
 
 // ── Conversion / export ────────────────────────────────────────────────────
 
-export type OutputContainer = 'mp4' | 'mov' | 'webm' | 'mkv' | 'm4a' | 'ogg' | 'wav' | 'adts' | 'flac';
+export type OutputContainer = 'mp4' | 'mov' | 'webm' | 'mkv' | 'm4a' | 'ogg' | 'wav' | 'adts' | 'flac' | 'mp3';
 export type QualityLevel = 'very-low' | 'low' | 'medium' | 'high' | 'very-high';
 
 /**
@@ -171,4 +171,55 @@ export interface WaveformData {
   peaks: Uint8Array;
   peaksPerSecond: number;
   duration: number;
+}
+
+// ── Batch / image outputs ──────────────────────────────────────────────────
+
+/** A produced file that is not an audio/video container (GIF, ZIP of frames). */
+export interface FileResult {
+  file: File;
+  storage: 'opfs' | 'memory';
+  scratchName: string | null;
+  checks: ValidationCheck[];
+  summary: string;
+  elapsedMs: number;
+}
+
+export interface GifOptions {
+  /** Seconds; defaults to the whole source (capped by `maxFrames`). */
+  start?: number;
+  end?: number;
+  fps: number;
+  width: number;
+  /** 2–256 colours per frame. */
+  colors: number;
+  /** 0 = loop forever, -1 = play once. */
+  repeat: number;
+  /** Playback speed multiplier. */
+  speed?: number;
+  fileName: string;
+}
+
+export interface FramesOptions {
+  start: number;
+  end: number;
+  /** 'interval': one frame every `interval` seconds; 'all': every frame; 'count': `count` evenly spaced frames. */
+  mode: 'interval' | 'all' | 'count';
+  interval?: number;
+  count?: number;
+  format: 'png' | 'jpeg' | 'webp';
+  quality?: number;
+  width?: number;
+  fileName: string;
+}
+
+export interface GifImagesOptions {
+  width: number;
+  height: number;
+  /** Milliseconds each image is shown. */
+  delay: number;
+  colors: number;
+  repeat: number;
+  background: string;
+  fileName: string;
 }

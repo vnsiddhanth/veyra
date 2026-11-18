@@ -25,8 +25,10 @@ Every operation returns a `Job<T>` (`src/media-engine/core/job.ts`). Operations:
 | `waveform(file, pps)` | Implemented | worker | `AudioSampleSink` streamed → 0–255 peak per bucket (default 50/s), transferred |
 | `convert(file, opts)` | Implemented | worker | Mediabunny `Conversion`: trim, resize, crop, rotate, flip, fps, codec, bitrate, container. Writes to OPFS. Output re-validated |
 | `releaseOutput(result)` | Implemented | main | Deletes the OPFS scratch file of a dismissed result |
-| `renderTimeline(project)` | Phase 7 | export worker | Compositor + encoders + muxer |
-| FFmpeg fallback | Phase 2–3 | dedicated worker | `@ffmpeg/ffmpeg`, lazy |
+| `render(input)` | Implemented | worker | `src/render`: compositor (Canvas 2D + WebGL2) → `CanvasSource`, mixer → `AudioSampleSource`, OPFS, validated |
+| `gif(file, opts)` / `gifFromImages` | Implemented | worker | `CanvasSink` → gifenc (PnnQuant palette per frame), checked with `ImageDecoder` |
+| `frames(file, opts)` | Implemented | worker | `CanvasSink` → images → streaming stored ZIP (OPFS), CRC-checked |
+| FFmpeg fallback | Not shipped (decision in DEVELOPMENT_ROADMAP.md) | — | — |
 
 ## MediaInfo
 
@@ -81,7 +83,7 @@ from packets as a fallback), size, overall bitrate, and per track:
 ## Known limitations (honest)
 
 - AVI/FLV/WMV containers are not demuxed by Mediabunny. They are detected and reported. Editing them needs the
-  FFmpeg fallback, which is deferred to Phase 3 (see DEVELOPMENT_ROADMAP.md for the licensing decision it needs).
-- MP3 encoding is not provided by WebCodecs in Chromium. MP3 output is not offered until a WASM encoder is added (Phase 3).
+  FFmpeg fallback, which is not shipped (see the decision in DEVELOPMENT_ROADMAP.md).
+- MP3 encoding is not provided by WebCodecs in Chromium. The worker registers `@mediabunny/mp3-encoder` (LAME in WASM) when no native encoder exists.
 - HEVC decode depends on OS/GPU support. ProRes decode is generally unavailable in browsers.
 - Duration from metadata can be missing for some WebM recordings. In that case it is computed from packets, which costs one index pass.

@@ -10,6 +10,7 @@ export type MediaErrorCode =
   | 'no-encoder'
   | 'validation-failed'
   | 'storage'
+  | 'too-large'
   | 'unknown';
 
 /** Typed engine error with a user-presentable message. */

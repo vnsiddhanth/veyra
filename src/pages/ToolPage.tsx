@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect, type ComponentType } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ToolCard } from '@/components/tools/ToolCard';
 import { IconShield } from '@/components/ui/icons';
@@ -7,7 +7,24 @@ import { BRAND } from '@/config/brand';
 import { InspectTool } from '@/tools/inspect/InspectTool';
 import { ThumbnailTool } from '@/tools/thumbnail/ThumbnailTool';
 import { TrimTool } from '@/tools/trim/TrimTool';
-import { CATEGORY_LABELS, findTool, relatedTools } from '@/tools/registry';
+import { CATEGORY_LABELS, findTool, relatedTools, type ToolDef, type ToolEngine } from '@/tools/registry';
+
+const named = <K extends string>(load: () => Promise<Record<K, ComponentType<{ tool: ToolDef }>>>, name: K) =>
+  lazy(() => load().then((m) => ({ default: m[name] })));
+
+/** Tool implementations, code-split so each page loads only its own processor UI. */
+const ENGINES: Partial<Record<ToolEngine, ComponentType<{ tool: ToolDef }>>> = {
+  convert: named(() => import('@/tools/convert/ConvertTool'), 'ConvertTool'),
+  gif: named(() => import('@/tools/gif/GifTool'), 'GifTool'),
+  frames: named(() => import('@/tools/frames/FramesTool') as Promise<Record<'FramesTool', ComponentType<{ tool: ToolDef }>>>, 'FramesTool'),
+  split: named(() => import('@/tools/split/SplitTool') as Promise<Record<'SplitTool', ComponentType<{ tool: ToolDef }>>>, 'SplitTool'),
+  merge: named(() => import('@/tools/compose/MergeTool'), 'MergeTool'),
+  speed: named(() => import('@/tools/compose/SpeedTool'), 'SpeedTool'),
+  'audio-track': named(() => import('@/tools/compose/AudioTrackTool'), 'AudioTrackTool'),
+  decor: named(() => import('@/tools/compose/DecorTool'), 'DecorTool'),
+  slideshow: named(() => import('@/tools/compose/SlideshowTool'), 'SlideshowTool'),
+  silence: named(() => import('@/tools/compose/SilenceTool') as Promise<Record<'SilenceTool', ComponentType<{ tool: ToolDef }>>>, 'SilenceTool'),
+};
 import { NotFoundPage } from './NotFoundPage';
 
 export default function ToolPage() {
@@ -38,7 +55,11 @@ export default function ToolPage() {
         </p>
       </header>
 
-      {tool.engine === 'inspect' ? (
+      {ENGINES[tool.engine] ? (
+        <Suspense fallback={<p className="text-sm text-muted">Loading tool…</p>}>
+          <EngineView tool={tool} />
+        </Suspense>
+      ) : tool.engine === 'inspect' ? (
         <InspectTool tool={tool} />
       ) : tool.engine === 'trim' ? (
         <TrimTool />
@@ -77,4 +98,9 @@ export default function ToolPage() {
       )}
     </div>
   );
+}
+
+function EngineView({ tool }: { tool: ToolDef }) {
+  const C = ENGINES[tool.engine]!;
+  return <C key={tool.slug} tool={tool} />;
 }

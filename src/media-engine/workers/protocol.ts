@@ -3,13 +3,18 @@ import type { SerializedMediaError } from '../core/errors';
 import type {
   ConvertOptions,
   ConvertResult,
+  FileResult,
   FrameOptions,
+  FramesOptions,
+  GifImagesOptions,
+  GifOptions,
   FrameResult,
   MediaInfo,
   Thumbnail,
   ThumbnailOptions,
   WaveformData,
 } from '../core/types';
+import type { RenderInput } from '@/render/render-project';
 
 export interface JobMap {
   probe: { input: { file: Blob }; output: MediaInfo };
@@ -17,6 +22,10 @@ export interface JobMap {
   convert: { input: { file: Blob; options: ConvertOptions }; output: ConvertResult };
   frame: { input: { file: Blob; options: FrameOptions }; output: FrameResult };
   waveform: { input: { file: Blob; peaksPerSecond: number }; output: WaveformData };
+  render: { input: RenderInput; output: ConvertResult };
+  gif: { input: { file: Blob; options: GifOptions }; output: FileResult };
+  gifImages: { input: { files: Blob[]; options: GifImagesOptions }; output: FileResult };
+  frames: { input: { file: Blob; options: FramesOptions }; output: FileResult };
 }
 
 export type JobType = keyof JobMap;

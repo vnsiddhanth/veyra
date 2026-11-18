@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.0 — 2026-11-18 · Phase 3: Standalone tools
+
+### Added
+- **Render engine** (`src/render`), shared by tools now and by preview/export later:
+  - Pure timeline evaluation: keyframes with easing, source-time mapping for speed and reverse, transitions centred on cuts, audible clips, gain envelopes.
+  - Canvas 2D compositor: transforms, crop, opacity, blend modes, filter effects, 10 transitions, text with outline/shadow/box, text animations, shape masks.
+  - WebGL2 pixel pass: temperature/tint, levels, 3D LUT (.cube), chroma key, vignette, grain. Effects that cannot run are reported, not dropped silently.
+  - Sequential per-clip frame streams (decoded once from the nearest key frame).
+  - Worker-side audio mixer: resampling, speed, reverse, fades, pan, 3-band EQ, compressor, ducking, soft limiter.
+  - WSOLA time-stretch for pitch-preserving speed changes.
+  - `renderProject` export job, writing to OPFS and validated like every other output.
+- New engine jobs: `render`, `gif` (from video), `gifImages`, `frames` (streaming stored ZIP with CRC verification). MP3 output through `@mediabunny/mp3-encoder` (LAME, WASM) when there is no native encoder.
+- 36 newly available tools:
+  - **Compress & convert:** compress, compress to target size (automatic re-encode if over the limit), convert / MP4 / WebM / MOV, change frame rate, change resolution, repair/remux.
+  - **Video edits:** resize with platform presets, aspect ratio (bars, crop or blurred background), interactive crop, rotate & flip, mute.
+  - **Audio:** video to audio and audio converter (MP3/M4A/Opus/WAV/FLAC/AAC), extract, replace and add audio (loop, fades, ducking), remove silence.
+  - **Cut, join & retime:** split (equal parts, every N s, custom times), merge, add transitions, change speed (pitch preserved), reverse.
+  - **Images & GIFs:** video to GIF, GIF maker (video or images), extract frames to ZIP.
+  - **Overlays & looks:** add text (animated), add watermark (logo or text), video filters, adjust colours (live preview through the real compositor), slideshow maker (Ken Burns, music), images to video.
+  - **Subtitles:** burn in subtitles.
+- Tool pages are code-split per engine.
+- e2e: 18 new Phase 3 tests per browser (outputs re-parsed in Node; speed, reverse and merge verified frame-by-frame).
+
+### Changed
+- Decision on the FFmpeg.wasm fallback: **not shipped**. The published cores bundle GPL encoders, and an LGPL-only core needs a custom Emscripten build that is outside this repository's toolchain. AVI/FLV/WMV stay detected and honestly reported as unsupported.
+- Form labels in tools are associated by id (better screen-reader names).
+- The dev server pre-bundles media dependencies so it never reloads mid-session.
+
 ## 0.2.0 — 2026-11-18 · Phase 2: Media engine
 
 ### Added

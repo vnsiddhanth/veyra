@@ -7,7 +7,25 @@ export type ToolCategory = 'compress' | 'convert' | 'edit' | 'audio' | 'visual' 
 export type ToolStatus = 'available' | 'planned';
 
 /** Which implementation renders the tool page. */
-export type ToolEngine = 'inspect' | 'trim' | 'thumbnail' | 'none';
+export type ToolEngine =
+  | 'inspect'
+  | 'trim'
+  | 'thumbnail'
+  | 'convert'
+  | 'gif'
+  | 'frames'
+  | 'split'
+  | 'merge'
+  | 'speed'
+  | 'audio-track'
+  | 'decor'
+  | 'slideshow'
+  | 'silence'
+  | 'subtitle-editor'
+  | 'soft-subtitles'
+  | 'stabilize'
+  | 'guide'
+  | 'none';
 
 export interface ToolDef {
   slug: string;
@@ -22,6 +40,12 @@ export interface ToolDef {
   focus?: 'all' | 'frame-rate' | 'resolution' | 'duration' | 'audio';
   keywords: string[];
   popular?: boolean;
+  /** Sub-mode for engines that serve several tools (convert, decor). */
+  mode?: string;
+  /** Fixed options, e.g. the output container of "Convert to MP4". */
+  preset?: { container?: string };
+  /** Label of the main action button. */
+  action?: string;
 }
 
 export const CATEGORY_LABELS: Record<ToolCategory, string> = {
@@ -44,6 +68,17 @@ const planned = (
   popular = false,
 ): ToolDef => ({ slug, title, summary, category, status: 'planned', phase, engine: 'none', keywords, popular });
 
+const tool = (
+  slug: string,
+  title: string,
+  summary: string,
+  category: ToolCategory,
+  phase: number,
+  engine: ToolEngine,
+  keywords: string[] = [],
+  extra: Partial<ToolDef> = {},
+): ToolDef => ({ slug, title, summary, category, status: 'available', phase, engine, keywords, ...extra });
+
 const inspect = (
   slug: string,
   title: string,
@@ -55,19 +90,19 @@ const inspect = (
 
 export const TOOLS: ToolDef[] = [
   // Compression
-  planned('compress-video', 'Compress video', 'Shrink a video by quality, resolution or bitrate.', 'compress', 3, ['smaller', 'reduce size'], true),
-  planned('compress-to-size', 'Compress to target size', 'Fit a video under a file-size limit, e.g. 25 MB for chat apps.', 'compress', 3, ['discord', 'email', 'limit']),
+  tool('compress-video', 'Compress video', 'Shrink a video by quality, resolution or bitrate.', 'compress', 3, 'convert', ['smaller', 'reduce size'], { popular: true, mode: 'compress', action: 'Compress' }),
+  tool('compress-to-size', 'Compress to target size', 'Fit a video under a file-size limit, e.g. 25 MB for chat apps.', 'compress', 3, 'convert', ['discord', 'email', 'limit'], { mode: 'compress-size', action: 'Compress' }),
   // Conversion
-  planned('convert-video', 'Convert video', 'Convert between MP4, WebM and MOV, choosing codecs your browser supports.', 'convert', 3, ['format', 'mkv to mp4'], true),
-  planned('mp4-converter', 'Convert to MP4', 'Turn any supported video into a widely compatible MP4.', 'convert', 3, ['h264']),
-  planned('webm-converter', 'Convert to WebM', 'Make a VP9/AV1 WebM for the web.', 'convert', 3, ['vp9']),
-  planned('mov-converter', 'Convert to MOV', 'Wrap or convert video into a QuickTime MOV container.', 'convert', 3, ['quicktime']),
-  planned('video-to-gif', 'Video to GIF', 'Turn a clip into an optimised animated GIF.', 'convert', 3, ['animated'], true),
-  planned('video-to-audio', 'Video to audio', 'Save the soundtrack of a video as MP3, M4A, Opus or WAV.', 'convert', 3, ['mp3', 'extract']),
-  planned('audio-converter', 'Convert audio', 'Convert between WAV, MP3, M4A, Opus and FLAC.', 'convert', 3, ['mp3', 'wav']),
-  planned('change-frame-rate', 'Change frame rate', 'Convert to 24, 25, 30, 60 fps or a custom rate.', 'convert', 3, ['fps']),
-  planned('change-resolution', 'Change resolution', 'Rescale to 360p up to 4K.', 'convert', 3, ['1080p', '720p', '4k']),
-  planned('repair-video', 'Repair / remux video', 'Rewrite a damaged or oddly muxed file into a clean container without re-encoding.', 'convert', 3, ['fix', 'corrupt']),
+  tool('convert-video', 'Convert video', 'Convert between MP4, WebM, MOV and MKV, choosing codecs your browser supports.', 'convert', 3, 'convert', ['format', 'mkv to mp4'], { popular: true, mode: 'convert' }),
+  tool('mp4-converter', 'Convert to MP4', 'Turn any supported video into a widely compatible MP4.', 'convert', 3, 'convert', ['h264'], { mode: 'convert', preset: { container: 'mp4' } }),
+  tool('webm-converter', 'Convert to WebM', 'Make a VP9/AV1 WebM for the web.', 'convert', 3, 'convert', ['vp9'], { mode: 'convert', preset: { container: 'webm' } }),
+  tool('mov-converter', 'Convert to MOV', 'Wrap or convert video into a QuickTime MOV container.', 'convert', 3, 'convert', ['quicktime'], { mode: 'convert', preset: { container: 'mov' } }),
+  tool('video-to-gif', 'Video to GIF', 'Turn a clip into an animated GIF with size and colour control.', 'convert', 3, 'gif', ['animated'], { popular: true }),
+  tool('video-to-audio', 'Video to audio', 'Save the soundtrack of a video as MP3, M4A, Opus, FLAC or WAV.', 'convert', 3, 'convert', ['mp3', 'extract'], { mode: 'audio', action: 'Save audio' }),
+  tool('audio-converter', 'Convert audio', 'Convert between WAV, MP3, M4A, Opus and FLAC.', 'convert', 3, 'convert', ['mp3', 'wav'], { mode: 'audio' }),
+  tool('change-frame-rate', 'Change frame rate', 'Convert to 12-60 fps by dropping or repeating frames.', 'convert', 3, 'convert', ['fps'], { mode: 'fps' }),
+  tool('change-resolution', 'Change resolution', 'Rescale to 360p up to 4K.', 'convert', 3, 'convert', ['1080p', '720p', '4k'], { mode: 'resolution', action: 'Rescale' }),
+  tool('repair-video', 'Repair / remux video', 'Rewrite an oddly muxed file into a clean container without re-encoding.', 'convert', 3, 'convert', ['fix', 'corrupt'], { mode: 'repair', action: 'Remux' }),
   // Editing
   {
     slug: 'trim-video',
@@ -80,28 +115,28 @@ export const TOOLS: ToolDef[] = [
     keywords: ['cut', 'shorten', 'clip'],
     popular: true,
   },
-  planned('split-video', 'Split video', 'Split a video into parts at chosen points or fixed lengths.', 'edit', 3, ['segments']),
-  planned('merge-videos', 'Merge videos', 'Join several clips into one video.', 'edit', 3, ['join', 'combine'], true),
-  planned('crop-video', 'Crop video', 'Crop to any region or a preset aspect ratio.', 'edit', 3, ['cut edges']),
-  planned('resize-video', 'Resize video', 'Fit, fill or pad to a new size for any platform.', 'edit', 3, ['instagram', 'tiktok', 'youtube'], true),
-  planned('rotate-video', 'Rotate & flip video', 'Rotate 90°/180° or mirror a video.', 'edit', 3, ['flip', 'mirror']),
-  planned('reverse-video', 'Reverse video', 'Play a clip backwards.', 'edit', 3, ['backwards']),
-  planned('change-speed', 'Change video speed', 'Speed up or slow down a video, with pitch-corrected audio.', 'edit', 3, ['slow motion', 'fast forward']),
-  planned('aspect-ratio-converter', 'Aspect ratio converter', 'Convert between 16:9, 9:16, 1:1, 4:5 with padding, blur fill or crop.', 'edit', 3, ['vertical', 'square']),
+  tool('split-video', 'Split video', 'Split a video into parts at chosen points or fixed lengths.', 'edit', 3, 'split', ['segments'], {}),
+  tool('merge-videos', 'Merge videos', 'Join several clips into one video.', 'edit', 3, 'merge', ['join', 'combine'], { popular: true }),
+  tool('crop-video', 'Crop video', 'Crop to any region or a preset aspect ratio.', 'edit', 3, 'convert', ['cut edges'], { mode: 'crop', action: 'Crop' }),
+  tool('resize-video', 'Resize video', 'Fit, fill or pad to a new size for any platform.', 'edit', 3, 'convert', ['instagram', 'tiktok', 'youtube'], { popular: true, mode: 'resize', action: 'Resize' }),
+  tool('rotate-video', 'Rotate & flip video', 'Rotate 90°/180° or mirror a video.', 'edit', 3, 'convert', ['flip', 'mirror'], { mode: 'rotate', action: 'Rotate' }),
+  tool('reverse-video', 'Reverse video', 'Play a clip backwards.', 'edit', 3, 'speed', ['backwards'], {}),
+  tool('change-speed', 'Change video speed', 'Speed up or slow down a video, with pitch-corrected audio.', 'edit', 3, 'speed', ['slow motion', 'fast forward'], {}),
+  tool('aspect-ratio-converter', 'Aspect ratio converter', 'Convert between 16:9, 9:16, 1:1, 4:5 with padding, blur fill or crop.', 'edit', 3, 'convert', ['vertical', 'square'], { mode: 'aspect' }),
   planned('stabilize-video', 'Stabilize video', 'Reduce camera shake (feasibility under evaluation for in-browser processing).', 'edit', 8, ['shaky']),
   // Audio
-  planned('mute-video', 'Mute video', 'Remove the audio track without re-encoding the video.', 'audio', 3, ['remove sound']),
-  planned('extract-audio', 'Extract audio', 'Save a video’s audio track as a separate file.', 'audio', 3, ['rip audio'], true),
-  planned('replace-audio', 'Replace audio', 'Swap a video’s soundtrack for another audio file.', 'audio', 3, ['music']),
-  planned('add-audio', 'Add audio to video', 'Mix music or narration into a video.', 'audio', 3, ['background music']),
-  planned('remove-silence', 'Remove silence', 'Detect and cut silent passages automatically.', 'audio', 6, ['jump cut']),
+  tool('mute-video', 'Mute video', 'Remove the audio track without re-encoding the video.', 'audio', 3, 'convert', ['remove sound'], { mode: 'mute', action: 'Remove audio' }),
+  tool('extract-audio', 'Extract audio', 'Save a video’s audio track as a separate file.', 'audio', 3, 'convert', ['rip audio'], { popular: true, mode: 'audio', action: 'Extract audio' }),
+  tool('replace-audio', 'Replace audio', 'Swap a video’s soundtrack for another audio file.', 'audio', 3, 'audio-track', ['music'], {}),
+  tool('add-audio', 'Add audio to video', 'Mix music or narration into a video, with optional ducking.', 'audio', 3, 'audio-track', ['background music'], {}),
+  tool('remove-silence', 'Remove silence', 'Detect and cut silent passages automatically.', 'audio', 3, 'silence', ['jump cut'], {}),
   // Visual
-  planned('video-filters', 'Video filters', 'Apply looks like vintage, black & white and film grain.', 'visual', 5, ['effects']),
-  planned('adjust-colors', 'Adjust brightness, contrast & saturation', 'Basic color correction for a whole video.', 'visual', 5, ['brightness', 'contrast', 'saturation']),
-  planned('add-text', 'Add text to video', 'Place titles or captions on a video.', 'visual', 5, ['caption', 'title']),
-  planned('add-watermark', 'Add watermark', 'Overlay your logo or text on a video.', 'visual', 5, ['logo']),
+  tool('video-filters', 'Video filters', 'Apply looks like vintage, black & white and film grain.', 'visual', 3, 'decor', ['effects'], { mode: 'look' }),
+  tool('adjust-colors', 'Adjust brightness, contrast & saturation', 'Basic color correction for a whole video.', 'visual', 3, 'decor', ['brightness', 'contrast', 'saturation'], { mode: 'look' }),
+  tool('add-text', 'Add text to video', 'Place animated titles or captions on a video.', 'visual', 3, 'decor', ['caption', 'title'], { mode: 'text' }),
+  tool('add-watermark', 'Add watermark', 'Overlay your logo or text on a video.', 'visual', 3, 'decor', ['logo'], { mode: 'watermark' }),
   planned('remove-overlay', 'Remove your own overlay', 'Re-export a project without an overlay you added earlier.', 'visual', 7, []),
-  planned('add-transitions', 'Add transitions', 'Join clips with fades, wipes and slides.', 'visual', 5, ['fade']),
+  tool('add-transitions', 'Add transitions', 'Join clips with fades, wipes and slides.', 'visual', 3, 'merge', ['fade'], {}),
   {
     slug: 'thumbnail-maker',
     title: 'Thumbnail maker',
@@ -113,14 +148,14 @@ export const TOOLS: ToolDef[] = [
     keywords: ['poster', 'cover', 'screenshot', 'still', 'frame grab'],
     popular: true,
   },
-  planned('extract-frames', 'Extract frames', 'Export frames as PNG/JPEG at an interval or every frame.', 'visual', 3, ['screenshots', 'images']),
-  planned('gif-maker', 'GIF maker', 'Build GIFs from video or images, with size control.', 'visual', 3, ['animated']),
-  planned('slideshow-maker', 'Slideshow maker', 'Turn photos into a video with transitions and music.', 'visual', 5, ['photos to video']),
-  planned('images-to-video', 'Images to video', 'Create a video from an image sequence.', 'visual', 5, ['timelapse']),
+  tool('extract-frames', 'Extract frames', 'Export frames as PNG/JPEG at an interval or every frame, in one ZIP.', 'visual', 3, 'frames', ['screenshots', 'images'], {}),
+  tool('gif-maker', 'GIF maker', 'Build GIFs from video or images, with size control.', 'visual', 3, 'gif', ['animated'], {}),
+  tool('slideshow-maker', 'Slideshow maker', 'Turn photos into a video with transitions, pan & zoom and music.', 'visual', 3, 'slideshow', ['photos to video'], {}),
+  tool('images-to-video', 'Images to video', 'Create a video from an image sequence.', 'visual', 3, 'slideshow', ['timelapse'], {}),
   // Subtitles
   planned('subtitle-editor', 'Subtitle editor', 'Edit SRT/VTT timing and text with a live preview.', 'subtitles', 6, ['srt', 'vtt', 'captions']),
   planned('add-subtitles', 'Add subtitles', 'Attach a soft subtitle track to a video file.', 'subtitles', 6, ['captions']),
-  planned('burn-subtitles', 'Burn in subtitles', 'Render subtitles permanently into the picture.', 'subtitles', 7, ['hardcode']),
+  tool('burn-subtitles', 'Burn in subtitles', 'Render SRT/VTT subtitles permanently into the picture.', 'subtitles', 3, 'decor', ['hardcode'], { mode: 'subtitles' }),
   // Inspect & utilities (available)
   inspect('video-metadata', 'Video metadata viewer', 'See container, codecs, bitrate, frame rate, HDR and every track in a file.', 'all', ['info', 'mediainfo', 'codec'], true),
   inspect('frame-rate-inspector', 'Frame rate inspector', 'Measure the real frame rate and detect variable-frame-rate footage.', 'frame-rate', ['fps', 'vfr']),
@@ -144,7 +179,13 @@ export function searchTools(query: string, tools: ToolDef[] = TOOLS): ToolDef[] 
       return { t, score };
     })
     .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score || (a.t.status === 'available' ? -1 : 1))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        (a.t.status === 'available' ? 0 : 1) - (b.t.status === 'available' ? 0 : 1) ||
+        (b.t.popular ? 1 : 0) - (a.t.popular ? 1 : 0) ||
+        a.t.title.length - b.t.title.length,
+    )
     .map((x) => x.t);
 }
 

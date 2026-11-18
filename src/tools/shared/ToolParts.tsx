@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { FileDrop } from '@/components/ui/FileDrop';
 import { IconAlert, IconDownload, IconUpload } from '@/components/ui/icons';
 import { Button, Progress } from '@/components/ui/primitives';
-import type { ConvertResult, MediaError } from '@/media-engine';
+import type { ConvertResult, FileResult, MediaError, MediaInfo } from '@/media-engine';
 import type { ImportEntry } from '@/state/media-actions';
 import { formatBytes, formatDuration } from '@/utils/format';
 import { cn } from '@/utils/id';
@@ -151,3 +151,135 @@ export function ConvertResultCard({ result, onReset, resetLabel = 'Start over' }
     </div>
   );
 }
+
+/** Validated non-media output (GIF, ZIP). */
+export function FileResultCard({ result, onReset, resetLabel = 'Start over' }: { result: FileResult; onReset(): void; resetLabel?: string }) {
+  const url = useObjectUrl(result.file);
+  const isImage = result.file.type.startsWith('image/');
+  return (
+    <div className="overflow-hidden rounded-lg border border-ok/40 bg-surface">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line p-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium uppercase tracking-wider text-ok">Done · output verified</p>
+          <p className="truncate text-sm font-medium" title={result.file.name}>
+            {result.file.name}
+          </p>
+          <p className="text-xs text-muted">
+            {formatBytes(result.file.size)} · {result.summary} · took {formatDuration(result.elapsedMs / 1000, 1)}
+          </p>
+        </div>
+        <a
+          href={url ?? undefined}
+          download={result.file.name}
+          className="inline-flex h-9 items-center gap-2 rounded-md bg-accent px-4 text-sm font-medium text-accent-fg hover:brightness-110"
+        >
+          <IconDownload /> Download
+        </a>
+        <Button onClick={onReset}>{resetLabel}</Button>
+      </div>
+      {url && isImage && <img src={url} alt="Output preview" className="mx-auto max-h-80 bg-black/40" />}
+      <details className="border-t border-line px-4 py-2 text-xs">
+        <summary className="cursor-pointer text-muted">Validation checks ({result.checks.filter((c) => c.ok).length}/{result.checks.length} passed)</summary>
+        <ul className="mt-2 space-y-1">
+          {result.checks.map((c) => (
+            <li key={c.name} className="flex gap-2">
+              <span className={c.ok ? 'text-ok' : 'text-danger'}>{c.ok ? '✓' : '✗'}</span>
+              <span className="w-28 shrink-0 text-muted">{c.name}</span>
+              <span className="font-mono">{c.detail}</span>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
+/** Header line for a loaded source file. */
+export function SourceHeader({ file, info, onChange, disabled }: { file: File; info: MediaInfo; onChange(): void; disabled?: boolean }) {
+  const v = info.video[0];
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="min-w-0 truncate font-medium">{file.name}</span>
+      <span className="shrink-0 text-xs text-muted">
+        {v ? `${info.width}×${info.height} · ` : ''}
+        {formatDuration(info.duration, 2)}
+        {v?.frameRate ? ` · ${Number(v.frameRate.bestGuess.toFixed(3))} fps` : ''} · {formatBytes(file.size)}
+      </span>
+      <Button size="sm" variant="ghost" className="ml-auto" onClick={onChange} disabled={disabled}>
+        Change file
+      </Button>
+    </div>
+  );
+}
+
+/** Progress / error / cancelled / run button area shared by tools. */
+export function JobArea<T>({
+  state,
+  onCancel,
+  label,
+  action,
+  disabledReason,
+  onRun,
+  done,
+}: {
+  state: JobState<T>;
+  onCancel(): void;
+  label: string;
+  action: string;
+  disabledReason?: string | null;
+  onRun(): void;
+  done(result: T): ReactNode;
+}) {
+  if (state.status === 'done') return <>{done(state.result)}</>;
+  return (
+    <>
+      <JobProgress state={state} onCancel={onCancel} label={label} />
+      {state.status === 'error' && <ErrorBox error={state.error} />}
+      {state.status === 'cancelled' && <p className="text-sm text-muted">Cancelled. Nothing was saved.</p>}
+      {state.status !== 'running' && (
+        <div className="flex items-center gap-3">
+          <Button variant="primary" size="lg" onClick={onRun} disabled={!!disabledReason}>
+            {action}
+          </Button>
+          {disabledReason && <span className="text-xs text-muted">{disabledReason}</span>}
+        </div>
+      )}
+    </>
+  );
+}
+
+export function baseName(name: string): string {
+  const i = name.lastIndexOf('.');
+  return i > 0 ? name.slice(0, i) : name;
+}
+
+/** Renders the empty / probing / error states of a single-source tool; children render when ready. */
+export function SourceGate({
+  source,
+  open,
+  clear,
+  accept,
+  label,
+}: {
+  source: import('./useSource').SourceState;
+  open(file: File): void;
+  clear(): void;
+  accept: string;
+  label?: string;
+}) {
+  if (source.status === 'empty') return <SourceDrop onFile={open} accept={accept} label={label} />;
+  if (source.status === 'probing') return <p className="rounded-lg border border-line bg-surface p-6 text-sm text-muted">Reading {source.file.name}…</p>;
+  if (source.status === 'error')
+    return (
+      <ErrorBox error={source.error}>
+        <Button size="sm" className="mt-2" onClick={clear}>
+          Choose another file
+        </Button>
+      </ErrorBox>
+    );
+  return null;
+}
+
+export const VIDEO_ACCEPT = 'video/*,.mp4,.mov,.m4v,.webm,.mkv,.ts,.mts,.m2ts';
+export const AUDIO_ACCEPT = 'audio/*,video/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus,.webm,.mp4,.mov,.mkv';
+export const IMAGE_ACCEPT = 'image/*,.png,.jpg,.jpeg,.webp,.gif,.avif,.bmp';

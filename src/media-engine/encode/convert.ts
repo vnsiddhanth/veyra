@@ -14,6 +14,7 @@ import {
   FlacOutputFormat,
   MkvOutputFormat,
   MovOutputFormat,
+  Mp3OutputFormat,
   Mp4OutputFormat,
   OggOutputFormat,
   Output,
@@ -45,9 +46,10 @@ export const CONTAINER_INFO: Record<OutputContainer, { ext: string; mime: string
   wav: { ext: 'wav', mime: 'audio/wav', audioOnly: true },
   adts: { ext: 'aac', mime: 'audio/aac', audioOnly: true },
   flac: { ext: 'flac', mime: 'audio/flac', audioOnly: true },
+  mp3: { ext: 'mp3', mime: 'audio/mpeg', audioOnly: true },
 };
 
-function makeFormat(container: OutputContainer): OutputFormat {
+export function makeFormat(container: OutputContainer): OutputFormat {
   switch (container) {
     case 'mp4':
     case 'm4a':
@@ -67,10 +69,12 @@ function makeFormat(container: OutputContainer): OutputFormat {
       return new AdtsOutputFormat();
     case 'flac':
       return new FlacOutputFormat();
+    case 'mp3':
+      return new Mp3OutputFormat();
   }
 }
 
-const bitrate = (b: number | QualityLevel | undefined): number | Quality | undefined =>
+export const toBitrate = (b: number | QualityLevel | undefined): number | Quality | undefined =>
   b == null ? undefined : typeof b === 'number' ? b : new Quality(b);
 
 const DROP_REASONS: Record<DiscardedTrack['reason'], string> = {
@@ -133,14 +137,14 @@ export async function convertMedia(
       flip: v.flip,
       crop: v.crop,
       frameRate: v.frameRate,
-      bitrate: bitrate(v.bitrate),
+      bitrate: toBitrate(v.bitrate),
       keyFrameInterval: v.keyFrameInterval,
       forceTranscode: options.copy === 'never' ? true : undefined,
     };
     const audioOptions: ConversionAudioOptions = {
       discard: a.discard === true,
       codec: a.codec as AudioCodec | undefined,
-      bitrate: bitrate(a.bitrate),
+      bitrate: toBitrate(a.bitrate),
       sampleRate: a.sampleRate,
       numberOfChannels: a.numberOfChannels,
       forceTranscode: options.copy === 'never' ? true : undefined,

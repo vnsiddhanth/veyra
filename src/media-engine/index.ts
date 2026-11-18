@@ -3,7 +3,8 @@
  */
 import { MediaError } from './core/errors';
 import { JobController, type Job } from './core/job';
-import type { ConvertOptions, ConvertResult, FrameOptions, FrameResult, MediaInfo, Thumbnail, ThumbnailOptions, WaveformData } from './core/types';
+import type { ConvertOptions, ConvertResult, FileResult, FrameOptions, FrameResult, FramesOptions, GifImagesOptions, GifOptions, MediaInfo, Thumbnail, ThumbnailOptions, WaveformData } from './core/types';
+import type { RenderInput } from '@/render/render-project';
 import { deleteScratchFile } from './encode/output-store';
 import { classifyFile, type Classification } from './import/classify';
 import { imageThumbnail, probeImage } from './import/image-probe';
@@ -94,6 +95,24 @@ export const mediaEngine = {
   /** Peak envelope of the primary audio track, for waveform display. */
   waveform(file: Blob, peaksPerSecond = 50): Job<WaveformData> {
     return getPool().run('waveform', { file, peaksPerSecond }, 'background');
+  },
+
+  /** Render a project (timeline export, or a tool's generated composition). Output validated. */
+  render(input: RenderInput): Job<ConvertResult> {
+    return getPool().run('render', input, 'interactive');
+  },
+
+  gif(file: Blob, options: GifOptions): Job<FileResult> {
+    return getPool().run('gif', { file, options }, 'interactive');
+  },
+
+  gifFromImages(files: Blob[], options: GifImagesOptions): Job<FileResult> {
+    return getPool().run('gifImages', { files, options }, 'interactive');
+  },
+
+  /** Extract many frames into a ZIP archive. */
+  frames(file: Blob, options: FramesOptions): Job<FileResult> {
+    return getPool().run('frames', { file, options }, 'interactive');
   },
 
   /** Free the on-disk storage of a conversion result once the user is done with it. */

@@ -27,7 +27,11 @@ export async function inspectInNode(path: string) {
 
 /** Load a file into the tool page's (hidden) file input. */
 export async function chooseFile(page: Page, path: string): Promise<void> {
+  // Wait until the tool UI (lazy-loaded) is interactive before handing it a file.
+  await page.getByRole('button', { name: 'Choose file' }).first().waitFor();
   await page.locator('main input[type=file]').first().setInputFiles(path);
+  // The file was taken once the drop zone is gone (a result, an error or the tool controls show).
+  await page.getByRole('button', { name: 'Choose file' }).first().waitFor({ state: 'detached', timeout: 30_000 }).catch(() => undefined);
 }
 
 /** Wait for the dev-only engine hook. */
