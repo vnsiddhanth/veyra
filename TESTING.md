@@ -42,7 +42,7 @@ acceptance test passes in at least Chromium, with results for other engines reco
   - ZIP writer, split points, silence detection
   - LUT parser, motion estimation, stabilisation smoothing
   - project validation, classification, subtitles, registry, media actions
-- **e2e (Playwright), 39 tests per Chromium browser:**
+- **e2e (Playwright), 49 tests per Chromium browser:**
 
 | Spec | Covers |
 |---|---|
@@ -54,6 +54,8 @@ acceptance test passes in at least Chromium, with results for other engines reco
 | `pro-editing.spec.ts` | Keyframes, effects, mixer, subtitles |
 | `export.spec.ts` | Exported frames, crossfade blend and audio match the timeline |
 | `reliability.spec.ts` | Stabiliser accuracy, proxies, storage manager, benchmark |
+| `a11y.spec.ts` | axe WCAG 2.1 A/AA audit of every page type, the editor and the export dialog |
+| `new-user.spec.ts` | First-run journey with on-screen guidance only; phone layout |
 
 - **Commands:**
   - `npm run test:e2e`: Chrome + Edge, the supported targets.

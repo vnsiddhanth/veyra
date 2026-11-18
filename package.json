@@ -1,7 +1,7 @@
 {
   "name": "veyra",
   "private": true,
-  "version": "0.8.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Free, local-first, browser-based video editor and video tools.",
   "scripts": {
@@ -25,6 +25,7 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.6.6",

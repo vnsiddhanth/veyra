@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Splitter, usePanelSize } from '@/components/ui/Splitter';
 import { useLibraryStore } from '@/state/library-store';
 import { removeAsset } from '@/state/media-actions';
@@ -21,6 +21,7 @@ export function EditorShell() {
   const [libraryWidth, setLibraryWidth] = usePanelSize('library', 300, 220, 560);
   const [inspectorWidth, setInspectorWidth] = usePanelSize('inspector', 300, 240, 520);
   const [timelineHeight, setTimelineHeight] = usePanelSize('timeline', 280, 140, 640);
+  const narrow = useNarrow();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -70,6 +71,9 @@ export function EditorShell() {
       } else if (mod && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         cmd.splitAtPlayhead();
+      } else if (e.key === '?') {
+        e.preventDefault();
+        useEditorUi.getState().setShortcutsOpen(true);
       } else if (mod || e.altKey) {
         return;
       } else if (e.key === ' ') {
@@ -117,6 +121,8 @@ export function EditorShell() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  if (narrow) return <MobileEditor />;
+
   return (
     <div className="theme-dark flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-fg">
       <TopBar />
@@ -158,6 +164,67 @@ function Toasts() {
           {t.message}
         </button>
       ))}
+    </div>
+  );
+}
+
+/** True below 768 px wide: phones get a stacked, tabbed editor. */
+function useNarrow(): boolean {
+  const query = '(max-width: 767px)';
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return narrow;
+}
+
+/**
+ * Simplified phone layout: the monitor on top and one panel at a time below (media, timeline,
+ * inspector). Every editing feature is the same component as on desktop; touch drags use pointer events.
+ */
+function MobileEditor() {
+  const [tab, setTab] = useState<'media' | 'timeline' | 'inspector'>('timeline');
+  return (
+    <div className="theme-dark flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-fg">
+      <TopBar />
+      <section className="flex h-[38vh] min-h-0 shrink-0 flex-col" aria-label="Preview">
+        <PreviewMonitor />
+      </section>
+      <div role="tablist" aria-label="Editor panels" className="flex shrink-0 border-y border-line bg-surface">
+        {(['media', 'timeline', 'inspector'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className={`flex-1 py-2 text-xs font-semibold capitalize ${tab === t ? 'border-b-2 border-accent text-fg' : 'text-muted'}`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col bg-surface">
+        {tab === 'media' && (
+          <aside className="flex min-h-0 flex-1 flex-col" aria-label="Media library">
+            <MediaLibrary />
+          </aside>
+        )}
+        {tab === 'timeline' && (
+          <section className="flex min-h-0 flex-1 flex-col" aria-label="Timeline">
+            <TimelinePanel />
+          </section>
+        )}
+        {tab === 'inspector' && (
+          <aside className="flex min-h-0 flex-1 flex-col" aria-label="Inspector">
+            <Inspector />
+          </aside>
+        )}
+      </div>
+      <Toasts />
     </div>
   );
 }

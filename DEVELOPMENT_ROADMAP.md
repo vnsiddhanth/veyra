@@ -105,3 +105,10 @@ codecs, duration and audible audio.
   - pixel effects report themselves when WebGL2 is missing.
 - **Measured:** encode, decode and export speed come from the benchmark page and are recorded in PERFORMANCE.md.
 - **Not achieved:** Firefox/WebKit runs. This host would not launch the Playwright Firefox and WebKit builds (OS execution policy; missing host dependencies). The projects are configured; anyone with a capable host can run `npm run test:e2e:engines`.
+
+## Phase 9 status (2026-11-18): release 1.0.0
+
+Acceptance criterion **met**: `e2e/new-user.spec.ts` goes from the home page through import, timeline placement, a split and export to a
+validated download, using only on-screen guidance. Accessibility, the phone layout and SEO are in place.
+
+All nine phases are complete for the Chromium targets. Remaining work beyond 1.0 is listed under "Not implemented" in FEATURE_MATRIX.md.

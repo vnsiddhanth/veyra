@@ -23,6 +23,8 @@ interface EditorUiState {
   /** Preview from proxies where available (export always uses originals). */
   useProxies: boolean;
   setUseProxies(v: boolean): void;
+  shortcutsOpen: boolean;
+  setShortcutsOpen(v: boolean): void;
 
   selectClips(ids: string[]): void;
   selectTransition(id: string | null): void;
@@ -53,6 +55,10 @@ export const useEditorUi = create<EditorUiState>((set, get) => ({
   clipboard: null,
   monitor: 'program',
   useProxies: true,
+  shortcutsOpen: false,
+  setShortcutsOpen(shortcutsOpen) {
+    set({ shortcutsOpen });
+  },
   setUseProxies(useProxies) {
     set({ useProxies });
   },

@@ -4,10 +4,28 @@ A free, local-first video editor and set of video tools that run entirely in the
 It has no uploads, no account, no watermark and no export limits. Media is processed on the user's device with WebCodecs and
 [Mediabunny](https://mediabunny.dev) in Web Workers.
 
-> **Status: Phase 2 (Media engine) complete in Chrome/Edge.** The trim tool (frame-accurate or instant), thumbnail maker and inspector
-> tools work today, with validated local exports. The editor imports media, autosaves, recovers and shows filmstrips and waveforms.
-> More standalone tools (Phase 3) and the interactive timeline (Phase 4) are next.
-> See [FEATURE_MATRIX.md](FEATURE_MATRIX.md) for exactly what is implemented and verified.
+> **Status: 1.0.0. All nine roadmap phases are complete and verified in Chrome and Edge.**
+>
+> - **Standalone tools:** all 46 are available and produce validated outputs.
+> - **Editor:** a multitrack editor with an interactive timeline, a real-time program monitor, keyframes, effects, a mixer, subtitles and validated export.
+> - **Firefox and Safari:** fallbacks exist in code but are not yet measured (see [BROWSER_COMPATIBILITY.md](BROWSER_COMPATIBILITY.md)).
+> - **Detail:** [FEATURE_MATRIX.md](FEATURE_MATRIX.md) lists exactly what is implemented and verified.
+
+## What you can do
+
+- **Standalone tools** (`/tools`), one job each:
+  - **Convert and compress:** compress (or fit a target size), convert (MP4/WebM/MOV/MKV), extract or convert audio (MP3/M4A/Opus/WAV/FLAC), change frame rate or resolution, remux.
+  - **Cut and reshape:** trim, split, merge with transitions, crop, resize for platforms, change aspect ratio (bars, crop or blurred fill), rotate, flip.
+  - **Time and audio:** change speed with pitch kept, reverse, mute, replace or add audio with ducking, remove silence.
+  - **Look and overlays:** filters and colour, text, watermark, burned-in or soft subtitles, a subtitle editor, stabilize.
+  - **Images:** GIFs, frames to ZIP, slideshow, thumbnails, metadata inspectors.
+- **Editor** (`/editor`):
+  - **Timeline:** multitrack drag, trim, roll and slip with snapping; split and ripple; markers; copy and paste.
+  - **Preview:** a WYSIWYG program monitor clocked by audio, with proxies for heavy media.
+  - **Clips:** keyframes with a curve editor; colour, LUT, chroma key, masks and blur; text with animation; transitions.
+  - **Audio:** EQ, compressor and ducking, plus a track mixer.
+  - **Projects and export:** autosave and crash-safe recovery, and export to video or audio with validation.
+- **Privacy:** files never leave the device. Outputs are re-opened and checked before you can download them. Nothing is simulated.
 
 ## Quick start
 
@@ -15,7 +33,8 @@ It has no uploads, no account, no watermark and no export limits. Media is proce
 npm install
 npm run dev          # http://localhost:5173 (cross-origin isolated)
 npm test             # unit + integration tests (Vitest)
-npm run test:e2e     # real-browser media tests (Playwright, uses installed Chrome + Edge)
+npm run test:e2e     # real-browser tests (Playwright, installed Chrome + Edge)
+npm run test:e2e:engines   # Firefox + WebKit (needs `npx playwright install firefox webkit`)
 npm run typecheck
 npm run build && npm run preview   # production build with CSP, http://localhost:4173
 ```
@@ -38,6 +57,9 @@ Cross-Origin-Embedder-Policy: require-corp
 ```
 
 The production CSP is also injected into `index.html` at build time. Single-page routing needs a fallback to `index.html`.
+Set `VEYRA_SITE_URL=https://your.domain` at build time to emit `sitemap.xml`. `robots.txt` is always emitted.
+
+Other pages: `/benchmark` measures the device, `/compatibility` lists codec support, `/privacy` shows local storage and lets you clear it.
 
 ## Documentation
 
@@ -57,4 +79,9 @@ The production CSP is also injected into `index.html` at build time. Single-page
 
 ## Licence notes
 
-Mediabunny is MPL-2.0 and is used unmodified. The project's own licence is still to be chosen by the maintainer.
+Dependencies are used unmodified:
+- Mediabunny and `@mediabunny/mp3-encoder` (MPL-2.0; the MP3 encoder wraps LAME, which is LGPL, as WASM)
+- gifenc (MIT)
+- React, Zustand, React Router (MIT)
+
+No GPL code is shipped: FFmpeg.wasm was deliberately not included (see DEVELOPMENT_ROADMAP.md). The project's own licence is still to be chosen by the maintainer.

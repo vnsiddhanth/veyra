@@ -8,7 +8,8 @@ const VARIANTS: Record<Variant, string> = {
   primary: 'bg-accent text-accent-fg hover:brightness-110 active:brightness-95',
   secondary: 'bg-surface-2 text-fg border border-line hover:bg-surface-3',
   ghost: 'text-muted hover:text-fg hover:bg-surface-2',
-  danger: 'bg-danger/90 text-white hover:bg-danger',
+  // accent-fg is white in the light theme and near-black in the dark one: AA contrast on both danger fills.
+  danger: 'bg-danger text-accent-fg hover:brightness-110',
 };
 const SIZES: Record<Size, string> = {
   sm: 'h-7 px-2.5 text-xs gap-1.5',
@@ -62,9 +63,9 @@ export function IconButton({ label, className, children, active, ...rest }: Butt
 export function Badge({ tone = 'neutral', children, className }: { tone?: 'neutral' | 'ok' | 'warn' | 'danger' | 'accent'; children: ReactNode; className?: string }) {
   const tones = {
     neutral: 'bg-surface-3 text-muted',
-    ok: 'bg-ok/15 text-ok',
-    warn: 'bg-warn/15 text-warn',
-    danger: 'bg-danger/15 text-danger',
+    ok: 'bg-ok/10 text-ok',
+    warn: 'bg-warn/10 text-warn',
+    danger: 'bg-danger/10 text-danger',
     accent: 'bg-accent-soft text-accent',
   };
   return <span className={cn('inline-flex items-center rounded-sm px-1.5 py-0.5 text-2xs font-medium uppercase tracking-wide', tones[tone], className)}>{children}</span>;

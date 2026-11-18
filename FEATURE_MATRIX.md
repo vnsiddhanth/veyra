@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 8).
+Last updated: 2026-11-18 (end of Phase 9, release 1.0.0).
 
 ## Phase 1 — Foundation
 
@@ -142,8 +142,25 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | Preview crash recovery, GPU context release | Implemented | `preview-engine.ts`, `pixel-fx.ts` | — | Crash path not forced in tests |
 | Firefox / WebKit e2e | Not measured (host blocked browser launch) | `playwright.config.ts` | — | See BROWSER_COMPATIBILITY.md |
 
-## Later phases (summary)
+## Phase 9 — Polish
 
-| Area | Status | Phase |
-|---|---|---|
-| Remaining tools (subtitle editor, soft subtitles, stabilise, overlay removal) | Not started | 6–8 |
+| Feature | Status | Location | Tests | Known limitations |
+|---|---|---|---|---|
+| Get started guide (onboarding) | Verified | `src/editor/GetStarted.tsx` | `new-user.spec.ts` | — |
+| Keyboard shortcuts dialog | Implemented | `src/editor/ShortcutsDialog.tsx` | — | — |
+| Context menus | Verified (Phase 4) | `TimelinePanel.tsx` | — | Timeline clips only |
+| Accessibility (WCAG 2.1 AA automated audit) | Verified: 0 serious or critical | site, tools, editor, export | `a11y.spec.ts` | Automated checks only; no manual screen-reader audit yet |
+| Responsive / phone editor | Verified (390 px, no overflow) | `EditorShell.tsx` | `new-user.spec.ts` | Precise timeline work is easier with a pointer |
+| SEO (meta, JSON-LD, OG, robots, sitemap) | Implemented | `utils/meta.ts`, `vite.config.ts` | build check | Client-rendered pages (no SSR) |
+| New user edits and exports without help | **Verified** | — | `new-user.spec.ts` | — |
+
+## Not implemented (honest list)
+
+| Area | Note |
+|---|---|
+| FFmpeg.wasm fallback (AVI/FLV/WMV, exotic codecs) | Decided against: GPL cores, and an LGPL build is out of scope |
+| Speed ramps (keyframed speed) | Constant speed and reverse only |
+| Bezier handles in the curve editor | Easing presets only |
+| Rotation / rolling-shutter stabilisation | Translation only |
+| Firefox / Safari verification | Fallbacks in code; e2e not runnable on the dev host |
+| Manual screen-reader audit | Automated axe audit passes |

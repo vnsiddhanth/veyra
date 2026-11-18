@@ -11,6 +11,7 @@ import { flicksToSeconds, formatTimecode } from '@/utils/time';
 import { useEditorUi } from '../editor-ui-store';
 import { goToEnd, jumpToEdit, stepFrames } from '../timeline/commands';
 import { PreviewEngine, type PreviewStats } from './preview-engine';
+import { GetStarted } from '../GetStarted';
 
 const QUALITY: [string, number][] = [
   ['Full', 1],
@@ -112,7 +113,11 @@ export function ProgramMonitor() {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black p-2">
         <div ref={hostRef} className="relative max-h-full max-w-full" style={{ aspectRatio: `${aspect}`, height: '100%' }} />
-        {empty && <p className="pointer-events-none absolute text-sm text-muted">Add media to the timeline to see the program here.</p>}
+        {empty && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-auto p-3">
+            <GetStarted project={project} />
+          </div>
+        )}
         {warnings.length > 0 && (
           <ul className="absolute left-2 top-2 max-w-[70%] space-y-1 text-2xs" role="status">
             {warnings.slice(0, 3).map((w) => (
@@ -123,7 +128,7 @@ export function ProgramMonitor() {
           </ul>
         )}
       </div>
-      <div className="flex h-9 shrink-0 items-center gap-1 border-t border-line px-2 text-xs">
+      <div className="flex min-h-9 shrink-0 flex-wrap items-center gap-1 border-t border-line px-2 py-0.5 text-xs">
         <IconButton label="Go to start (Home)" onClick={() => goToEnd(false)}>
           ⏮
         </IconButton>

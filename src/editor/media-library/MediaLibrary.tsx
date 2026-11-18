@@ -187,15 +187,7 @@ function AssetCard({ asset }: { asset: Asset }) {
   return (
     <li>
       <div
-        role="button"
-        tabIndex={0}
-        aria-pressed={selected}
-        aria-label={`${asset.name}${status === 'offline' && asset.kind !== 'subtitle' ? ' (offline)' : ''}`}
         onClick={() => selectAsset(asset.id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') selectAsset(asset.id);
-          if (e.key === 'F2') setRenaming(true);
-        }}
         onDoubleClick={() => setRenaming(true)}
         draggable
         onDragStart={(e) => {
@@ -205,6 +197,16 @@ function AssetCard({ asset }: { asset: Asset }) {
         className={cn('group block w-full cursor-default rounded-md border p-1 text-left outline-none', selected ? 'border-accent bg-surface-3' : 'border-transparent hover:bg-surface-2')}
       >
         <div className="relative aspect-video overflow-hidden rounded-sm bg-black/60">
+          {/* The card's selectable control; action buttons below are siblings, never nested inside it. */}
+          <button
+            type="button"
+            aria-pressed={selected}
+            aria-label={`${asset.name}${status === 'offline' && asset.kind !== 'subtitle' ? ' (offline)' : ''}`}
+            onKeyDown={(e) => {
+              if (e.key === 'F2') setRenaming(true);
+            }}
+            className="absolute inset-0 z-[1] rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+          />
           {thumbs?.[0] ? (
             <img src={thumbs[0]} alt="" className={cn('h-full w-full object-contain', status !== 'online' && 'opacity-40 grayscale')} draggable={false} />
           ) : (
@@ -228,7 +230,7 @@ function AssetCard({ asset }: { asset: Asset }) {
               {proxyProgress != null ? `proxy ${Math.round(proxyProgress * 100)}%` : 'proxy'}
             </span>
           )}
-          <div className={cn('absolute right-0.5 top-0.5 gap-0.5 group-hover:flex group-focus-within:flex', selected ? 'flex' : 'hidden')}>
+          <div className={cn('absolute right-0.5 top-0.5 z-[2] gap-0.5 group-hover:flex group-focus-within:flex', selected ? 'flex' : 'hidden')}>
             {status === 'online' && asset.kind !== 'subtitle' && (
               <IconButton
                 label="Append to timeline"

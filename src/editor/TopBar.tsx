@@ -9,6 +9,7 @@ import { projectDuration } from '@/timeline/model/ops';
 import { cn } from '@/utils/id';
 import { useEditorUi } from './editor-ui-store';
 import { ExportDialog } from './export/ExportDialog';
+import { ShortcutsDialog } from './ShortcutsDialog';
 
 const SAVE_LABEL = { saved: 'Saved', dirty: 'Unsaved changes', saving: 'Saving…', error: 'Save failed' } as const;
 
@@ -20,14 +21,15 @@ export function TopBar() {
   const canRedo = useProjectStore((s) => (s.history?.future.length ?? 0) > 0);
   const [editingName, setEditingName] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const shortcuts = useEditorUi((s) => s.shortcutsOpen);
   if (!project) return null;
   const { width, height, frameRate } = project.settings;
   const mod = navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl';
 
   return (
-    <header className="flex h-11 shrink-0 items-center gap-2 border-b border-line bg-surface px-2">
-      <Link to="/editor" className="flex h-7 items-center gap-1 rounded-sm px-1.5 text-xs text-muted hover:bg-surface-3 hover:text-fg" title="All projects">
-        <IconChevronLeft /> Projects
+    <header className="flex h-11 shrink-0 items-center gap-2 overflow-x-auto border-b border-line bg-surface px-2">
+      <Link to="/editor" className="flex h-7 shrink-0 items-center gap-1 rounded-sm px-1.5 text-xs text-muted hover:bg-surface-3 hover:text-fg" title="All projects">
+        <IconChevronLeft /> <span className="hidden sm:inline">Projects</span>
       </Link>
       <div className="mx-1 h-5 w-px bg-line" />
       {editingName ? (
@@ -47,7 +49,7 @@ export function TopBar() {
           }}
         />
       ) : (
-        <button type="button" onClick={() => setEditingName(true)} className="max-w-64 truncate rounded-sm px-1.5 py-1 text-sm font-medium hover:bg-surface-3" title="Rename project">
+        <button type="button" onClick={() => setEditingName(true)} className="min-w-12 max-w-64 shrink truncate rounded-sm px-1.5 py-1 text-sm font-medium hover:bg-surface-3" title="Rename project">
           {project.name}
         </button>
       )}
@@ -73,17 +75,20 @@ export function TopBar() {
         <span>{Number(rateToNumber(frameRate).toFixed(3))} fps</span>
         <span>{formatTimecode(projectDuration(project), frameRate)}</span>
       </div>
+      <IconButton label="Keyboard shortcuts (?)" className="ml-2" onClick={() => useEditorUi.getState().setShortcutsOpen(true)}>
+        ?
+      </IconButton>
       <Button
         size="sm"
         variant="ghost"
-        className="ml-2"
+        className="ml-1"
         title="Saves edit decisions and media references only. Media files are not included; keep them alongside."
         onClick={() => {
           downloadText(serializeProject(project), projectFileName(project));
           useEditorUi.getState().notify('Project file saved. It references your media but does not contain it.');
         }}
       >
-        <IconDownload /> Project file
+        <IconDownload /> <span className="hidden sm:inline">Project file</span>
       </Button>
       <Button
         size="sm"
@@ -99,6 +104,7 @@ export function TopBar() {
         Export
       </Button>
       {exporting && <ExportDialog project={project} onClose={() => setExporting(false)} />}
+      {shortcuts && <ShortcutsDialog onClose={() => useEditorUi.getState().setShortcutsOpen(false)} />}
     </header>
   );
 }

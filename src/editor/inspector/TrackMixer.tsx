@@ -29,7 +29,7 @@ export function TrackMixer({ project }: { project: Project }) {
             />
             <span className="text-right font-mono text-2xs tabular">{db(t.volume)} dB</span>
             <span className="flex gap-0.5">
-              <button type="button" aria-pressed={t.muted} aria-label={`Mute ${t.name}`} className={cn('w-5 rounded-sm text-2xs font-bold', t.muted ? 'bg-danger text-white' : 'bg-surface-3 text-muted')} onClick={() => tryEdit((p) => setTrackFlags(p, t.id, { muted: !t.muted }))}>
+              <button type="button" aria-pressed={t.muted} aria-label={`Mute ${t.name}`} className={cn('w-5 rounded-sm text-2xs font-bold', t.muted ? 'bg-danger text-black' : 'bg-surface-3 text-muted')} onClick={() => tryEdit((p) => setTrackFlags(p, t.id, { muted: !t.muted }))}>
                 M
               </button>
               <button type="button" aria-pressed={t.solo} aria-label={`Solo ${t.name}`} className={cn('w-5 rounded-sm text-2xs font-bold', t.solo ? 'bg-warn text-black' : 'bg-surface-3 text-muted')} onClick={() => tryEdit((p) => setTrackFlags(p, t.id, { solo: !t.solo }))}>

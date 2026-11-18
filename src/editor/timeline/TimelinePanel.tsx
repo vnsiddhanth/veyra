@@ -365,7 +365,7 @@ export function TimelinePanel() {
             <div style={{ width: HEADER_W }} className="sticky left-0 z-10 flex shrink-0 items-center border-r border-line bg-surface px-2 font-mono text-2xs text-muted tabular">
               <PlayheadTimecode project={project} />
             </div>
-            <div className="relative flex-1 cursor-pointer" onPointerDown={startScrub} role="slider" aria-label="Playhead" aria-valuemin={0} aria-valuemax={durationSec} tabIndex={0}>
+            <div className="relative flex-1 cursor-pointer" onPointerDown={startScrub} aria-label="Timeline ruler: click or drag to move the playhead" title="Click or drag to move the playhead">
               {shown.inPoint != null && (
                 <div
                   className="absolute inset-y-0 bg-accent/20"
@@ -455,7 +455,7 @@ function Toolbar({ project }: { project: Project }) {
   const snapping = useEditorUi((s) => s.snapping);
   const hasSel = useEditorUi((s) => s.selectedClipIds.length > 0);
   return (
-    <div className="flex h-8 shrink-0 items-center gap-1 border-b border-line px-2">
+    <div className="flex h-8 shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2">
       <h2 className="mr-1 text-xs font-semibold">Timeline</h2>
       <AddTrackMenu />
       <Button size="sm" variant="ghost" onClick={splitAtPlayhead} title="Split at playhead (S)">

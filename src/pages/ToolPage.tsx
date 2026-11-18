@@ -4,6 +4,7 @@ import { ToolCard } from '@/components/tools/ToolCard';
 import { IconShield } from '@/components/ui/icons';
 import { Badge } from '@/components/ui/primitives';
 import { BRAND } from '@/config/brand';
+import { setPageMeta } from '@/utils/meta';
 import { InspectTool } from '@/tools/inspect/InspectTool';
 import { ThumbnailTool } from '@/tools/thumbnail/ThumbnailTool';
 import { TrimTool } from '@/tools/trim/TrimTool';
@@ -34,7 +35,16 @@ export default function ToolPage() {
   const { slug = '' } = useParams();
   const tool = findTool(slug);
   useEffect(() => {
-    if (tool) document.title = `${tool.title} — free, private, in your browser · ${BRAND.name}`;
+    if (!tool) return;
+    return setPageMeta(`${tool.title} — free, private, in your browser · ${BRAND.name}`, `${tool.summary} Free, no upload, no watermark, no account: runs entirely in your browser.`, {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: `${tool.title} · ${BRAND.name}`,
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Any (web browser)',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      description: tool.summary,
+    });
   }, [tool]);
   if (!tool) return <NotFoundPage />;
   const related = relatedTools(tool);

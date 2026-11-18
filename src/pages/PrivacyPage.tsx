@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { DB_NAME, resetDbForTests } from '@/storage/idb';
 import { StorageManager } from '@/components/StorageManager';
+import { setPageMeta } from '@/utils/meta';
 
 export default function PrivacyPage() {
   const [cleared, setCleared] = useState<string | null>(null);
   useEffect(() => {
-    document.title = 'Privacy — Veyra';
+    return setPageMeta('Privacy — Veyra', 'Veyra processes your media on your device. Nothing is uploaded. See what is stored locally and clear it.');
   }, []);
 
   const clearAll = async () => {

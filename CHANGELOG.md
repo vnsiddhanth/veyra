@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.0 — 2026-11-18 · Phase 9: Polish
+
+### Added
+- **Get started guide:** shown on the empty program monitor. Four steps (import, put on the timeline, edit, export) tick off as you go, and the guide can open the file picker itself.
+- **Keyboard shortcuts dialog:** opened with `?` or from the top bar, grouped into playback, editing, timeline and project.
+- **Phone layout for the editor:** a stacked monitor with Media, Timeline and Inspector tabs. Top bar, transport and toolbars fit 375 px with no horizontal page overflow.
+- **SEO:**
+  - per-page titles and meta descriptions
+  - SoftwareApplication JSON-LD on tool pages
+  - Open Graph and Twitter tags
+  - build-time `robots.txt`, plus `sitemap.xml` when `VEYRA_SITE_URL` is set (52 URLs)
+- **Automated accessibility audit:** axe-core, WCAG 2.1 A/AA. Every page type, the editor and the export dialog have **no serious or critical violations**.
+- **Phase 9 acceptance test (`new-user.spec.ts`):** from the home page to a split, exported and validated file, using only what the UI shows.
+- Reduced-motion support.
+
+### Changed
+- **Colour tokens:** every text colour meets 4.5:1. In the light theme the accent is a deeper amber with white text, and faint, ok and warn are darker. In the dark theme faint is lighter.
+- **Danger buttons:** use theme-aware text for AA contrast.
+- **Links in running text:** underlined, so they don't rely on colour alone.
+- **Media cards:** the select control and the action buttons are siblings, so there is no nested-interactive violation.
+- **Timeline ruler:** now a labelled pointer surface rather than an ARIA slider without a value. Keyboard control stays with the global shortcuts.
+
 ## 0.8.0 — 2026-11-18 · Phase 8: Optimization & reliability
 
 ### Added

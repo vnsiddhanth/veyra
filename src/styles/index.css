@@ -41,13 +41,13 @@
   --c-line: #e3e3de;
   --c-line-strong: #cfcfc8;
   --c-fg: #17181b;
-  --c-muted: #5b5e66;
-  --c-faint: #8a8d94;
-  --c-accent: #c98a0d;
-  --c-accent-fg: #17181b;
+  --c-muted: #53565d;
+  --c-faint: #66696f;
+  --c-accent: #8f5d00;
+  --c-accent-fg: #ffffff;
   --c-accent-soft: #fbf0d6;
-  --c-ok: #1f8a5b;
-  --c-warn: #a86a00;
+  --c-ok: #11663f;
+  --c-warn: #7a4c00;
   --c-danger: #c23b3b;
   color-scheme: light;
 }
@@ -62,7 +62,7 @@
     --c-line-strong: #353a43;
     --c-fg: #e9eaec;
     --c-muted: #a0a4ad;
-    --c-faint: #6c717b;
+    --c-faint: #8d929c;
     --c-accent: #f5b942;
     --c-accent-fg: #15171b;
     --c-accent-soft: #3a2f17;
@@ -84,7 +84,7 @@
   --c-line-strong: #353a43;
   --c-fg: #e9eaec;
   --c-muted: #a0a4ad;
-  --c-faint: #6c717b;
+  --c-faint: #8d929c;
   --c-accent: #f5b942;
   --c-accent-fg: #15171b;
   --c-accent-soft: #3a2f17;
@@ -135,5 +135,22 @@ body {
   * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* Links inside running text are underlined so they are distinguishable without colour (WCAG 1.4.1). */
+p a.text-accent,
+li a.text-accent,
+p a.hover\:underline {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

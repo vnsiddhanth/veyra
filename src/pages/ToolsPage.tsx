@@ -3,13 +3,14 @@ import { ToolCard } from '@/components/tools/ToolCard';
 import { IconSearch } from '@/components/ui/icons';
 import { CATEGORY_LABELS, TOOLS, searchTools, type ToolCategory } from '@/tools/registry';
 import { cn } from '@/utils/id';
+import { setPageMeta } from '@/utils/meta';
 
 export function ToolsPage() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<ToolCategory | 'all'>('all');
   const [readyOnly, setReadyOnly] = useState(false);
   useEffect(() => {
-    document.title = 'All video tools — Veyra';
+    return setPageMeta('All video tools — Veyra', 'Compress, convert, trim, merge, resize, add text, make GIFs and more — free video tools that run privately in your browser.');
   }, []);
   const list = useMemo(() => {
     let l = searchTools(query);
