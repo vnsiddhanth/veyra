@@ -12,7 +12,7 @@ createRoot(document.getElementById('root')!).render(
 // Dev-only test hook: lets the browser console and Playwright drive the media engine directly.
 // Tree-shaken from production builds.
 if (import.meta.env.DEV) {
-  void import('./media-engine').then((engine) => {
-    (window as unknown as { __veyra: unknown }).__veyra = engine;
+  void Promise.all([import('./media-engine'), import('./state/project-store'), import('./editor/editor-ui-store')]).then(([engine, project, ui]) => {
+    (window as unknown as { __veyra: unknown }).__veyra = { ...engine, useProjectStore: project.useProjectStore, useEditorUi: ui.useEditorUi };
   });
 }

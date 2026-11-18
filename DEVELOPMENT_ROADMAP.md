@@ -69,3 +69,8 @@ Decisions:
 - **Render engine built early.** The compositor, frame streams and mixer were written in Phase 3 because merge, speed, overlays and
   slideshow need them. Phases 5–7 reuse them for the program monitor and timeline export.
 - Firefox/WebKit runs are still pending (Phase 8).
+
+## Phase 4 status (2026-11-18)
+
+Acceptance criterion **met**: clips from several files are assembled across tracks and their positions and durations edited with
+mouse and keyboard, with undo/redo. Verified by `e2e/timeline.spec.ts` with real pointer input, asserting on the project model.

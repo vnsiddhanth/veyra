@@ -3,12 +3,12 @@ import { Splitter, usePanelSize } from '@/components/ui/Splitter';
 import { useLibraryStore } from '@/state/library-store';
 import { removeAsset } from '@/state/media-actions';
 import { useProjectStore } from '@/state/project-store';
-import { removeClips } from '@/timeline/model/ops';
 import { useEditorUi } from './editor-ui-store';
 import { Inspector } from './inspector/Inspector';
 import { MediaLibrary } from './media-library/MediaLibrary';
 import { PreviewMonitor } from './preview/PreviewMonitor';
 import { TimelinePanel } from './timeline/TimelinePanel';
+import * as cmd from './timeline/commands';
 import { TopBar } from './TopBar';
 
 function isTypingTarget(t: EventTarget | null): boolean {
@@ -42,14 +42,9 @@ export function EditorShell() {
         useEditorUi.getState().requestImport();
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         const ui = useEditorUi.getState();
-        if (ui.selectedClipIds.length) {
+        if (ui.selectedClipIds.length || ui.selectedTransitionId || ui.selectedMarkerId) {
           e.preventDefault();
-          try {
-            store.apply((p) => removeClips(p, ui.selectedClipIds));
-            ui.selectClips([]);
-          } catch (err) {
-            ui.notify(err instanceof Error ? err.message : String(err));
-          }
+          cmd.deleteSelection(e.shiftKey);
         } else {
           const assetId = useLibraryStore.getState().selectedAssetId;
           if (assetId && ui.focusArea === 'library') {
@@ -57,6 +52,56 @@ export function EditorShell() {
             removeAsset(assetId);
           }
         }
+      } else if (mod && e.key.toLowerCase() === 'c') {
+        cmd.copySelection();
+      } else if (mod && e.key.toLowerCase() === 'x') {
+        cmd.copySelection(true);
+      } else if (mod && e.key.toLowerCase() === 'v') {
+        cmd.paste();
+      } else if (mod && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        cmd.duplicateSelection();
+      } else if (mod && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        cmd.selectAll();
+      } else if (mod && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        cmd.splitAtPlayhead();
+      } else if (mod || e.altKey) {
+        return;
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        const ui = useEditorUi.getState();
+        ui.setMonitor('program');
+        ui.setPlaying(!ui.playing);
+      } else if (e.key === 's' || e.key === 'S') {
+        cmd.splitAtPlayhead();
+      } else if (e.key === 'm' || e.key === 'M') {
+        cmd.addMarkerAtPlayhead();
+      } else if (e.key === 'i' || e.key === 'I') {
+        cmd.setInPoint();
+      } else if (e.key === 'o' || e.key === 'O') {
+        cmd.setOutPoint();
+      } else if (e.key === 'x' || e.key === 'X') {
+        cmd.clearInOut();
+      } else if (e.key === 't' || e.key === 'T') {
+        cmd.addTitle();
+      } else if (e.key === 'n' || e.key === 'N') {
+        useEditorUi.getState().toggleSnapping();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        cmd.stepFrames((e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 10 : 1));
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        cmd.jumpToEdit(e.key === 'ArrowUp' ? -1 : 1);
+      } else if (e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        cmd.goToEnd(e.key === 'End');
+      } else if (e.key === '=' || e.key === '+' || e.key === '-') {
+        const ui = useEditorUi.getState();
+        ui.setZoom(ui.pxPerSecond * (e.key === '-' ? 1 / 1.4 : 1.4));
+      } else if (e.key === 'Escape') {
+        useEditorUi.getState().selectClips([]);
       }
     };
     window.addEventListener('keydown', onKey);

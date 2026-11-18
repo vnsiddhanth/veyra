@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 3).
+Last updated: 2026-11-18 (end of Phase 4).
 
 ## Phase 1 — Foundation
 
@@ -78,13 +78,29 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | Slideshow / images to video | Implemented | `SlideshowTool.tsx` | — | — |
 | FFmpeg.wasm fallback | Not shipped (decision) | — | — | AVI/FLV/WMV unsupported |
 
+## Phase 4 — Timeline engine
+
+| Feature | Status | Location | Tests | Known limitations |
+|---|---|---|---|---|
+| Group move across tracks, clamped at neighbours | Verified | `edit.ts`, `TimelinePanel.tsx` | `edit.test.ts`, `timeline.spec.ts` | — |
+| Trim, roll, slip | Verified (trim); roll/slip Tested | `ops.ts`, `edit.ts` | unit + e2e | No ripple-trim mode yet |
+| Split, ripple delete, delete | Verified | `edit.ts`, `commands.ts` | unit + e2e | — |
+| Snapping (edges, markers, in/out, playhead) | Tested | `snapTargets`, `snapDelta` | unit | — |
+| Zoom (slider, Ctrl+wheel around the pointer, +/−) | Implemented | `TimelinePanel.tsx` | — | No virtualisation for very long timelines yet (Phase 8) |
+| Playhead, ruler scrub, frame step, jump to edits | Implemented | `commands.ts` | — | — |
+| Markers, in/out | Verified (markers) | `edit.ts` | unit + e2e | — |
+| Multi-select (shift/ctrl click, marquee), select all | Verified (marquee) | `TimelinePanel.tsx` | e2e | — |
+| Copy / cut / paste / duplicate | Verified | `edit.ts` | unit + e2e | Clipboard is in-app only |
+| Library drag-and-drop to timeline | Verified | `MediaLibrary.tsx`, `TimelinePanel.tsx` | e2e | — |
+| Detach audio, transitions, text clips | Tested | `edit.ts` | unit | — |
+| Undo/redo for every gesture (one step per drag) | Verified | `project-store.ts` | e2e | — |
+
 ## Later phases (summary)
 
 | Area | Status | Phase |
 |---|---|---|
 | Firefox/WebKit e2e runs | Not started | 3 |
 | Remaining tools (subtitle editor, soft subtitles, stabilise, overlay removal) | Not started | 6–8 |
-| Interactive timeline (drag, trim handles, snapping, playhead, markers, multi-select, copy/paste) | Not started (model ops done) | 4 |
 | WebGL2 compositor, program monitor, audio clock | Not started | 5 |
 | Effects, transitions, text, keyframe UI, color, masks, chroma key | Not started (schema ready) | 5–6 |
 | Timeline export | Not started | 7 |

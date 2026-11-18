@@ -58,6 +58,49 @@ Pure functions that return a new project, or throw `TimelineError` without mutat
 | Roll edit, ripple insert, magnetic main track, groups | Phase 4 |
 | Snapping engine (playhead, clip edges, markers, in/out) | Phase 4 |
 
+## Higher-level edits (`src/timeline/model/edit.ts`, Phase 4)
+
+| Operation | Behaviour |
+|---|---|
+| `moveClips(p, ids, delta, trackDelta)` | All-or-nothing group move across tracks. Rejects overlaps, locked tracks and wrong track kinds; never goes before 0 |
+| `clampMoveDelta` | Largest legal move toward the pointer (binary search on frames), used while dragging against neighbours |
+| `rollEdit(p, leftId, cut)` | Moves the cut between two touching clips, keeping the total length; limited by both sources |
+| `rippleDeleteClips` | Per-track gap closing |
+| `splitAt(p, t, ids?)` | Splits the selection, or every unlocked clip under `t` |
+| `setClipSpeed` | Rescales duration from the source span; refuses to overlap the next clip |
+| `copyClips` / `pasteClips` | Relative timing kept; original track if free, else a compatible one, else a new track |
+| `detachAudio` | Puts a video clip's sound on an audio track and mutes the video clip (`mute-audio` effect) |
+| `addTextClip`, `updateClip` | Text clips on text tracks; non-timing clip updates |
+| `setTransitionAfter`, `removeTransition` | Transitions only between touching clips; length capped by the shorter clip. Moves that separate clips drop the transition |
+| `setKeyframe`, `removeKeyframe` | Frame-aligned keyframes per property |
+| `addMarker`, `updateMarker`, `removeMarker`, `setInOut` | Frame-aligned, de-duplicated |
+| `snapTargets`, `snapDelta` | Clip edges, markers, in/out, playhead and 0; threshold 8 px at the current zoom |
+
+## Interaction model (`src/editor/timeline`)
+
+- Every gesture edits a **draft** project computed by the pure operations. The draft is rendered live and committed on release as **one undo step**. The commit happens outside React state updaters, so StrictMode cannot double-apply it.
+- **Clip gestures:** drag a clip body to move it (across tracks too). Drag an edge to trim it. Ctrl/⌘ + edge drag is a roll edit. Alt + drag is a slip edit. Shift inverts snapping while dragging. A yellow guide line shows the snap target.
+- **Lane and ruler gestures:** dragging on empty lane space draws a marquee selection; clicking empty space deselects and moves the playhead. Drag on the ruler to scrub.
+- **Library drag-and-drop:** drag media from the library onto a lane to place it at the drop time, or onto the nearest compatible track.
+- **Context menu:** split, copy, cut, paste, duplicate, add crossfade, detach audio, delete, ripple delete.
+- **Shortcuts:**
+
+| Keys | Action |
+|---|---|
+| S or Ctrl+K | Split |
+| Delete / Shift+Delete | Delete / ripple delete |
+| Ctrl+C / X / V / D | Copy / cut / paste / duplicate |
+| Ctrl+A | Select all |
+| M | Add marker |
+| I / O / X | Set in / set out / clear in–out |
+| T | Add a title |
+| N | Toggle snapping |
+| ← → (Shift ×10) | Step frames |
+| ↑ ↓ | Jump to the previous / next edit point |
+| Home / End | Go to the start / end |
+| + / − or Ctrl+wheel | Zoom |
+| Space | Play / pause |
+
 ## Undo/redo
 
 `src/state/history.ts`: a bounded stack (200 entries) of immutable project snapshots. Ops never mutate, so a snapshot is

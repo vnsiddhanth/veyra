@@ -45,5 +45,5 @@ test('a project with imported media survives a reload', async ({ page }) => {
   await page.reload();
   await expect(card).toBeVisible();
   await expect(card).toContainText('Offline'); // honest: no file handle from a plain <input>
-  await expect(page.locator('section[aria-label="Timeline"] button[title^="counter-720p30-5s"]')).toHaveCount(1);
+  await expect(page.locator('section[aria-label="Timeline"] [data-clip][title^="counter-720p30-5s"]')).toHaveCount(1);
 });

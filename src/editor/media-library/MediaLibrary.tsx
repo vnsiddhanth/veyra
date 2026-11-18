@@ -12,6 +12,9 @@ import { cn } from '@/utils/id';
 import { useEditorUi } from '../editor-ui-store';
 import { appendToTimeline } from '../timeline/timeline-actions';
 
+/** Drag payload type for dragging library media onto the timeline. */
+export const ASSET_DRAG_TYPE = 'application/x-veyra-asset';
+
 type SortKey = 'added' | 'name' | 'duration' | 'size';
 type KindFilter = 'all' | Asset['kind'];
 
@@ -192,6 +195,11 @@ function AssetCard({ asset }: { asset: Asset }) {
           if (e.key === 'F2') setRenaming(true);
         }}
         onDoubleClick={() => setRenaming(true)}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData(ASSET_DRAG_TYPE, asset.id);
+          e.dataTransfer.effectAllowed = 'copy';
+        }}
         className={cn('group block w-full cursor-default rounded-md border p-1 text-left outline-none', selected ? 'border-accent bg-surface-3' : 'border-transparent hover:bg-surface-2')}
       >
         <div className="relative aspect-video overflow-hidden rounded-sm bg-black/60">

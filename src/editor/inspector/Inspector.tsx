@@ -6,6 +6,7 @@ import { selectProject, useProjectStore } from '@/state/project-store';
 import { formatBytes, formatDate } from '@/utils/format';
 import { COMMON_FRAME_RATES, formatTimecode, rateToNumber } from '@/utils/time';
 import { useEditorUi } from '../editor-ui-store';
+import { MarkerInspector, TransitionInspector } from './TimelineItemInspectors';
 
 const RESOLUTIONS: Array<[string, number, number]> = [
   ['4K UHD 3840×2160', 3840, 2160],
@@ -21,7 +22,11 @@ export function Inspector() {
   const project = useProjectStore(selectProject);
   const selectedAssetId = useLibraryStore((s) => s.selectedAssetId);
   const selectedClipIds = useEditorUi((s) => s.selectedClipIds);
+  const transitionId = useEditorUi((s) => s.selectedTransitionId);
+  const markerId = useEditorUi((s) => s.selectedMarkerId);
   if (!project) return null;
+  if (transitionId && project.transitions[transitionId]) return <Wrap title="Transition"><TransitionInspector project={project} id={transitionId} /></Wrap>;
+  if (markerId && project.markers.some((m) => m.id === markerId)) return <Wrap title="Marker"><MarkerInspector project={project} id={markerId} /></Wrap>;
   const clip = selectedClipIds.length === 1 ? project.clips[selectedClipIds[0]!] : undefined;
   const asset = project.assets.find((a) => a.id === (clip?.assetId ?? selectedAssetId));
 
@@ -128,6 +133,17 @@ function ProjectSettings({ project }: { project: Project }) {
       <p className="px-3 pt-3 text-2xs leading-relaxed text-faint">
         Projects save automatically in this browser. Media files stay on your disk and are referenced, never copied or uploaded.
       </p>
+    </div>
+  );
+}
+
+function Wrap({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-8 shrink-0 items-center border-b border-line px-3">
+        <h2 className="text-xs font-semibold">{title}</h2>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto pb-4">{children}</div>
     </div>
   );
 }

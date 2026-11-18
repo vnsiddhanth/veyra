@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0 — 2026-11-18 · Phase 4: Timeline engine
+
+### Added
+- `src/timeline/model/edit.ts`: group moves across tracks with clamping, roll, ripple delete of many clips, split at the playhead, speed, clipboard, detach audio, text clips, transitions, keyframes, markers, in/out and snapping. 15 new unit tests.
+- Interactive timeline. Every gesture is one undo step.
+  - **Editing:** move clips by dragging (across tracks too), trim from either edge, roll (Ctrl+edge) and slip (Alt+drag).
+  - **Navigation and selection:** snapping with a guide line, marquee selection, ruler scrubbing, playhead.
+  - **Markers and range:** markers you can drag, in/out range shading, transition badges.
+  - **Placing media:** drag and drop from the media library.
+  - **Context menu:** split, copy, cut, paste, duplicate, add crossfade, detach audio, delete, ripple delete.
+- Keyboard shortcuts for the timeline (see TIMELINE_ENGINE.md).
+- Inspector panels for transitions (type, length) and markers (label, colour).
+- e2e `timeline.spec.ts`: drag across tracks + single-step undo, trim, split, ripple delete, library drop, markers, marquee, copy/paste — with real pointer input, asserted against the project model.
+
 ## 0.3.0 — 2026-11-18 · Phase 3: Standalone tools
 
 ### Added
