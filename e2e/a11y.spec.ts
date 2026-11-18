@@ -17,6 +17,7 @@ for (const [name, path] of [
   ['privacy', '/privacy'],
   ['compatibility', '/compatibility'],
   ['benchmark', '/benchmark'],
+  ['guide', '/guide'],
   ['projects', '/editor'],
 ] as const) {
   test(`a11y: ${name}`, async ({ page }) => {

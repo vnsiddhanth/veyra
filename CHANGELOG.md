@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.2.0 — 2026-11-18 · Drag-to-reorder everywhere, hover previews, user guide
+
+### Added
+- **Drag-to-reorder lists** in Merge videos, Add transitions, Slideshow, Images to video and the GIF maker (`SortableList`).
+  - **Thumbnail grid:** numbered tiles; the others slide aside live to show where the dragged item will land, with a dashed drop outline and a floating copy under the pointer.
+  - **Input:** mouse, touch and pen. The page auto-scrolls near the edges and Esc cancels.
+  - **Keyboard:** Space picks up, arrows move, Space drops, Esc cancels; Alt+arrow moves one step. Every move is announced to screen readers.
+  - **One-click sorting:** Sort A→Z (natural order, so 2 comes before 10), Sort by date, Reverse, Remove all.
+- **Hover-scrub previews:** move the mouse across a video thumbnail to scrub through it. A full-size lightbox (⤢) steps through items with ← →.
+- **Media library:**
+  - **"My order" sort** (the new default): drag a card onto another card to place it. A highlight bar shows the side it lands on. Alt+arrow moves a card; dragging onto the timeline still adds the clip.
+  - **Hover-scrub on video cards:** uses the cached filmstrip, so it works even when the media is offline.
+- **Timeline Rearrange mode** (toolbar toggle or R): drag a clip between others to reorder them storyboard-style. The gap it leaves closes, later clips make room, other gaps are preserved, and the drag is one undo step (`rearrangeClip`).
+- **User guide** (`/guide`): task-based sections in plain language with an animated reorder illustration. Linked from the site menu, the editor top bar, the Get started panel and each reorderable list ("How?").
+- **Shortcuts dialog:** adds R (Rearrange) and Alt+arrow on media cards.
+
+### Fixed (found by the first Firefox CI run)
+- **Playback froze at 0 s without a working audio output.** Playback is clocked by the AudioContext, which never advances without a sound device. It now falls back to the wall clock after 0.5 s and says that playback is silent.
+- **The preview test probe could wait forever** if reading the canvas failed. It now always answers and reports the reason.
+- **Tests:** the trim and export tests accept Opus in MP4 where the browser has no AAC encoder (Firefox). This is the documented fallback, now verified in Firefox.
+
+### Verified
+- New unit tests for `moveAsset` and `rearrangeClip`.
+- **e2e `reorder.spec.ts`:** mouse drag, keyboard pick-up and drop, Alt+arrow, natural sort, library drag-and-drop, and timeline Rearrange with single-step undo.
+- **Accessibility:** the guide passes the axe audit.
+
 ## 1.1.0 — 2026-11-18 · Remaining gaps closed
 
 ### Added

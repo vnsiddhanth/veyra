@@ -5,6 +5,8 @@ import { Button, EmptyState, IconButton, Progress } from '@/components/ui/primit
 import { ACCEPT_ATTRIBUTE } from '@/media-engine';
 import type { Asset } from '@/project/schema/types';
 import { assetStatus, useLibraryStore } from '@/state/library-store';
+import { moveAsset } from '@/timeline/model/edit';
+import { tryEdit } from '../timeline/commands';
 import { createProxy, importFiles, reconnectMedia, relinkAsset, removeAsset, removeProxy, renameAsset } from '@/state/media-actions';
 import { selectProject, useProjectStore } from '@/state/project-store';
 import { formatBytes, formatDuration } from '@/utils/format';
@@ -15,7 +17,7 @@ import { appendToTimeline } from '../timeline/timeline-actions';
 /** Drag payload type for dragging library media onto the timeline. */
 export const ASSET_DRAG_TYPE = 'application/x-veyra-asset';
 
-type SortKey = 'added' | 'name' | 'duration' | 'size';
+type SortKey = 'manual' | 'added' | 'name' | 'duration' | 'size';
 type KindFilter = 'all' | Asset['kind'];
 
 const KIND_ICON = { video: IconFilm, audio: IconMusic, image: IconImage, subtitle: IconCaptions } as const;
@@ -27,7 +29,7 @@ export function MediaLibrary() {
   const errors = useLibraryStore((s) => s.errors);
   const importRequest = useEditorUi((s) => s.importRequest);
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<SortKey>('added');
+  const [sort, setSort] = useState<SortKey>('manual');
   const [kind, setKind] = useState<KindFilter>('all');
   const pickerOpen = useRef<() => void>(() => undefined);
 
@@ -40,6 +42,7 @@ export function MediaLibrary() {
     const q = query.trim().toLowerCase();
     const list = project.assets.filter((a) => (kind === 'all' || a.kind === kind) && (!q || a.name.toLowerCase().includes(q) || a.fileName.toLowerCase().includes(q)));
     const cmp: Record<SortKey, (a: Asset, b: Asset) => number> = {
+      manual: () => 0,
       added: (a, b) => a.addedAt - b.addedAt,
       name: (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }),
       duration: (a, b) => (b.info?.duration ?? 0) - (a.info?.duration ?? 0),
@@ -92,6 +95,7 @@ export function MediaLibrary() {
                     <option value="subtitle">Subtitles</option>
                   </select>
                   <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Sort by" className="h-6 flex-1 rounded-sm border border-line bg-surface-2 px-1 text-2xs text-muted">
+                    <option value="manual">My order (drag to arrange)</option>
                     <option value="added">Date added</option>
                     <option value="name">Name</option>
                     <option value="duration">Duration</option>
@@ -143,8 +147,8 @@ export function MediaLibrary() {
                 </EmptyState>
               ) : (
                 <ul className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 p-2">
-                  {assets.map((a) => (
-                    <AssetCard key={a.id} asset={a} />
+                  {assets.map((a, index) => (
+                    <AssetCard key={a.id} asset={a} index={index} reorderable={sort === 'manual' && !query.trim() && kind === 'all'} count={assets.length} />
                   ))}
                 </ul>
               )}
@@ -163,8 +167,19 @@ function selectAsset(id: string) {
   useEditorUi.getState().selectClips([]);
 }
 
-function AssetCard({ asset }: { asset: Asset }) {
+/** Drag payload marking a library card being rearranged (alongside ASSET_DRAG_TYPE for the timeline). */
+const REORDER_TYPE = 'application/x-veyra-reorder';
+
+function AssetCard({ asset, index, reorderable, count }: { asset: Asset; index: number; reorderable: boolean; count: number }) {
   const thumbs = useLibraryStore((s) => s.thumbs[asset.id]);
+  const strip = useLibraryStore((s) => s.strips[asset.id]);
+  const [scrub, setScrub] = useState<number | null>(null);
+  const [dropSide, setDropSide] = useState<'before' | 'after' | null>(null);
+  const moveTo = (to: number) => {
+    const p = useProjectStore.getState().history?.present;
+    if (!p) return;
+    if (tryEdit((q) => moveAsset(q, asset.id, to))) useEditorUi.getState().notify(`Moved “${asset.name}” to position ${Math.min(count, to + 1)} of ${count}.`);
+  };
   const status = useLibraryStore((s) => assetStatus(asset.id, s));
   const hasProxy = useLibraryStore((s) => !!s.proxies[asset.id]);
   const proxyProgress = useLibraryStore((s) => s.proxyProgress[asset.id]);
@@ -192,11 +207,44 @@ function AssetCard({ asset }: { asset: Asset }) {
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData(ASSET_DRAG_TYPE, asset.id);
-          e.dataTransfer.effectAllowed = 'copy';
+          if (reorderable) e.dataTransfer.setData(REORDER_TYPE, asset.id);
+          e.dataTransfer.effectAllowed = reorderable ? 'copyMove' : 'copy';
         }}
+        onDragOver={(e) => {
+          if (!reorderable || !e.dataTransfer.types.includes(REORDER_TYPE)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          const r = e.currentTarget.getBoundingClientRect();
+          setDropSide(e.clientX < r.left + r.width / 2 ? 'before' : 'after');
+        }}
+        onDragLeave={() => setDropSide(null)}
+        onDrop={(e) => {
+          const id = e.dataTransfer.getData(REORDER_TYPE);
+          const side = dropSide;
+          setDropSide(null);
+          if (!reorderable || !id || id === asset.id) return;
+          e.preventDefault();
+          const p = useProjectStore.getState().history?.present;
+          if (!p) return;
+          const from = p.assets.findIndex((a) => a.id === id);
+          let to = side === 'after' ? index + 1 : index;
+          if (from < to) to--;
+          const moved = p.assets[from];
+          if (moved && tryEdit((q) => moveAsset(q, id, to))) useEditorUi.getState().notify(`Moved “${moved.name}” to position ${to + 1} of ${count}.`);
+        }}
+        data-asset-index={index}
         className={cn('group block w-full cursor-default rounded-md border p-1 text-left outline-none', selected ? 'border-accent bg-surface-3' : 'border-transparent hover:bg-surface-2')}
       >
-        <div className="relative aspect-video overflow-hidden rounded-sm bg-black/60">
+        <div
+          className="relative aspect-video overflow-hidden rounded-sm bg-black/60"
+          onPointerMove={(e) => {
+            if (e.pointerType !== 'mouse' || !strip?.urls.length) return;
+            const r = e.currentTarget.getBoundingClientRect();
+            setScrub(Math.max(0, Math.min(0.999, (e.clientX - r.left) / r.width)));
+          }}
+          onPointerLeave={() => setScrub(null)}
+        >
+          {dropSide && <span aria-hidden className={cn('absolute inset-y-0 z-[3] w-1 rounded bg-accent', dropSide === 'before' ? 'left-0' : 'right-0')} />}
           {/* The card's selectable control; action buttons below are siblings, never nested inside it. */}
           <button
             type="button"
@@ -204,10 +252,27 @@ function AssetCard({ asset }: { asset: Asset }) {
             aria-label={`${asset.name}${status === 'offline' && asset.kind !== 'subtitle' ? ' (offline)' : ''}`}
             onKeyDown={(e) => {
               if (e.key === 'F2') setRenaming(true);
+              if (reorderable && e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const dir = e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 1;
+                const to = Math.max(0, Math.min(count - 1, index + dir));
+                if (to !== index) moveTo(to);
+                const target = e.currentTarget;
+                requestAnimationFrame(() => target.focus());
+              }
             }}
+            aria-description={reorderable ? 'Drag onto another card, or press Alt and an arrow key, to change the order. Drag onto the timeline to use it.' : undefined}
             className="absolute inset-0 z-[1] rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           />
-          {thumbs?.[0] ? (
+          {scrub != null && strip?.urls.length ? (
+            <>
+              <img src={strip.urls[Math.floor(scrub * strip.urls.length)]} alt="" className="h-full w-full object-contain" draggable={false} />
+              <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-0.5 bg-white/20">
+                <span className="block h-full bg-accent" style={{ width: `${scrub * 100}%` }} />
+              </span>
+            </>
+          ) : thumbs?.[0] ? (
             <img src={thumbs[0]} alt="" className={cn('h-full w-full object-contain', status !== 'online' && 'opacity-40 grayscale')} draggable={false} />
           ) : (
             <div className="flex h-full items-center justify-center text-faint">

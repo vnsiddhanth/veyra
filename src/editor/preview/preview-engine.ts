@@ -119,7 +119,8 @@ export class PreviewEngine {
         this.onWarnings(m.warnings);
         break;
       case 'probe':
-        this.probes.get(m.id)?.(m.rgb);
+        if (m.error) console.warn('[veyra] preview probe failed:', m.error);
+        this.probes.get(m.id)?.(m.error ? [-1, -1, -1] : m.rgb);
         this.probes.delete(m.id);
         break;
       case 'error':
@@ -129,9 +130,38 @@ export class PreviewEngine {
     }
   }
 
+  /** Wall-clock anchor, used when the audio clock is not running (no output device, blocked audio). */
+  private startWall = 0;
+  private clock: 'audio' | 'wall' = 'audio';
+  private clockCheck: { at: number; ctxTime: number } | null = null;
+
   private currentSeconds(): number {
     if (!this.playing || !this.ctx) return this.startSeconds;
+    if (this.clock === 'wall') return this.startSeconds + Math.max(0, (performance.now() - this.startWall) / 1000);
     return this.startSeconds + (this.ctx.currentTime - this.startCtx);
+  }
+
+  /**
+   * Picture follows the audio clock. If that clock does not advance (no audio device, audio blocked),
+   * fall back to the wall clock so playback still runs — silently, and say so.
+   */
+  private checkClock() {
+    if (this.clock === 'wall' || !this.ctx) return;
+    const now = performance.now();
+    if (!this.clockCheck) {
+      this.clockCheck = { at: now, ctxTime: this.ctx.currentTime };
+      return;
+    }
+    if (now - this.clockCheck.at < 500) return;
+    if (this.ctx.state !== 'running' || this.ctx.currentTime - this.clockCheck.ctxTime < 0.05) {
+      const s = this.currentSeconds();
+      this.clock = 'wall';
+      this.startSeconds = s;
+      this.startWall = now;
+      this.onWarnings(['No audio output is available, so playback runs without sound.']);
+    } else {
+      this.clockCheck = { at: now, ctxTime: this.ctx.currentTime };
+    }
   }
 
   play(from: Flicks) {
@@ -143,11 +173,15 @@ export class PreviewEngine {
     this.dropped = 0;
     this.startSeconds = from / 705_600_000;
     if (this.startSeconds >= this.endSeconds - 1e-3) this.startSeconds = 0;
+    this.clock = 'audio';
+    this.clockCheck = null;
+    this.startWall = performance.now() + 120;
     // A short lead so the first audio block arrives before it is due.
     this.startCtx = this.ctx.currentTime + 0.12;
     this.startAudio(this.startSeconds);
     const tick = () => {
       if (!this.playing || !this.project) return;
+      this.checkClock();
       const s = this.currentSeconds();
       if (s >= this.endSeconds) {
         this.stop();
@@ -186,6 +220,7 @@ export class PreviewEngine {
     // Re-anchor the clock so audio for `seconds` plays now (+ lead).
     this.startSeconds = seconds;
     this.startCtx = this.ctx.currentTime + 0.12;
+    this.startWall = performance.now() + 120;
     this.audioQueued = 0;
     this.post({ kind: 'audio-start', seconds, sampleRate: this.ctx.sampleRate, gen: this.gen });
     this.post({ kind: 'audio-need', gen: this.gen, blocks: 4 });
@@ -245,8 +280,9 @@ export class PreviewEngine {
   }
 
   /** Resolves once the last requested frame has been drawn. */
-  async settled(): Promise<void> {
-    while (this.busy || this.wantFrame != null) await new Promise((r) => setTimeout(r, 10));
+  async settled(timeoutMs = 10_000): Promise<void> {
+    const end = performance.now() + timeoutMs;
+    while ((this.busy || this.wantFrame != null) && performance.now() < end) await new Promise((r) => setTimeout(r, 10));
   }
 
   get isPlaying() {

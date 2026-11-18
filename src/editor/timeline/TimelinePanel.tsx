@@ -11,7 +11,7 @@ import { Button, IconButton } from '@/components/ui/primitives';
 import type { Clip, Project, Track, TrackKind } from '@/project/schema/types';
 import { useLibraryStore } from '@/state/library-store';
 import { selectProject, useProjectStore } from '@/state/project-store';
-import { clampMoveDelta, moveClips, rollEdit, snapDelta, snapTargets, updateMarker } from '@/timeline/model/edit';
+import { clampMoveDelta, moveClips, rearrangeClip, rollEdit, snapDelta, snapTargets, updateMarker } from '@/timeline/model/edit';
 import { addTrack, clipEnd, insertClip, projectDuration, removeTrack, renameTrack, setTrackFlags, slipClip, trackAccepts, trimClipEnd, trimClipStart } from '@/timeline/model/ops';
 import { cn } from '@/utils/id';
 import { FLICKS_PER_SECOND, flicksToSeconds, formatTimecode, quantizeToFrame, secondsToFlicks, type Flicks } from '@/utils/time';
@@ -178,6 +178,28 @@ export function TimelinePanel() {
     ui.setFocusArea('timeline');
     if (!ids.includes(clip.id)) return;
     const p0 = project;
+    if (ui.rearrange && !e.altKey) {
+      // Rearrange: lift the clip and insert it between others on its track; neighbours make room.
+      const track = p0.tracks.find((t) => t.id === clip.trackId)!;
+      const others = track.clipIds.filter((id) => id !== clip.id).map((id) => p0.clips[id]!);
+      const grabOffset = toFlicks(laneX(e.clientX)) - clip.start;
+      beginDrag(
+        e,
+        (_dx, _dy, ev) => {
+          // Insert before the first clip whose middle is to the right of the dragged clip's middle.
+          const mid = toFlicks(laneX(ev.clientX)) - grabOffset + clip.duration / 2;
+          const before = others.find((c) => c.start + c.duration / 2 > mid) ?? null;
+          try {
+            const next = rearrangeClip(p0, clip.id, before?.id ?? null);
+            setDrag({ draft: next, guide: next.clips[clip.id]!.start, marquee: null });
+          } catch (err) {
+            ui.notify(err instanceof Error ? err.message : String(err));
+          }
+        },
+        (moved) => commit(moved),
+      );
+      return;
+    }
     if (e.altKey) {
       // Slip: change which part of the source shows, keep the clip in place.
       beginDrag(
@@ -453,6 +475,7 @@ function Toolbar({ project }: { project: Project }) {
   const px = useEditorUi((s) => s.pxPerSecond);
   const setZoom = useEditorUi((s) => s.setZoom);
   const snapping = useEditorUi((s) => s.snapping);
+  const rearrange = useEditorUi((s) => s.rearrange);
   const hasSel = useEditorUi((s) => s.selectedClipIds.length > 0);
   return (
     <div className="flex h-8 shrink-0 items-center gap-1 overflow-x-auto border-b border-line px-2">
@@ -470,11 +493,21 @@ function Toolbar({ project }: { project: Project }) {
       <Button size="sm" variant="ghost" onClick={addMarkerAtPlayhead} title="Add marker (M)">
         + Marker
       </Button>
+      <Button
+        size="sm"
+        variant={rearrange ? 'primary' : 'ghost'}
+        aria-pressed={rearrange}
+        onClick={() => useEditorUi.getState().toggleRearrange()}
+        title="Rearrange (R): drag a clip between others to change the order; the rest move to make room"
+      >
+        Rearrange
+      </Button>
       <Button size="sm" variant={snapping ? 'secondary' : 'ghost'} aria-pressed={snapping} onClick={() => useEditorUi.getState().toggleSnapping()} title="Snapping (N). Hold Shift while dragging to invert.">
         Snap
       </Button>
       <span className="ml-2 hidden text-2xs text-faint xl:inline">
-        Drag to move · edges trim · Ctrl+edge rolls · Alt+drag slips · {project.settings.width}×{project.settings.height}
+        {rearrange ? 'Rearrange: drag a clip between others to reorder; gaps close and clips make room' : 'Drag to move · edges trim · Ctrl+edge rolls · Alt+drag slips'} ·{' '}
+        {project.settings.width}×{project.settings.height}
       </span>
       <label className="ml-auto flex items-center gap-2 text-2xs text-faint">
         Zoom

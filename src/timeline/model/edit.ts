@@ -412,3 +412,43 @@ export function snapDelta(edges: readonly Flicks[], targets: readonly Flicks[], 
   }
   return bestDist <= threshold ? best : { delta: 0, target: null };
 }
+
+// ── media library order ───────────────────────────────────────────────────
+
+/** Move an asset to `toIndex` in the project's media order ("My order" in the library). */
+export function moveAsset(p: Project, assetId: string, toIndex: number): Project {
+  const from = p.assets.findIndex((a) => a.id === assetId);
+  if (from < 0) throw new TimelineError('Media not found.');
+  const assets = [...p.assets];
+  const [a] = assets.splice(from, 1);
+  assets.splice(Math.max(0, Math.min(assets.length, toIndex)), 0, a!);
+  if (assets.every((x, i) => x === p.assets[i])) return p;
+  return touch({ ...p, assets });
+}
+
+/**
+ * Rearrange (insert edit): lift a clip out of its track (closing its gap) and insert it before
+ * `beforeClipId` (or after the last clip when null), pushing later clips right by its length.
+ * Other gaps on the track are preserved.
+ */
+export function rearrangeClip(p: Project, clipId: string, beforeClipId: string | null): Project {
+  const clip = getClip(p, clipId);
+  if (beforeClipId === clipId) return p;
+  const track = p.tracks.find((t) => t.id === clip.trackId)!;
+  if (track.locked) throw new TimelineError(`Track ${track.name} is locked.`);
+  if (beforeClipId && getClip(p, beforeClipId).trackId !== clip.trackId) throw new TimelineError('Rearranging works within one track.');
+  const order = track.clipIds.filter((id) => id !== clipId);
+  const currentNext = track.clipIds[track.clipIds.indexOf(clipId) + 1] ?? null;
+  if (currentNext === beforeClipId) return p; // already there
+  let q = rippleDeleteClips(p, [clipId]);
+  const lastId = order[order.length - 1];
+  const at = beforeClipId ? q.clips[beforeClipId]!.start : lastId ? clipEnd(q.clips[lastId]!) : clip.start;
+  const clips = { ...q.clips };
+  for (const id of order) {
+    const c = clips[id]!;
+    if (c.start >= at) clips[id] = { ...c, start: c.start + clip.duration };
+  }
+  clips[clipId] = { ...clip, start: at };
+  q = { ...q, clips, tracks: rebuildTrackOrder(q, clips) };
+  return touch(pruneTransitions(q));
+}

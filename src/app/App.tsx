@@ -11,6 +11,7 @@ const EditorPage = lazy(() => import('@/pages/EditorPage'));
 const CompatibilityPage = lazy(() => import('@/pages/CompatibilityPage'));
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const BenchmarkPage = lazy(() => import('@/pages/BenchmarkPage'));
+const GuidePage = lazy(() => import('@/pages/GuidePage'));
 const DevFixturesPage = lazy(() => import('@/pages/DevFixturesPage'));
 
 function Loading() {
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
       { path: '/compatibility', element: withSuspense(<CompatibilityPage />) },
       { path: '/privacy', element: withSuspense(<PrivacyPage />) },
       { path: '/benchmark', element: withSuspense(<BenchmarkPage />) },
+      { path: '/guide', element: withSuspense(<GuidePage />) },
       ...(import.meta.env.DEV ? [{ path: '/dev/fixtures', element: withSuspense(<DevFixturesPage />) }] : []),
       { path: '*', element: <NotFoundPage /> },
     ],

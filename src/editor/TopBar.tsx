@@ -75,7 +75,10 @@ export function TopBar() {
         <span>{Number(rateToNumber(frameRate).toFixed(3))} fps</span>
         <span>{formatTimecode(projectDuration(project), frameRate)}</span>
       </div>
-      <IconButton label="Keyboard shortcuts (?)" className="ml-2" onClick={() => useEditorUi.getState().setShortcutsOpen(true)}>
+      <a href="/guide" target="_blank" rel="noopener" className="ml-2 hidden h-7 items-center rounded-sm px-2 text-xs text-muted hover:bg-surface-3 hover:text-fg sm:inline-flex" title="Open the guide in a new tab">
+        Guide
+      </a>
+      <IconButton label="Keyboard shortcuts (?)" className="ml-1" onClick={() => useEditorUi.getState().setShortcutsOpen(true)}>
         ?
       </IconButton>
       <Button

@@ -35,6 +35,7 @@ const GROUPS: [string, [string, string][]][] = [
       ['N', 'Snapping on or off (hold Shift while dragging to invert)'],
       ['+ / −', 'Zoom in / out (or Ctrl + mouse wheel)'],
       ['Drag a clip', 'Move (also to another track)'],
+      ['R', 'Rearrange mode: drag a clip between others to reorder them'],
       ['Drag a clip edge', 'Trim'],
       [`${mod} + drag an edge`, 'Roll edit between touching clips'],
       ['Alt + drag a clip', 'Slip the source inside the clip'],
@@ -45,6 +46,7 @@ const GROUPS: [string, [string, string][]][] = [
     'Project',
     [
       [`${mod}+I`, 'Import media'],
+      ['Alt + arrow on a media card', 'Change its place in “My order”'],
       [`${mod}+E`, 'Export'],
       [`${mod}+S`, 'Save now (projects also save automatically)'],
       ['?', 'This list'],

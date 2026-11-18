@@ -8,6 +8,8 @@ import {
   clampMoveDelta,
   copyClips,
   detachAudio,
+  moveAsset,
+  rearrangeClip,
   moveClips,
   pasteClips,
   removeKeyframe,
@@ -162,5 +164,40 @@ describe('transitions, keyframes, markers, snapping', () => {
     const targets = snapTargets(p, new Set([img]), S(4.5));
     expect(snapDelta([S(2.95), S(4.95)], targets, S(0.1))).toEqual({ delta: S(0.05), target: S(3) });
     expect(snapDelta([S(7.5)], targets, S(0.1)).target).toBeNull();
+  });
+});
+
+describe('moveAsset', () => {
+  it('reorders media and is a no-op for the same position', () => {
+    const { p } = base();
+    const ids = p.assets.map((a) => a.id);
+    const q = moveAsset(p, ids[2]!, 0);
+    expect(q.assets.map((a) => a.id)).toEqual([ids[2], ids[0], ids[1]]);
+    expect(moveAsset(p, ids[0]!, 0)).toBe(p);
+  });
+});
+
+describe('rearrangeClip', () => {
+  /** V1: A [0,3) B [3,6) C [8,10) (2 s gap before C). */
+  function three() {
+    const { p, a, b, v1 } = base();
+    const [q, c] = insertClip(p, { trackId: v1, assetId: 'vid', start: S(8), duration: S(2) });
+    return { p: q, a, b, c };
+  }
+  it('moves the last clip to the front, pushing the others right and keeping the gap', () => {
+    const { p, a, b, c } = three();
+    const q = rearrangeClip(p, c, a);
+    expect([c, a, b].map((id) => q.clips[id]!.start / S(1))).toEqual([0, 2, 5]);
+    checkIntegrity(q);
+  });
+  it('moves the first clip to the end', () => {
+    const { p, a, b, c } = three();
+    const q = rearrangeClip(p, a, null);
+    expect([b, c, a].map((id) => q.clips[id]!.start / S(1))).toEqual([0, 5, 7]);
+    checkIntegrity(q);
+  });
+  it('is a no-op when dropped where it already is', () => {
+    const { p, a, b } = three();
+    expect(rearrangeClip(p, a, b)).toBe(p);
   });
 });

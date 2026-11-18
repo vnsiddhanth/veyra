@@ -28,7 +28,7 @@ export type PreviewOut =
   | { kind: 'audio'; gen: number; t0: number; left: Float32Array; right: Float32Array; sampleRate: number }
   | { kind: 'warnings'; warnings: string[] }
   | { kind: 'error'; message: string }
-  | { kind: 'probe'; id: number; rgb: number[] };
+  | { kind: 'probe'; id: number; rgb: number[]; error?: string };
 
 declare const self: {
   postMessage(message: PreviewOut, transfer?: Transferable[]): void;
@@ -176,14 +176,20 @@ self.onmessage = (event: MessageEvent<PreviewIn>) => {
       stopAudio();
       break;
     case 'probe': {
-      if (!canvas) break;
-      const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
-      const x = Math.min(canvas.width - 4, Math.max(0, Math.round(m.x * canvas.width)));
-      const y = Math.min(canvas.height - 4, Math.max(0, Math.round(m.y * canvas.height)));
-      const d = ctx.getImageData(x, y, 4, 4).data;
-      const sum = [0, 0, 0];
-      for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) sum[k]! += d[i + k]!;
-      self.postMessage({ kind: 'probe', id: m.id, rgb: sum.map((v) => Math.round(v / 16)) });
+      // Always answer, so a caller never waits forever; report why if the read fails.
+      try {
+        if (!canvas) throw new Error('canvas not initialised');
+        const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D | null;
+        if (!ctx) throw new Error('2D context unavailable');
+        const x = Math.min(canvas.width - 4, Math.max(0, Math.round(m.x * canvas.width)));
+        const y = Math.min(canvas.height - 4, Math.max(0, Math.round(m.y * canvas.height)));
+        const d = ctx.getImageData(x, y, 4, 4).data;
+        const sum = [0, 0, 0];
+        for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) sum[k]! += d[i + k]!;
+        self.postMessage({ kind: 'probe', id: m.id, rgb: sum.map((v) => Math.round(v / 16)) });
+      } catch (e) {
+        self.postMessage({ kind: 'probe', id: m.id, rgb: [], error: e instanceof Error ? `${e.name}: ${e.message}` : String(e) });
+      }
       break;
     }
   }

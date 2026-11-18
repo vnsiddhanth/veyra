@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (release 1.1.0).
+Last updated: 2026-11-18 (release 1.2.0).
 
 ## Phase 1 — Foundation
 
@@ -161,6 +161,19 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | Speed ramps (keyframed speed) | Verified (export frame = integral prediction) | `src/render/speed.ts`, inspector | `speed.test.ts`, `ramps-rotation.spec.ts` |
 | Bezier easing handles | Tested | `ClipInspector.tsx`, `edit.ts` | `edit.test.ts` |
 | Rotation stabilisation | Verified (corr 0.9998 on injected tilt) | `decode/motion.ts`, `StabilizeTool.tsx` | `motion.test.ts`, `ramps-rotation.spec.ts` |
+
+## Release 1.2.0 — reorder, preview, guide
+
+| Feature | Status | Location | Tests |
+|---|---|---|---|
+| Drag-to-reorder lists (mouse, touch, keyboard, screen-reader announcements) | Verified | `components/sortable/SortableList.tsx`, `tools/compose/OrderedFiles.tsx` | `reorder.spec.ts` |
+| Natural sort, sort by date, reverse | Verified (natural sort) | `OrderedFiles.tsx` | `reorder.spec.ts` |
+| Hover-scrub video thumbnails, full-size lightbox | Implemented | `components/sortable/MediaThumb.tsx` | — |
+| Library "My order" drag-and-drop, Alt+arrow | Verified | `MediaLibrary.tsx`, `moveAsset` | `edit.test.ts`, `reorder.spec.ts` |
+| Library hover-scrub (filmstrip) | Implemented | `MediaLibrary.tsx` | — |
+| Timeline Rearrange (insert/ripple reorder) | Verified | `rearrangeClip`, `TimelinePanel.tsx` | `edit.test.ts`, `reorder.spec.ts` |
+| User guide `/guide` | Verified (axe audit) | `pages/GuidePage.tsx` | `a11y.spec.ts` |
+| Playback without an audio device (wall-clock fallback) | Implemented | `preview-engine.ts` | Firefox CI |
 
 ## Not implemented (honest list)
 

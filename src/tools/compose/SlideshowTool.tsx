@@ -10,7 +10,8 @@ import { AUDIO_ACCEPT, ConvertResultCard, IMAGE_ACCEPT, JobArea, SourceDrop, Sou
 import { useMediaJob } from '../shared/useMediaJob';
 import { useSource } from '../shared/useSource';
 import { RenderFormatField, useProbedFiles, type RenderContainer } from './common';
-import { AddFiles, FileList, TRANSITIONS } from './MergeTool';
+import { AddFiles, TRANSITIONS } from './MergeTool';
+import { OrderedFiles } from './OrderedFiles';
 
 const SIZES: [string, string, number, number][] = [
   ['1080p', 'Landscape 1920×1080', 1920, 1080],
@@ -81,18 +82,7 @@ export function SlideshowTool({ tool }: { tool: ToolDef }) {
   return (
     <div className="space-y-4">
       <AddFiles onFiles={list.add} accept={IMAGE_ACCEPT} label={sequence ? 'Drop an image sequence (sorted by the order you add them)' : 'Drop photos here'} count={list.items.length} />
-      {list.items.length > 0 && (
-        <div className="flex gap-2">
-          <button className="text-xs text-accent hover:underline" onClick={() => {
-            const sorted = [...list.items].sort((a, b) => a.file.name.localeCompare(b.file.name, undefined, { numeric: true }));
-            list.clear();
-            list.add(sorted.map((x) => x.file));
-          }}>
-            Sort by file name
-          </button>
-        </div>
-      )}
-      <FileList list={list} label="Images" />
+      <OrderedFiles list={list} label="Images" unit="image" />
       <Panel>
         <SelectField label="Video size" value={size} onChange={setSize} options={SIZES.map(([id, l]) => [id, l] as const)} />
         {sequence ? (

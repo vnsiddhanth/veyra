@@ -28,7 +28,8 @@ for (const precision of ['Frame-accurate', 'Fast'] as const) {
     const meta = await inspectInNode(out);
     expect(meta.mime).toContain('video/mp4');
     expect(meta.video).toEqual({ codec: 'avc', width: 1280, height: 720 });
-    expect(meta.audio?.codec).toBe('aac');
+    // AAC where the browser can encode it; Firefox has no AAC encoder and falls back to Opus in MP4.
+    expect(['aac', 'opus']).toContain(meta.audio?.codec);
     expect(meta.duration).toBeGreaterThan(2.0 - 1 / 30);
     expect(meta.duration).toBeLessThan(2.0 + 1 / 30 + 0.05);
 

@@ -10,6 +10,7 @@ import { Panel, RangeField, SelectField } from '../shared/controls';
 import { ConvertResultCard, JobArea, VIDEO_ACCEPT } from '../shared/ToolParts';
 import { useMediaJob } from '../shared/useMediaJob';
 import { RenderFormatField, useProbedFiles, type ProbedFile, type RenderContainer } from './common';
+import { OrderedFiles } from './OrderedFiles';
 
 export const TRANSITIONS: [string, string][] = [
   ['none', 'None (hard cut)'],
@@ -112,8 +113,8 @@ export function MergeTool({ tool }: { tool: ToolDef }) {
 
   return (
     <div className="space-y-4">
-      <AddFiles onFiles={list.add} accept={VIDEO_ACCEPT} label="Drop two or more videos here. They are joined in list order." count={list.items.length} />
-      <FileList list={list} label="Videos to merge" />
+      <AddFiles onFiles={list.add} accept={VIDEO_ACCEPT} label="Drop two or more videos here. They are joined in the order shown; drag to reorder." count={list.items.length} />
+      <OrderedFiles list={list} label="Videos to merge" unit="video" />
       <Panel>
         <SelectField label="Transition between clips" value={transition} onChange={setTransition} options={TRANSITIONS} />
         {transition !== 'none' && <RangeField label="Transition length" value={Math.min(tDur, tMax)} min={0.1} max={tMax} step={0.05} onChange={setTDur} format={(v) => `${v.toFixed(2)} s`} />}

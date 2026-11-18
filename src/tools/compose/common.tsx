@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { mediaEngine, MediaError, type MediaInfo } from '@/media-engine';
 import { SelectField } from '../shared/controls';
+import { moveItem } from '@/components/sortable/SortableList';
 
 export type RenderContainer = 'mp4' | 'webm';
 
@@ -73,6 +74,9 @@ export function useProbedFiles(require: 'video' | 'audio' | 'image' | 'any' = 'a
       [next[i], next[j]] = [next[j]!, next[i]!];
       return next;
     });
+  const moveTo = (from: number, to: number) => setItems((xs) => moveItem(xs, from, to));
+  const sortBy = (cmp: (a: ProbedFile, b: ProbedFile) => number) => setItems((xs) => [...xs].sort(cmp));
+  const reverse = () => setItems((xs) => [...xs].reverse());
   const clear = () => {
     for (const u of urls.current) URL.revokeObjectURL(u);
     urls.current.clear();
@@ -84,7 +88,7 @@ export function useProbedFiles(require: 'video' | 'audio' | 'image' | 'any' = 'a
     },
     [],
   );
-  return { items, add, remove, move, clear, ready: items.filter((x) => x.status === 'ready') };
+  return { items, add, remove, move, moveTo, sortBy, reverse, clear, ready: items.filter((x) => x.status === 'ready') };
 }
 
 /** Decode images to bitmaps for the live preview (closed when replaced). */

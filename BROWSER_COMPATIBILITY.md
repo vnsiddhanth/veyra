@@ -27,8 +27,11 @@ Values in this table are expected behaviour from the specifications and vendor d
 |---|---|---|
 | Chrome (stable) | **39/39 passing** | Primary target |
 | Edge (stable) | **39/39 passing** | Primary target |
-| Firefox (Playwright build) | **Not measured** | The binary fails with "side-by-side configuration is incorrect": the Microsoft Visual C++ runtime is not installed on this machine |
-| WebKit (Playwright build) | **Not measured** | Playwright reports missing host dependencies (the same runtime). Note: Playwright's WebKit on Windows is not Safari |
+| Firefox (Playwright build, Linux CI) | **46/51 on the first run**; the 5 failures are addressed in 1.2.0 (see below) | AAC is not encodable, so MP4 exports use Opus (verified). Playback hung without an audio device; it now falls back to the wall clock |
+| WebKit (Playwright WebKitGTK, Linux CI) | **30/51** (informational) | Media workers crash while decoding H.264 in this GTK build. OPFS writes failed once with "UnknownError". Basic tools, metadata, conversion UI, accessibility and the guide work. **This is not Safari**; Safari is still unmeasured |
+
+Local runs of the Playwright Firefox and WebKit builds are blocked on the dev machine by Windows **Smart App Control**, which refuses their
+unsigned DLLs. CI runs them on Linux instead: `.github/workflows/engines.yml` runs on every push to `main`.
 
 Run `npm run test:e2e:engines` on a machine where these browsers launch to measure them. Paths that are known to differ have
 fallbacks in code, but these are **unverified on those engines**:

@@ -98,6 +98,10 @@ export function EditorShell() {
         cmd.clearInOut();
       } else if (e.key === 't' || e.key === 'T') {
         cmd.addTitle();
+      } else if (e.key === 'r' || e.key === 'R') {
+        useEditorUi.getState().toggleRearrange();
+        const ui = useEditorUi.getState();
+        ui.notify(ui.rearrange ? 'Rearrange on: drag clips between others to reorder them.' : 'Rearrange off: clips move freely.');
       } else if (e.key === 'n' || e.key === 'N') {
         useEditorUi.getState().toggleSnapping();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {

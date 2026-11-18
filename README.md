@@ -4,7 +4,7 @@ A free, local-first video editor and set of video tools that run entirely in the
 It has no uploads, no account, no watermark and no export limits. Media is processed on the user's device with WebCodecs and
 [Mediabunny](https://mediabunny.dev) in Web Workers.
 
-> **Status: 1.1.0. All nine roadmap phases are complete and verified in Chrome and Edge, plus speed ramps, Bezier easing and rotation stabilisation.**
+> **Status: 1.2.0. All nine roadmap phases are complete and verified in Chrome and Edge, plus speed ramps, Bezier easing and rotation stabilisation.**
 >
 > - **Standalone tools:** all 46 are available and produce validated outputs.
 > - **Editor:** a multitrack editor with an interactive timeline, a real-time program monitor, keyframes, effects, a mixer, subtitles and validated export.
@@ -25,6 +25,7 @@ It has no uploads, no account, no watermark and no export limits. Media is proce
   - **Clips:** keyframes with a curve editor; colour, LUT, chroma key, masks and blur; text with animation; transitions.
   - **Audio:** EQ, compressor and ducking, plus a track mixer.
   - **Projects and export:** autosave and crash-safe recovery, and export to video or audio with validation.
+- **Easy to learn:** drag to reorder anywhere (tool lists, media panel, timeline Rearrange mode), hover to preview, keyboard alternatives for everything, and a plain-language [guide](/guide) in the app.
 - **Privacy:** files never leave the device. Outputs are re-opened and checked before you can download them. Nothing is simulated.
 
 ## Quick start

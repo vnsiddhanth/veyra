@@ -28,6 +28,9 @@ export function SiteLayout() {
             <NavLink to="/tools" className={navClass}>
               Tools
             </NavLink>
+            <NavLink to="/guide" className={navClass}>
+              Guide
+            </NavLink>
             <NavLink to="/compatibility" className={navClass}>
               Compatibility
             </NavLink>

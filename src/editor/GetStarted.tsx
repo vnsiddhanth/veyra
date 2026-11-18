@@ -32,7 +32,11 @@ export function GetStarted({ project }: { project: Project }) {
         ))}
       </ol>
       <p className="mt-3 text-xs text-muted">
-        Press <kbd className="rounded border border-line px-1">?</kbd> for all keyboard shortcuts.
+        Press <kbd className="rounded border border-line px-1">?</kbd> for all keyboard shortcuts, or{' '}
+        <a href="/guide" target="_blank" rel="noopener" className="text-accent underline">
+          read the guide
+        </a>
+        .
       </p>
     </section>
   );

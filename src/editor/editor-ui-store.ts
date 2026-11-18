@@ -17,6 +17,9 @@ interface EditorUiState {
   playhead: Flicks;
   playing: boolean;
   snapping: boolean;
+  /** Rearrange mode: dragging a clip inserts it between others and closes the gap it left. */
+  rearrange: boolean;
+  toggleRearrange(): void;
   clipboard: ClipboardData | null;
   /** Which monitor the preview shows. */
   monitor: 'program' | 'source';
@@ -52,6 +55,10 @@ export const useEditorUi = create<EditorUiState>((set, get) => ({
   playhead: 0,
   playing: false,
   snapping: true,
+  rearrange: false,
+  toggleRearrange() {
+    set((s) => ({ rearrange: !s.rearrange }));
+  },
   clipboard: null,
   monitor: 'program',
   useProxies: true,

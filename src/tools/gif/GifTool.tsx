@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { mediaEngine, type FileResult } from '@/media-engine';
-import { Button } from '@/components/ui/primitives';
-import { FileDrop } from '@/components/ui/FileDrop';
 import type { ToolDef } from '../registry';
 import { ChoiceGroup, ColorField, NumberField, Panel, RangeField, SelectField } from '../shared/controls';
 import { baseName, FileResultCard, IMAGE_ACCEPT, JobArea, SourceGate, SourceHeader, VIDEO_ACCEPT } from '../shared/ToolParts';
 import { useMediaJob } from '../shared/useMediaJob';
 import { useSource } from '../shared/useSource';
 import { MAX_GIF_FRAMES } from '@/media-engine/core/limits';
+import { useProbedFiles } from '../compose/common';
+import { AddFiles } from '../compose/MergeTool';
+import { OrderedFiles } from '../compose/OrderedFiles';
 
 export function GifTool({ tool }: { tool: ToolDef }) {
   const [from, setFrom] = useState<'video' | 'images'>('video');
@@ -90,7 +91,8 @@ function VideoGif() {
 }
 
 function ImagesGif() {
-  const [files, setFiles] = useState<File[]>([]);
+  const list = useProbedFiles('image');
+  const files = list.ready.map((x) => x.file);
   const job = useMediaJob<FileResult>();
   const [width, setWidth] = useState(480);
   const [height, setHeight] = useState(480);
@@ -99,33 +101,8 @@ function ImagesGif() {
   const [bg, setBg] = useState('#000000');
   return (
     <div className="space-y-4">
-      <FileDrop onFiles={(entries) => setFiles((f) => [...f, ...entries.map((e) => e.file).filter((x) => x.type.startsWith('image/'))])} multiple accept={IMAGE_ACCEPT}>
-        {({ dragging, open }) => (
-          <div className={`flex items-center gap-3 rounded-lg border border-dashed p-4 text-sm ${dragging ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface'}`}>
-            <span className="text-muted">{files.length ? `${files.length} image(s), shown in this order` : 'Drop images here (PNG, JPEG, WebP…)'}</span>
-            <Button size="sm" className="ml-auto" onClick={open}>
-              Add images
-            </Button>
-            {files.length > 0 && (
-              <Button size="sm" variant="ghost" onClick={() => setFiles([])}>
-                Clear
-              </Button>
-            )}
-          </div>
-        )}
-      </FileDrop>
-      {files.length > 0 && (
-        <ol className="flex flex-wrap gap-2 text-xs">
-          {files.map((f, i) => (
-            <li key={i} className="flex items-center gap-1 rounded border border-line bg-surface px-2 py-1">
-              <span className="text-faint">{i + 1}.</span> <span className="max-w-[10rem] truncate">{f.name}</span>
-              <button className="text-faint hover:text-danger" aria-label={`Remove ${f.name}`} onClick={() => setFiles((x) => x.filter((_, j) => j !== i))}>
-                ×
-              </button>
-            </li>
-          ))}
-        </ol>
-      )}
+      <AddFiles onFiles={list.add} accept={IMAGE_ACCEPT} label="Drop images here (PNG, JPEG, WebP…). Each becomes one frame, in the order shown." count={list.items.length} />
+      <OrderedFiles list={list} label="GIF frames" unit="image" />
       <Panel>
         <NumberField label="Width" unit="px" value={width} min={16} max={1280} onChange={setWidth} />
         <NumberField label="Height" unit="px" value={height} min={16} max={1280} onChange={setHeight} />

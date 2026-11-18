@@ -53,7 +53,8 @@ test('export renders the timeline exactly: cuts, crossfade blend, title and audi
 
   const meta = await inspectInNode(out);
   expect(meta.video).toMatchObject({ codec: 'avc', width: 1280, height: 720 });
-  expect(meta.audio?.codec).toBe('aac');
+  // AAC where the browser can encode it; Firefox has no AAC encoder and falls back to Opus in MP4.
+    expect(['aac', 'opus']).toContain(meta.audio?.codec);
   expect(Math.abs(meta.duration - 4)).toBeLessThan(0.08);
 
   const src = readFileSync(fixture('counter-720p30-5s.mp4'));
