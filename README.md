@@ -78,11 +78,9 @@ Other pages: `/benchmark` measures the device, `/compatibility` lists codec supp
 | [FEATURE_MATRIX.md](FEATURE_MATRIX.md) | Per-feature status |
 | [CHANGELOG.md](CHANGELOG.md) | History |
 
-## Licence notes
+## Licence
 
-Dependencies are used unmodified:
-- Mediabunny and `@mediabunny/mp3-encoder` (MPL-2.0; the MP3 encoder wraps LAME, which is LGPL, as WASM)
-- gifenc (MIT)
-- React, Zustand, React Router (MIT)
+Veyra is open source under the [MIT licence](LICENSE). Dependencies keep their own licences (Mediabunny and the MP3 encoder are
+MPL-2.0; the bundled LAME encoder is LGPL): see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No GPL code is shipped.
 
-No GPL code is shipped: FFmpeg.wasm was deliberately not included (see DEVELOPMENT_ROADMAP.md). The project's own licence is still to be chosen by the maintainer.
+Contributions are welcome: open an issue or a pull request. Run `npm test` and `npm run test:e2e` before submitting.
