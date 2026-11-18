@@ -57,7 +57,8 @@ const plain = (s: string) => s.replace(/<\/?[biu]>/gi, '');
 
 export class Compositor {
   readonly canvas: AnyCanvas;
-  private readonly ctx: Ctx2D;
+  /** The 2D context this compositor draws with (reused for read-back; some engines return null for a second getContext). */
+  readonly ctx: Ctx2D;
   private fx: PixelFx | null | undefined;
   private scratch: AnyCanvas | null = null;
   private maskCanvas: AnyCanvas | null = null;

@@ -29,7 +29,11 @@ async function showAt(page: Page, t: number) {
   await page.waitForTimeout(150);
   await page.evaluate(() => (window as any).__veyraPreview.settled());
 }
-const probe = (page: Page, x: number, y: number): Promise<number[]> => page.evaluate(([a, b]) => (window as any).__veyraPreview.probe(a, b), [x, y]);
+async function probe(page: Page, x: number, y: number): Promise<number[]> {
+  const rgb = await page.evaluate(([a, b]) => (window as any).__veyraPreview.probe(a, b), [x, y]);
+  if (rgb[0] === -1) throw new Error(`Preview read-back failed: ${await page.evaluate(() => (window as any).__veyraPreview.lastProbeError)}`);
+  return rgb;
+}
 
 test('program monitor shows the exact timeline frame at the playhead', async ({ page }) => {
   await newProjectWith(page, ['counter-720p30-5s.mp4']);

@@ -7,7 +7,9 @@ import { readFileSync } from 'node:fs';
 import { engineReady, expectClose, fixture, framePixel, inspectInNode } from './helpers';
 
 
-test('export renders the timeline exactly: cuts, crossfade blend, title and audio', async ({ page }) => {
+test('export renders the timeline exactly: cuts, crossfade blend, title and audio', async ({ page, browserName }) => {
+  // Firefox encodes H.264 in software (OpenH264) with slightly coarser colour; neighbouring frames still differ by more.
+  const tol = browserName === 'firefox' ? 9 : 6;
   test.setTimeout(180_000);
   await page.goto('/editor');
   await page.getByRole('button', { name: /New project|Create your first project/ }).first().click();
@@ -61,12 +63,12 @@ test('export renders the timeline exactly: cuts, crossfade blend, title and audi
   const res = readFileSync(out);
   const px = (buf: Buffer, n: string, f: number) => framePixel(page, buf, n, (f + 0.5) / 30);
   // Before the transition window (1.5 s): A only. Frame 10 → source 10.
-  expectClose(await px(res, 'o.mp4', 10), await px(src, 's.mp4', 10), 6);
+  expectClose(await px(res, 'o.mp4', 10), await px(src, 's.mp4', 10), tol);
   // After the window (2.5 s): B only. Output frame 90 (3.0 s) → source 3 + 1 = 4.0 s = frame 120.
-  expectClose(await px(res, 'o.mp4', 90), await px(src, 's.mp4', 120), 6);
+  expectClose(await px(res, 'o.mp4', 90), await px(src, 's.mp4', 120), tol);
   // At the cut (2.0 s) the crossfade is 50 %: A shows source 2.0 s (60), B source 3.0 s (90).
   const [mid, a60, b90] = await Promise.all([px(res, 'o.mp4', 60), px(src, 's.mp4', 60), px(src, 's.mp4', 90)]);
-  expectClose(mid, a60.map((v, i) => (v + b90[i]!) / 2), 8);
+  expectClose(mid, a60.map((v, i) => (v + b90[i]!) / 2), tol + 2);
 
   // Audio is present and audible (the fixture carries a continuous tone).
   const peak = await page.evaluate(async (b64) => {

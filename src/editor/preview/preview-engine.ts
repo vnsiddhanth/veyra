@@ -37,6 +37,8 @@ export class PreviewEngine {
   private endSeconds = 0;
   private probes = new Map<number, (rgb: number[]) => void>();
   private probeId = 0;
+  /** Last read-back failure (tests report it). */
+  lastProbeError: string | null = null;
   onTime: (t: Flicks) => void = () => undefined;
   onEnded: () => void = () => undefined;
   onWarnings: (w: string[]) => void = () => undefined;
@@ -119,7 +121,10 @@ export class PreviewEngine {
         this.onWarnings(m.warnings);
         break;
       case 'probe':
-        if (m.error) console.warn('[veyra] preview probe failed:', m.error);
+        if (m.error) {
+          console.warn('[veyra] preview probe failed:', m.error);
+          this.lastProbeError = m.error;
+        }
         this.probes.get(m.id)?.(m.error ? [-1, -1, -1] : m.rgb);
         this.probes.delete(m.id);
         break;
