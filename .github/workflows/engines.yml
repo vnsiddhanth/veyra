@@ -1,0 +1,55 @@
+# Cross-engine verification. Firefox and WebKit run here (Linux) because Windows Smart App Control
+# blocks the unsigned Playwright browser builds on the development machine.
+name: Engines (Firefox, WebKit)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: engines-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx vitest run
+      - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.project }}
+      - name: e2e (${{ matrix.project }})
+        run: npx playwright test --project=${{ matrix.project }} --reporter=list,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results-${{ matrix.project }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-${{ matrix.project }}
+          path: |
+            results-${{ matrix.project }}.json
+            test-results/
+          retention-days: 14
