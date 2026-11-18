@@ -4,7 +4,7 @@ A free, local-first video editor and set of video tools that run entirely in the
 It has no uploads, no account, no watermark and no export limits. Media is processed on the user's device with WebCodecs and
 [Mediabunny](https://mediabunny.dev) in Web Workers.
 
-> **Status: 1.0.0. All nine roadmap phases are complete and verified in Chrome and Edge.**
+> **Status: 1.1.0. All nine roadmap phases are complete and verified in Chrome and Edge, plus speed ramps, Bezier easing and rotation stabilisation.**
 >
 > - **Standalone tools:** all 46 are available and produce validated outputs.
 > - **Editor:** a multitrack editor with an interactive timeline, a real-time program monitor, keyframes, effects, a mixer, subtitles and validated export.

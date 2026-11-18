@@ -28,6 +28,8 @@ Every operation returns a `Job<T>` (`src/media-engine/core/job.ts`). Operations:
 | `render(input)` | Implemented | worker | `src/render`: compositor (Canvas 2D + WebGL2) → `CanvasSource`, mixer → `AudioSampleSource`, OPFS, validated |
 | `gif(file, opts)` / `gifFromImages` | Implemented | worker | `CanvasSink` → gifenc (PnnQuant palette per frame), checked with `ImageDecoder` |
 | `frames(file, opts)` | Implemented | worker | `CanvasSink` → images → streaming stored ZIP (OPFS), CRC-checked |
+| `analyzeMotion(file, width)` | Implemented | worker | Per-frame translation (global block match) and roll (four textured edge blocks, sub-pixel) for stabilisation |
+| `benchmark(opts)` | Implemented | worker | Encode, decode and two-layer render speed on a generated clip |
 | FFmpeg fallback | Not shipped (decision in DEVELOPMENT_ROADMAP.md) | — | — |
 
 ## MediaInfo

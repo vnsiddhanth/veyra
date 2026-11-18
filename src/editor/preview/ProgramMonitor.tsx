@@ -4,6 +4,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, IconButton } from '@/components/ui/primitives';
+import { mediaEngine } from '@/media-engine';
 import { useLibraryStore } from '@/state/library-store';
 import { selectProject, useProjectStore } from '@/state/project-store';
 import { projectDuration } from '@/timeline/model/ops';
@@ -27,7 +28,6 @@ export function ProgramMonitor() {
   const files = useMemo(() => (useProxies ? { ...originals, ...Object.fromEntries(Object.entries(proxies).filter(([id]) => !!originals[id])) } : originals), [originals, proxies, useProxies]);
   const filesRef = useRef(files);
   filesRef.current = files;
-  const playhead = useEditorUi((s) => s.playhead);
   const playing = useEditorUi((s) => s.playing);
   const hostRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<PreviewEngine | null>(null);
@@ -95,15 +95,21 @@ export function ProgramMonitor() {
   useEffect(() => {
     const e = engineRef.current;
     if (!e) return;
+    mediaEngine.setBackgroundPaused(playing);
     if (playing && !e.isPlaying) e.play(useEditorUi.getState().playhead);
     else if (!playing && e.isPlaying) e.stop();
   }, [playing]);
 
-  // Paused scrubbing: show the frame at the playhead.
-  useEffect(() => {
-    const e = engineRef.current;
-    if (e && !e.isPlaying) e.seek(playhead);
-  }, [playhead]);
+  // Paused scrubbing: show the frame at the playhead. Subscribed outside render so playback does not
+  // re-render the monitor every frame.
+  useEffect(
+    () =>
+      useEditorUi.subscribe((st, prev) => {
+        const e = engineRef.current;
+        if (st.playhead !== prev.playhead && e && !e.isPlaying) e.seek(st.playhead);
+      }),
+    [],
+  );
 
   if (!project) return null;
   const total = projectDuration(project);
@@ -151,7 +157,7 @@ export function ProgramMonitor() {
           ⏭
         </IconButton>
         <span className="ml-2 font-mono tabular" aria-label="Playhead timecode">
-          {formatTimecode(playhead, project.settings.frameRate)}
+          <MonitorTimecode project={project} />
         </span>
         <span className="font-mono text-faint tabular">/ {formatTimecode(total, project.settings.frameRate)}</span>
         {playing && stats && (
@@ -178,4 +184,9 @@ export function ProgramMonitor() {
       </div>
     </div>
   );
+}
+
+function MonitorTimecode({ project }: { project: { settings: { frameRate: { num: number; den: number } } } }) {
+  const playhead = useEditorUi((s) => s.playhead);
+  return <>{formatTimecode(playhead, project.settings.frameRate)}</>;
 }

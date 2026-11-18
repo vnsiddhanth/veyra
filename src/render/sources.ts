@@ -110,7 +110,8 @@ export class ClipFrameStream {
       a.transform.scaleX === clip.transform.scaleX &&
       fr(this.project) === fr(project) &&
       trs(this.project, a.id) === trs(project, clip.id) &&
-      JSON.stringify(a.keyframes.scale ?? null) === JSON.stringify(clip.keyframes.scale ?? null)
+      JSON.stringify(a.keyframes.scale ?? null) === JSON.stringify(clip.keyframes.scale ?? null) &&
+      JSON.stringify(a.keyframes.speed ?? null) === JSON.stringify(clip.keyframes.speed ?? null)
     );
   }
 

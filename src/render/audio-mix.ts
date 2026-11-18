@@ -11,6 +11,7 @@ import type { Clip, EffectInstance, Project } from '@/project/schema/types';
 import { clipEnd } from '@/timeline/model/ops';
 import { flicksToSeconds, secondsToFlicks } from '@/utils/time';
 import { effectNum } from './effects';
+import { hasSpeedRamp, rampedSpan, sourceAdvance } from './speed';
 import { audibleClips, clipGainAt, type AudioSourceClip } from './evaluate';
 import type { MediaPool } from './sources';
 
@@ -188,7 +189,8 @@ class ClipAudioReader {
     const c = fx('compressor');
     this.comp = c ? new Compressor(effectNum(c, 'threshold', -18), Math.max(1, effectNum(c, 'ratio', 4)), effectNum(c, 'makeup', 0), outRate) : null;
     const pitch = fx('preserve-pitch');
-    this.wsola = pitch && !src.clip.reversed && Math.abs(src.clip.speed - 1) > 1e-3 ? new Wsola(src.clip.speed) : null;
+    // Pitch preservation applies to constant speeds; ramps play like a tape (pitch follows speed).
+    this.wsola = pitch && !src.clip.reversed && !hasSpeedRamp(src.clip) && Math.abs(src.clip.speed - 1) > 1e-3 ? new Wsola(src.clip.speed) : null;
   }
 
   private static planar(s: AudioSample): Float32Array[] {
@@ -276,8 +278,12 @@ class ClipAudioReader {
     const t1 = t0 + n / this.outRate;
     if (t1 <= cs || t0 >= ce) return false;
     const sIn = flicksToSeconds(clip.sourceIn);
-    const span = flicksToSeconds(clip.duration) * clip.speed;
-    const srcAt = (t: number) => (clip.reversed ? sIn + span - (t - cs) * clip.speed : sIn + (t - cs) * clip.speed);
+    const span = flicksToSeconds(rampedSpan(clip));
+    const ramp = hasSpeedRamp(clip);
+    const srcAt = (t: number) => {
+      const adv = ramp ? flicksToSeconds(sourceAdvance(clip, secondsToFlicks(t - cs))) : (t - cs) * clip.speed;
+      return clip.reversed ? sIn + span - adv : sIn + adv;
+    };
     if (!clip.reversed) {
       const margin = this.wsola ? (Wsola.margin / this.outRate) * Math.max(1, clip.speed) + 0.1 : 0.05;
       await this.ensure(srcAt(Math.min(t1, ce)) + margin);
@@ -370,10 +376,10 @@ export class AudioMixer {
         continue;
       }
       const cs = flicksToSeconds(src.clip.start);
-      const startSource = flicksToSeconds(src.clip.sourceIn) + Math.max(0, this.time - cs) * src.clip.speed;
+      const startSource = flicksToSeconds(src.clip.sourceIn + sourceAdvance(src.clip, secondsToFlicks(Math.max(0, this.time - cs))));
       const r = new ClipAudioReader(src, track, this.sampleRate, startSource);
       if (src.clip.reversed) {
-        const span = flicksToSeconds(src.clip.duration) * src.clip.speed;
+        const span = flicksToSeconds(rampedSpan(src.clip));
         if (span > MAX_REVERSE_SECONDS) {
           this.warnings.add(`Reversed audio is limited to ${MAX_REVERSE_SECONDS / 60} minutes per clip; ${src.clip.name} is silent.`);
           continue;

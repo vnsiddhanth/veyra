@@ -33,6 +33,7 @@ export class PreviewEngine {
   private renderTimes: number[] = [];
   private presented: number[] = [];
   private dropped = 0;
+  private lastStats = 0;
   private endSeconds = 0;
   private probes = new Map<number, (rgb: number[]) => void>();
   private probeId = 0;
@@ -161,7 +162,11 @@ export class PreviewEngine {
       this.topUpAudio();
       const now = performance.now();
       this.presented = this.presented.filter((x) => now - x < 1000);
-      this.onStats({ fps: this.presented.length, renderMs: this.renderTimes.reduce((a, b) => a + b, 0) / Math.max(1, this.renderTimes.length), dropped: this.dropped });
+      // Stats feed React state: 4 updates per second is plenty and keeps playback free of re-renders.
+      if (now - this.lastStats >= 250) {
+        this.lastStats = now;
+        this.onStats({ fps: this.presented.length, renderMs: this.renderTimes.reduce((a, b) => a + b, 0) / Math.max(1, this.renderTimes.length), dropped: this.dropped });
+      }
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);

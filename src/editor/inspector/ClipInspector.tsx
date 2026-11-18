@@ -13,6 +13,7 @@ import { removeKeyframe, setClipSpeed, setKeyframe, updateClip } from '@/timelin
 import { createId, cn } from '@/utils/id';
 import { flicksToSeconds, formatTimecode, secondsToFlicks, type Flicks } from '@/utils/time';
 import { useEditorUi } from '../editor-ui-store';
+import { useThrottledPlayhead } from '../use-playhead';
 import { detachSelectedAudio, tryEdit } from '../timeline/commands';
 import { beginGesture, endGesture, gestureProps, liveEdit } from './live-edit';
 
@@ -25,6 +26,7 @@ const PROP_META: Record<AnimatableProp, { label: string; min: number; max: numbe
   scale: { label: 'Scale', min: 0.05, max: 5, step: 0.01, fmt: (v) => `${Math.round(v * 100)}%` },
   rotation: { label: 'Rotation', min: -360, max: 360, step: 0.5, unit: '°' },
   volume: { label: 'Volume', min: 0, max: 4, step: 0.01, fmt: (v) => (v <= 0 ? '−∞ dB' : `${(20 * Math.log10(v)).toFixed(1)} dB`) },
+  speed: { label: 'Speed ramp', min: 0.1, max: 8, step: 0.05, fmt: (v) => `${v.toFixed(2)}×` },
 };
 
 /** Write a property: keyframe at the playhead if the property is animated, else the static value. */
@@ -46,6 +48,8 @@ function writeProp(p: Project, clipId: string, prop: AnimatableProp, value: numb
       return updateClip(p, clipId, { transform: { ...c.transform, rotation: value } });
     case 'volume':
       return updateClip(p, clipId, { audio: { ...c.audio, gain: value } });
+    case 'speed':
+      return setClipSpeed(p, clipId, value);
   }
 }
 
@@ -60,7 +64,7 @@ function Row({ label, children, aside }: { label: string; children: ReactNode; a
 }
 
 export function ClipInspector({ project, clip }: { project: Project; clip: Clip }) {
-  const playhead = useEditorUi((s) => s.playhead);
+  const playhead = useThrottledPlayhead();
   const [curveProp, setCurveProp] = useState<AnimatableProp | null>(null);
   const asset = clip.assetId ? project.assets.find((a) => a.id === clip.assetId) : undefined;
   const local = Math.max(0, Math.min(clip.duration, playhead - clip.start));
@@ -132,23 +136,8 @@ export function ClipInspector({ project, clip }: { project: Project; clip: Clip 
             <Row label="Source in">
               <span className="font-mono tabular">{formatTimecode(clip.sourceIn, fr)}</span>
             </Row>
-            <Row label="Speed">
-              <input
-                key={`${clip.id}:${clip.speed}`}
-                type="number"
-                min={0.05}
-                max={16}
-                step={0.05}
-                defaultValue={clip.speed}
-                aria-label="Speed"
-                className={input}
-                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                onBlur={(e) => {
-                  const v = Number(e.target.value);
-                  if (v > 0 && v !== clip.speed) tryEdit((p) => setClipSpeed(p, clip.id, v));
-                }}
-              />
-            </Row>
+            {propRow('speed')}
+            <p className="pb-1 text-2xs text-faint">Add ◆ keyframes to ramp the speed over time; the clip keeps its length and plays more or less of the source.</p>
             <Row label="Reverse">
               <input type="checkbox" checked={clip.reversed} aria-label="Play backwards" onChange={(e) => tryEdit((p) => updateClip(p, clip.id, { reversed: e.target.checked }))} className="accent-[var(--c-accent)]" />
             </Row>
@@ -516,7 +505,7 @@ function LutLoader({ clip, effect }: { clip: Clip; effect: EffectInstance }) {
 
 // ── curve editor ──────────────────────────────────────────────────────────
 
-const EASINGS: Easing[] = ['linear', 'ease-in', 'ease-out', 'ease-in-out', 'hold'];
+const EASINGS: Easing[] = ['linear', 'ease-in', 'ease-out', 'ease-in-out', 'hold', 'bezier'];
 
 function CurveEditor({ clip, prop, playhead }: { clip: Clip; prop: AnimatableProp; playhead: Flicks }) {
   const kfs = clip.keyframes[prop] ?? [];
@@ -551,6 +540,7 @@ function CurveEditor({ clip, prop, playhead }: { clip: Clip; prop: AnimatablePro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kfs, clip.duration, lo, hi, base]);
   const sel = kfs.find((k) => k.t === selT);
+  const nextKf = sel ? kfs.find((k) => k.t > sel.t) : undefined;
 
   const dragPoint = (e: React.PointerEvent, k: (typeof kfs)[number]) => {
     e.stopPropagation();
@@ -563,7 +553,7 @@ function CurveEditor({ clip, prop, playhead }: { clip: Clip; prop: AnimatablePro
       const v = Math.max(meta.min, Math.min(meta.max, lo + (1 - (ev.clientY - rect.top) / rect.height) * (hi - lo)));
       liveEdit((p) => {
         let q = removeKeyframe(p, clip.id, prop, currentT);
-        q = setKeyframe(q, clip.id, prop, t, v, k.easing);
+        q = setKeyframe(q, clip.id, prop, t, v, k.easing, k.bezier);
         currentT = q.clips[clip.id]!.keyframes[prop]!.find((kk) => Math.abs(kk.value - v) < 1e-9)?.t ?? currentT;
         return q;
       });
@@ -597,6 +587,23 @@ function CurveEditor({ clip, prop, playhead }: { clip: Clip; prop: AnimatablePro
         >
           <path d={path} fill="none" stroke="var(--c-accent)" strokeWidth={1.5} />
           {playhead >= clip.start && playhead <= clip.start + clip.duration && <line x1={x(playhead - clip.start)} x2={x(playhead - clip.start)} y1={0} y2={H} stroke="var(--c-danger)" strokeWidth={1} />}
+          {sel && sel.easing === 'bezier' && nextKf && (
+            <BezierHandles
+              a={sel}
+              b={nextKf}
+              x={x}
+              y={y}
+              svg={svgRef}
+              onChange={(bz, live) => {
+                const fn = (p: Project) => setKeyframe(p, clip.id, prop, sel.t, sel.value, 'bezier', bz);
+                if (live) liveEdit(fn);
+                else tryEdit(fn);
+              }}
+              lo={lo}
+              hi={hi}
+              duration={clip.duration}
+            />
+          )}
           {kfs.map((k) => (
             <rect
               key={k.t}
@@ -611,11 +618,11 @@ function CurveEditor({ clip, prop, playhead }: { clip: Clip; prop: AnimatablePro
             />
           ))}
         </svg>
-        <p className="mt-1 text-2xs text-faint">Double-click to add a keyframe; drag points to change time and value.</p>
+        <p className="mt-1 text-2xs text-faint">Double-click to add a keyframe; drag points to change time and value. Choose “bezier” easing to shape a segment with handles.</p>
         {sel && (
           <div className="mt-1 flex items-center gap-2 text-xs">
             <span className="text-muted">Easing out of {flicksToSeconds(sel.t).toFixed(2)} s</span>
-            <select value={sel.easing} aria-label="Keyframe easing" className="h-6 rounded-sm border border-line bg-surface-2 px-1" onChange={(e) => tryEdit((p) => setKeyframe(p, clip.id, prop, sel.t, sel.value, e.target.value as Easing))}>
+            <select value={sel.easing} aria-label="Keyframe easing" className="h-6 rounded-sm border border-line bg-surface-2 px-1" onChange={(e) => tryEdit((p) => setKeyframe(p, clip.id, prop, sel.t, sel.value, e.target.value as Easing, sel.bezier))}>
               {EASINGS.map((ez) => (
                 <option key={ez}>{ez}</option>
               ))}
@@ -631,3 +638,66 @@ function CurveEditor({ clip, prop, playhead }: { clip: Clip; prop: AnimatablePro
 }
 
 export { ANIMATABLE };
+
+/** Two draggable control points shaping the segment a→b (CSS cubic-bezier semantics). */
+function BezierHandles({
+  a,
+  b,
+  x,
+  y,
+  svg,
+  onChange,
+  lo,
+  hi,
+  duration,
+}: {
+  a: { t: Flicks; value: number; bezier?: [number, number, number, number] };
+  b: { t: Flicks; value: number };
+  x: (t: Flicks) => number;
+  y: (v: number) => number;
+  svg: React.RefObject<SVGSVGElement | null>;
+  onChange(bz: [number, number, number, number], live: boolean): void;
+  lo: number;
+  hi: number;
+  duration: Flicks;
+}) {
+  const bz = a.bezier ?? [0.42, 0, 0.58, 1];
+  const dv = b.value - a.value || 1e-9;
+  const pt = (i: 0 | 1) => {
+    const fx = bz[i * 2]!;
+    const fy = bz[i * 2 + 1]!;
+    return { cx: x(a.t + fx * (b.t - a.t)), cy: y(a.value + fy * (b.value - a.value)) };
+  };
+  const p1 = pt(0);
+  const p2 = pt(1);
+  const drag = (i: 0 | 1) => (e: React.PointerEvent) => {
+    e.stopPropagation();
+    const rect = svg.current!.getBoundingClientRect();
+    beginGesture();
+    const move = (ev: PointerEvent) => {
+      const t = ((ev.clientX - rect.left) / rect.width) * duration;
+      const v = lo + (1 - (ev.clientY - rect.top) / rect.height) * (hi - lo);
+      const fx = (t - a.t) / Math.max(1, b.t - a.t);
+      const fy = Math.max(-2, Math.min(3, (v - a.value) / dv));
+      const next: [number, number, number, number] = [...bz];
+      next[i * 2] = Math.min(1, Math.max(0, fx));
+      next[i * 2 + 1] = fy;
+      onChange(next, true);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      endGesture();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <g aria-label="Bezier handles">
+      <line x1={x(a.t)} y1={y(a.value)} x2={p1.cx} y2={p1.cy} stroke="var(--c-muted)" strokeWidth={1} />
+      <line x1={x(b.t)} y1={y(b.value)} x2={p2.cx} y2={p2.cy} stroke="var(--c-muted)" strokeWidth={1} />
+      <circle cx={p1.cx} cy={p1.cy} r={4} fill="var(--c-warn)" className="cursor-move" onPointerDown={drag(0)} data-handle="1" />
+      <circle cx={p2.cx} cy={p2.cy} r={4} fill="var(--c-warn)" className="cursor-move" onPointerDown={drag(1)} data-handle="2" />
+    </g>
+  );
+}

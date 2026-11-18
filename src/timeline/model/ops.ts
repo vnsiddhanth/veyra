@@ -8,6 +8,7 @@
 import { DEFAULT_STILL_DURATION, assetSourceDuration, createClip, createTrack } from '@/project/schema/factory';
 import type { Clip, Project, Track, TrackKind } from '@/project/schema/types';
 import { createId } from '@/utils/id';
+import { rampedSpan } from '@/render/speed';
 import { quantizeToFrame, type Flicks } from '@/utils/time';
 
 export class TimelineError extends Error {
@@ -43,7 +44,7 @@ function snap(p: Project, t: Flicks): Flicks {
 
 /** Source flicks consumed by a clip (timeline duration × speed). */
 export function sourceSpan(c: Clip): Flicks {
-  return Math.round(c.duration * c.speed);
+  return Math.round(rampedSpan(c));
 }
 
 function withTrack(p: Project, track: Track): Project {

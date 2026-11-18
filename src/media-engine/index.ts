@@ -135,6 +135,14 @@ export const mediaEngine = {
     return getPool().run('softSubtitles', { file, options }, 'interactive');
   },
 
+  /**
+   * Hold back background work (filmstrips, waveforms) while the program monitor plays, so analysis
+   * of newly imported media does not compete with playback for the video decoder.
+   */
+  setBackgroundPaused(paused: boolean): void {
+    getPool().setBackgroundPaused(paused);
+  },
+
   /** Free the on-disk storage of a conversion result once the user is done with it. */
   async releaseOutput(result: Pick<ConvertResult, 'scratchName'>): Promise<void> {
     if (result.scratchName) await deleteScratchFile(result.scratchName);

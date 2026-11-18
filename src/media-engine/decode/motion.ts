@@ -1,10 +1,12 @@
 /**
- * Global motion analysis for video stabilisation (translation only).
+ * Global motion analysis for video stabilisation: translation and rotation (roll).
  *
- * Each frame is decoded at a small width, converted to luma, and compared with the previous frame:
- * a coarse exhaustive search on a 2× downsampled image, refined at full analysis resolution,
- * minimising the mean absolute difference over the central region. Rotation and zoom are not
- * estimated — this corrects handheld shake, not rolling shutter or rotation.
+ * Each frame is decoded at a small width, converted to luma, and compared with the previous frame.
+ * Translation: coarse exhaustive search on a 2× downsampled image, refined at full analysis
+ * resolution, minimising the mean absolute difference over the central region.
+ * Rotation: four edge blocks (left, right, top, bottom) are matched with sub-pixel precision around
+ * the global shift; a rotation by θ moves the left/right blocks vertically by ∓θ·r and the
+ * top/bottom blocks horizontally by ±θ·r. Zoom and rolling-shutter skew are not estimated.
  */
 import { CanvasSink } from 'mediabunny';
 import { MediaError } from '../core/errors';
@@ -18,6 +20,8 @@ export interface MotionAnalysis {
   /** Per-frame content shift relative to the previous frame, in analysis pixels (first = 0). */
   dx: Float32Array;
   dy: Float32Array;
+  /** Per-frame rotation relative to the previous frame, radians (clockwise on screen). */
+  dr: Float32Array;
   timestamps: Float64Array;
 }
 
@@ -84,6 +88,93 @@ export function estimateShift(prev: Uint8Array, cur: Uint8Array, w: number, h: n
   return search(prev, cur, w, h, cx * 2, cy * 2, 2, margin, 1);
 }
 
+/** Sub-pixel shift of one block (centre bx, by; half-size hw, hh) around an initial guess. */
+function blockShift(prev: Uint8Array, cur: Uint8Array, w: number, h: number, bx: number, by: number, hw: number, hh: number, gx: number, gy: number, r: number): [number, number] {
+  const c = (sx: number, sy: number) => {
+    let sum = 0;
+    let n = 0;
+    for (let y = by - hh; y < by + hh; y++) {
+      const py = y - sy;
+      if (y < 0 || y >= h || py < 0 || py >= h) continue;
+      for (let x = bx - hw; x < bx + hw; x++) {
+        const px = x - sx;
+        if (x < 0 || x >= w || px < 0 || px >= w) continue;
+        sum += Math.abs(cur[y * w + x]! - prev[py * w + px]!);
+        n++;
+      }
+    }
+    return n ? sum / n : Infinity;
+  };
+  let best: [number, number] = [gx, gy];
+  let bc = Infinity;
+  for (let sy = gy - r; sy <= gy + r; sy++)
+    for (let sx = gx - r; sx <= gx + r; sx++) {
+      const v = c(sx, sy);
+      if (v < bc) {
+        bc = v;
+        best = [sx, sy];
+      }
+    }
+  // Parabolic refinement per axis.
+  const refine = (m: number, z: number, p: number) => {
+    const d = m - 2 * z + p;
+    return d > 1e-9 ? Math.max(-0.5, Math.min(0.5, (m - p) / (2 * d))) : 0;
+  };
+  const [x0, y0] = best;
+  return [x0 + refine(c(x0 - 1, y0), bc, c(x0 + 1, y0)), y0 + refine(c(x0, y0 - 1), bc, c(x0, y0 + 1))];
+}
+
+/** Luma standard deviation below which a block is considered too flat to match. */
+const MIN_TEXTURE = 6;
+
+function blockStd(img: Uint8Array, w: number, h: number, bx: number, by: number, hw: number, hh: number): number {
+  let s = 0;
+  let s2 = 0;
+  let n = 0;
+  for (let y = Math.max(0, by - hh); y < Math.min(h, by + hh); y += 2)
+    for (let x = Math.max(0, bx - hw); x < Math.min(w, bx + hw); x += 2) {
+      const v = img[y * w + x]!;
+      s += v;
+      s2 += v * v;
+      n++;
+    }
+  if (!n) return 0;
+  const m = s / n;
+  return Math.sqrt(Math.max(0, s2 / n - m * m));
+}
+
+/**
+ * Estimate translation (dx, dy, pixels) and rotation (radians) between two frames such that
+ * cur(p) ≈ prev(R(−θ)·(p − c) + c − d).
+ */
+export function estimateMotion(prev: Uint8Array, cur: Uint8Array, w: number, h: number, radius = 12): [number, number, number] {
+  const [gx, gy] = estimateShift(prev, cur, w, h, radius);
+  const hw = Math.round(w * 0.1);
+  const hh = Math.round(h * 0.14);
+  const rx = w * 0.32;
+  const ry = h * 0.3;
+  const cx = w / 2;
+  const cy = h / 2;
+  // Rotation of a few degrees moves edge blocks a few pixels beyond the global shift.
+  const r = Math.max(3, Math.ceil(Math.max(rx, ry) * 0.06));
+  const L = blockShift(prev, cur, w, h, Math.round(cx - rx), Math.round(cy), hw, hh, gx, gy, r);
+  const R = blockShift(prev, cur, w, h, Math.round(cx + rx), Math.round(cy), hw, hh, gx, gy, r);
+  const T = blockShift(prev, cur, w, h, Math.round(cx), Math.round(cy - ry), hw, hh, gx, gy, r);
+  const B = blockShift(prev, cur, w, h, Math.round(cx), Math.round(cy + ry), hw, hh, gx, gy, r);
+  // On screen (y down), a clockwise rotation θ moves (x, y) by (−θ·y, θ·x) relative to the centre.
+  const thetaLR = (R[1] - L[1]) / (2 * rx);
+  const thetaTB = (T[0] - B[0]) / (2 * ry);
+  // Flat regions (sky, walls, plain backgrounds) cannot be matched; their pair is left out rather than
+  // adding noise. Weight each pair by its baseline and only if both of its blocks carry texture.
+  const tex = (bx: number, by: number) => blockStd(prev, w, h, Math.round(bx), Math.round(by), hw, hh) >= MIN_TEXTURE;
+  const wLR = tex(cx - rx, cy) && tex(cx + rx, cy) ? rx : 0;
+  const wTB = tex(cx, cy - ry) && tex(cx, cy + ry) ? ry : 0;
+  const theta = wLR + wTB > 0 ? (thetaLR * wLR + thetaTB * wTB) / (wLR + wTB) : 0;
+  // Translation comes from the global central-region search (robust on flat edges); the edge blocks
+  // only contribute rotation.
+  return [gx, gy, theta];
+}
+
 export async function analyzeMotion(file: Blob, width: number, onProgress: (p: number) => void, signal: AbortSignal): Promise<MotionAnalysis> {
   const input = openInput(file);
   try {
@@ -97,22 +188,24 @@ export async function analyzeMotion(file: Blob, width: number, onProgress: (p: n
     const sink = new CanvasSink(track, { width: w, height: h, fit: 'fill', poolSize: 2 });
     const dx: number[] = [];
     const dy: number[] = [];
+    const dr: number[] = [];
     const ts: number[] = [];
     let prev: Uint8Array | null = null;
     for await (const wc of sink.canvases()) {
       if (signal.aborted) throw new MediaError('cancelled', 'Cancelled.');
       const ctx = (wc.canvas as OffscreenCanvas).getContext('2d', { willReadFrequently: true }) as OffscreenCanvasRenderingContext2D;
       const cur = toLuma(ctx.getImageData(0, 0, w, h).data, w, h);
-      const [sx, sy] = prev ? estimateShift(prev, cur, w, h) : [0, 0];
+      const [sx, sy, sr] = prev ? estimateMotion(prev, cur, w, h) : [0, 0, 0];
       dx.push(sx);
       dy.push(sy);
+      dr.push(sr);
       ts.push(wc.timestamp);
       prev = cur;
       if (dur > 0) onProgress(Math.min(0.99, wc.timestamp / dur));
     }
     if (dx.length < 2) throw new MediaError('not-media', 'The video is too short to stabilise.');
     onProgress(1);
-    return { width: w, height: h, fps, dx: Float32Array.from(dx), dy: Float32Array.from(dy), timestamps: Float64Array.from(ts) };
+    return { width: w, height: h, fps, dx: Float32Array.from(dx), dy: Float32Array.from(dy), dr: Float32Array.from(dr), timestamps: Float64Array.from(ts) };
   } finally {
     input.dispose();
   }

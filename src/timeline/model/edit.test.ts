@@ -135,6 +135,11 @@ describe('transitions, keyframes, markers, snapping', () => {
     const moved = moveClips(q, [Object.values(q.clips).find((c) => c.start === S(3))!.id], S(1));
     expect(Object.keys(moved.transitions)).toHaveLength(0);
   });
+  it('stores bezier easing with control x clamped to [0, 1]', () => {
+    const { p, a } = base();
+    const q = setKeyframe(p, a, 'x', 0, 0, 'bezier', [-0.5, 1.4, 1.2, -0.3]);
+    expect(q.clips[a]!.keyframes.x![0]!.bezier).toEqual([0, 1.4, 1, -0.3]);
+  });
   it('sets and removes keyframes', () => {
     const { p, a } = base();
     let q = setKeyframe(p, a, 'opacity', S(1), 0.5);

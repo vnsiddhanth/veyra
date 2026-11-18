@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 9, release 1.0.0).
+Last updated: 2026-11-18 (release 1.1.0).
 
 ## Phase 1 — Foundation
 
@@ -154,13 +154,20 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | SEO (meta, JSON-LD, OG, robots, sitemap) | Implemented | `utils/meta.ts`, `vite.config.ts` | build check | Client-rendered pages (no SSR) |
 | New user edits and exports without help | **Verified** | — | `new-user.spec.ts` | — |
 
+## Release 1.1.0 additions
+
+| Feature | Status | Location | Tests |
+|---|---|---|---|
+| Speed ramps (keyframed speed) | Verified (export frame = integral prediction) | `src/render/speed.ts`, inspector | `speed.test.ts`, `ramps-rotation.spec.ts` |
+| Bezier easing handles | Tested | `ClipInspector.tsx`, `edit.ts` | `edit.test.ts` |
+| Rotation stabilisation | Verified (corr 0.9998 on injected tilt) | `decode/motion.ts`, `StabilizeTool.tsx` | `motion.test.ts`, `ramps-rotation.spec.ts` |
+
 ## Not implemented (honest list)
 
 | Area | Note |
 |---|---|
 | FFmpeg.wasm fallback (AVI/FLV/WMV, exotic codecs) | Decided against: GPL cores, and an LGPL build is out of scope |
-| Speed ramps (keyframed speed) | Constant speed and reverse only |
-| Bezier handles in the curve editor | Easing presets only |
-| Rotation / rolling-shutter stabilisation | Translation only |
-| Firefox / Safari verification | Fallbacks in code; e2e not runnable on the dev host |
+| Rolling-shutter / zoom stabilisation | Translation and rotation (roll) are corrected; rolling-shutter skew and zoom breathing are not |
+| Pitch-preserved speed *ramps* | Constant-speed clips keep pitch (WSOLA); during a ramp pitch follows speed |
+| Firefox / Safari verification | Fallbacks in code; the dev host lacks the Visual C++ runtime the Playwright builds need |
 | Manual screen-reader audit | Automated axe audit passes |

@@ -101,6 +101,13 @@ Pure functions that return a new project, or throw `TimelineError` without mutat
 | + / − or Ctrl+wheel | Zoom |
 | Space | Play / pause |
 
+## Speed ramps (`src/render/speed.ts`)
+
+`keyframes.speed` holds absolute speed multipliers over clip-local time; without them `clip.speed` applies. Source time is
+`sourceIn + ∫₀^local speed(τ) dτ`. It is tabulated per keyframe list at 1 ms resolution (trapezoid rule), cached in a WeakMap
+and linearly interpolated. `sourceTimeAt`, the audio mixer, reverse and `sourceSpan` all use it, so preview, export and trimming
+agree. A ramped clip keeps its timeline length and plays more or less of its source.
+
 ## Undo/redo
 
 `src/state/history.ts`: a bounded stack (200 entries) of immutable project snapshots. Ops never mutate, so a snapshot is

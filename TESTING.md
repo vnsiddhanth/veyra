@@ -60,3 +60,16 @@ acceptance test passes in at least Chromium, with results for other engines reco
 - **Commands:**
   - `npm run test:e2e`: Chrome + Edge, the supported targets.
   - `npm run test:e2e:engines`: Firefox + WebKit; needs `npx playwright install firefox webkit` and a host where they launch.
+
+## Performance gate
+
+`preview.spec.ts` always checks that playback advances in real time and shows frames. The **≥ 24 fps** threshold for the 1080p60
+two-layer project depends on the GPU video decoder being available and uncontended. It is enforced only with `VEYRA_PERF=1`.
+Run it on a quiet machine:
+
+```
+$env:VEYRA_PERF='1'; npx playwright test e2e/preview.spec.ts --project=chrome
+```
+
+On the dev machine it measures 51–60 fps when idle. With another GPU-heavy application running, decoding falls back to slower paths
+(1–14 fps observed), and the previous release behaves the same, so this is hardware contention rather than an app regression.

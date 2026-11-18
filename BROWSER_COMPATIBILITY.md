@@ -27,8 +27,8 @@ Values in this table are expected behaviour from the specifications and vendor d
 |---|---|---|
 | Chrome (stable) | **39/39 passing** | Primary target |
 | Edge (stable) | **39/39 passing** | Primary target |
-| Firefox (Playwright build) | **Not measured** | Windows blocked execution of the downloaded browser binary ("Permission denied"). We did not change OS security settings to get around it |
-| WebKit (Playwright build) | **Not measured** | Playwright reports missing host dependencies on this machine. Note: Playwright's WebKit on Windows is not Safari |
+| Firefox (Playwright build) | **Not measured** | The binary fails with "side-by-side configuration is incorrect": the Microsoft Visual C++ runtime is not installed on this machine |
+| WebKit (Playwright build) | **Not measured** | Playwright reports missing host dependencies (the same runtime). Note: Playwright's WebKit on Windows is not Safari |
 
 Run `npm run test:e2e:engines` on a machine where these browsers launch to measure them. Paths that are known to differ have
 fallbacks in code, but these are **unverified on those engines**:

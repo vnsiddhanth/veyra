@@ -58,3 +58,9 @@ Numbers vary run to run by about 10% and are much lower on machines without hard
 - **Proxies:** a 540p proxy with 1 s key frames cuts decode cost for 4K or long-GOP sources in preview.
 - **Decoder reuse:** frame streams survive value-equal project updates, so edits do not restart decoders.
 - **GPU cleanup:** WebGL contexts are released explicitly after each render.
+
+### Contention note (release 1.1.0)
+
+Under heavy load from other applications, the same benchmark measured about half the throughput: encode 38 fps, export 21 fps.
+Preview playback became bimodal, either 51–60 fps or 1–14 fps depending on whether hardware decode was available. Veyra now pauses
+background analysis during playback and keeps the main thread out of the per-frame path, but it cannot make a contended GPU decoder fast.

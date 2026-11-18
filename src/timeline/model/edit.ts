@@ -175,6 +175,7 @@ export function splitAt(p: Project, t: Flicks, ids?: readonly string[]): [Projec
 export function setClipSpeed(p: Project, id: string, speed: number): Project {
   const c = getClip(p, id);
   if (!(speed >= 0.05 && speed <= 16)) throw new TimelineError('Speed must be between 0.05× and 16×.');
+  if (c.keyframes.speed?.length) throw new TimelineError('This clip has a speed ramp. Edit the ramp keyframes, or remove them to set a constant speed.');
   const span = c.duration * c.speed;
   const asset = c.assetId ? p.assets.find((a) => a.id === c.assetId) : undefined;
   const srcDur = assetSourceDuration(asset);
@@ -318,11 +319,25 @@ export function removeTransition(p: Project, id: string): Project {
 // ── keyframes ─────────────────────────────────────────────────────────────
 
 /** Insert or replace the keyframe of `prop` at `t` (flicks from clip start). */
-export function setKeyframe(p: Project, clipId: string, prop: string, t: Flicks, value: number, easing: Easing = 'ease-in-out'): Project {
+export function setKeyframe(
+  p: Project,
+  clipId: string,
+  prop: string,
+  t: Flicks,
+  value: number,
+  easing: Easing = 'ease-in-out',
+  bezier?: [number, number, number, number],
+): Project {
   const c = getClip(p, clipId);
   const at = Math.max(0, Math.min(c.duration, snapFrame(p, t)));
   const list = (c.keyframes[prop] ?? []).filter((k) => k.t !== at);
-  const next: Keyframe[] = [...list, { t: at, value, easing }].sort((a, b) => a.t - b.t);
+  const kf: Keyframe = { t: at, value, easing };
+  if (easing === 'bezier') {
+    // x of both control points must stay in [0, 1] for the curve to be a function of time.
+    const [x1, y1, x2, y2] = bezier ?? [0.42, 0, 0.58, 1];
+    kf.bezier = [Math.min(1, Math.max(0, x1)), y1, Math.min(1, Math.max(0, x2)), y2];
+  }
+  const next: Keyframe[] = [...list, kf].sort((a, b) => a.t - b.t);
   return touch({ ...p, clips: { ...p.clips, [clipId]: { ...c, keyframes: { ...c.keyframes, [prop]: next } } } });
 }
 

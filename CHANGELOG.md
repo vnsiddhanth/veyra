@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.1.0 — 2026-11-18 · Remaining gaps closed
+
+### Added
+- **Speed ramps:**
+  - **How it works:** keyframe a clip's speed with the Speed ramp row in the inspector. Source time is the integral of the speed curve, tabulated at 1 ms steps and cached, so ramps never jump.
+  - **Where it applies:** frames, audio (pitch follows speed during a ramp), reverse, frame streams and source-span bounds.
+  - **Tests:** checked in `speed.test.ts`. `ramps-rotation.spec.ts` shows the exported frame equals the source frame the integral predicts.
+- **Bezier easing with draggable handles** in the curve editor. Control-point x is clamped to [0, 1] so the curve stays a function of time.
+- **Rotation (tilt) stabilisation:**
+  - **Method:** four edge blocks are matched with sub-pixel refinement around the global shift, and their differential shifts give the roll angle.
+  - **Flat footage:** pairs of blocks without texture are left out instead of adding noise.
+  - **Rendering:** correction is applied as rotation keyframes, with a cover zoom that accounts for rotation and translation.
+  - **Measured:** recovers injected tilt in real rendered video with correlation 0.9998 and gain 1.006. Unit tests recover synthetic rotations to within 0.004 rad.
+
+### Fixed
+- **Import intermittently failed** with "The processing worker stopped unexpectedly" when a media worker died before or during a job. This was seen under load on a fresh page. The pool now retries the job once on a fresh worker and logs the cause; a second crash is still reported.
+- **Playback stutter while new media is analysed.** Background jobs (filmstrips, waveforms) are held back while the program monitor plays.
+- **Main-thread load during playback:**
+  - the program monitor no longer re-renders every frame (timecode and seek subscribe on their own);
+  - the clip inspector follows the playhead at most 4× per second while playing;
+  - preview stats update 4× per second.
+
+### Changed
+- `setClipSpeed` refuses clips with a speed ramp (edit the ramp or remove its keyframes instead).
+- Keyframe maths moved to `src/render/keyframes.ts` to avoid an import cycle with the timeline ops.
+
+### Still blocked on this machine
+- **Firefox and WebKit e2e:** both Playwright builds fail to start because the **Microsoft Visual C++ runtime** is missing. Windows reports "side-by-side configuration is incorrect" for Firefox, and Playwright reports missing host dependencies for WebKit. Installing that system runtime needs the machine owner's approval.
+
 ## 1.0.0 — 2026-11-18 · Phase 9: Polish
 
 ### Added

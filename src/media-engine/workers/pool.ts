@@ -9,6 +9,8 @@ interface QueuedJob {
   type: JobType;
   input: JobInput<JobType>;
   priority: Priority;
+  /** Times this job's worker died under it. One retry on a fresh worker is allowed. */
+  crashes?: number;
 }
 
 interface Slot {
@@ -73,7 +75,14 @@ export class WorkerPool {
       const job = slot.current;
       slot.worker.terminate();
       this.slots = this.slots.filter((s) => s !== slot);
-      job?.controller.reject(new MediaError('worker-crashed', 'The processing worker stopped unexpectedly.', e.message));
+      console.warn('[veyra] media worker stopped', e.message || '(no message: script load failure or native crash)');
+      if (job && !job.controller.isSettled) {
+        job.crashes = (job.crashes ?? 0) + 1;
+        // Jobs are idempotent (each run writes its own scratch output), so one retry on a fresh worker
+        // turns transient failures (script load hiccup, decoder/GPU reset) into success.
+        if (job.crashes <= 1) this.queue.unshift(job);
+        else job.controller.reject(new MediaError('worker-crashed', 'The processing worker stopped unexpectedly, twice. Try again, or reload the page.', e.message));
+      }
       this.pump();
     };
     this.slots.push(slot);
@@ -93,12 +102,22 @@ export class WorkerPool {
     this.pump();
   }
 
+  /** While paused, background-priority jobs wait (interactive jobs still run). */
+  private backgroundPaused = false;
+
+  setBackgroundPaused(paused: boolean): void {
+    this.backgroundPaused = paused;
+    if (!paused) this.pump();
+  }
+
   private pump(): void {
     while (this.queue.length > 0) {
+      const idx = this.backgroundPaused ? this.queue.findIndex((q) => q.priority !== 'background') : 0;
+      if (idx < 0) return;
       let slot = this.slots.find((s) => s.current === null);
       if (!slot && this.slots.length < this.size) slot = this.spawn();
       if (!slot) return;
-      const job = this.queue.shift()!;
+      const job = this.queue.splice(idx, 1)[0]!;
       slot.current = job;
       const msg: ToWorker = { kind: 'run', jobId: job.controller.id, type: job.type, input: job.input };
       slot.worker.postMessage(msg);
