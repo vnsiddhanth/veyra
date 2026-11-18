@@ -20,6 +20,9 @@ interface EditorUiState {
   clipboard: ClipboardData | null;
   /** Which monitor the preview shows. */
   monitor: 'program' | 'source';
+  /** Preview from proxies where available (export always uses originals). */
+  useProxies: boolean;
+  setUseProxies(v: boolean): void;
 
   selectClips(ids: string[]): void;
   selectTransition(id: string | null): void;
@@ -49,6 +52,10 @@ export const useEditorUi = create<EditorUiState>((set, get) => ({
   snapping: true,
   clipboard: null,
   monitor: 'program',
+  useProxies: true,
+  setUseProxies(useProxies) {
+    set({ useProxies });
+  },
 
   selectClips(ids) {
     set({ selectedClipIds: ids, selectedTransitionId: null, selectedMarkerId: null });

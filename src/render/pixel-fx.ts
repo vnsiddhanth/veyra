@@ -160,6 +160,11 @@ export class PixelFx {
     gl.uniform1i(this.u('lut'), 1);
   }
 
+  /** Release the GPU context now instead of waiting for garbage collection. */
+  dispose() {
+    this.gl.getExtension('WEBGL_lose_context')?.loseContext();
+  }
+
   private u(name: string): WebGLUniformLocation | null {
     if (!this.loc.has(name)) this.loc.set(name, this.gl.getUniformLocation(this.prog, name));
     return this.loc.get(name)!;

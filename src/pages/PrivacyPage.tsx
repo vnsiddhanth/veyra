@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { DB_NAME, resetDbForTests } from '@/storage/idb';
+import { StorageManager } from '@/components/StorageManager';
 
 export default function PrivacyPage() {
   const [cleared, setCleared] = useState<string | null>(null);
@@ -52,6 +53,8 @@ export default function PrivacyPage() {
         <li>Panel sizes and similar interface preferences are kept in localStorage.</li>
       </ul>
       <p>All of this belongs to this site’s storage in your browser. We cannot see it.</p>
+      <h2 className="pt-2 text-lg font-semibold text-fg">Storage on this device</h2>
+      <StorageManager />
       <h2 className="pt-2 text-lg font-semibold text-fg">What we don’t do</h2>
       <ul className="list-disc space-y-1 pl-5">
         <li>No analytics, tracking pixels, advertising scripts or third-party fonts.</li>

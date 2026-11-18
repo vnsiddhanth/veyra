@@ -89,8 +89,7 @@ export function TimelinePanel() {
   const project = useProjectStore(selectProject);
   const px = useEditorUi((s) => s.pxPerSecond);
   const setZoom = useEditorUi((s) => s.setZoom);
-  const playhead = useEditorUi((s) => s.playhead);
-  const playing = useEditorUi((s) => s.playing);
+  const [view, setView] = useState({ left: 0, width: 2000 });
   const snapping = useEditorUi((s) => s.snapping);
   const [drag, setDragState] = useState<DragState>({ draft: null, guide: null, marquee: null });
   const draftRef = useRef<Project | null>(null);
@@ -101,14 +100,39 @@ export function TimelinePanel() {
   const [menu, setMenu] = useState<MenuState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Keep the playhead visible while playing.
+  // Keep the playhead visible while playing. Subscribed outside React render so playback does not
+  // re-render the whole timeline every frame.
+  useEffect(
+    () =>
+      useEditorUi.subscribe((st, prev) => {
+        const el = scrollRef.current;
+        if (!el || !st.playing || st.playhead === prev.playhead) return;
+        const x = flicksToSeconds(st.playhead) * st.pxPerSecond;
+        const viewW = el.clientWidth - HEADER_W;
+        if (x < el.scrollLeft || x > el.scrollLeft + viewW - 40) el.scrollLeft = Math.max(0, x - viewW * 0.1);
+      }),
+    [],
+  );
+
+  // Track the visible range so off-screen clips are not rendered (long timelines).
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || !playing) return;
-    const x = flicksToSeconds(playhead) * px;
-    const view = el.clientWidth - HEADER_W;
-    if (x < el.scrollLeft || x > el.scrollLeft + view - 40) el.scrollLeft = Math.max(0, x - view * 0.1);
-  }, [playhead, playing, px]);
+    if (!el) return;
+    let raf = 0;
+    const update = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setView({ left: el.scrollLeft, width: el.clientWidth }));
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   // Ctrl/⌘ + wheel zooms around the pointer.
   useEffect(() => {
@@ -327,7 +351,9 @@ export function TimelinePanel() {
   };
 
   const step = rulerStep(px);
-  const playheadX = flicksToSeconds(playhead) * px;
+  // Clips intersecting the viewport (plus a margin) are rendered; the rest are culled.
+  const visFrom = secondsToFlicks(Math.max(0, (view.left - HEADER_W - 400) / px));
+  const visTo = secondsToFlicks((view.left + view.width + 400) / px);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" onFocusCapture={() => useEditorUi.getState().setFocusArea('timeline')}>
@@ -337,9 +363,9 @@ export function TimelinePanel() {
           {/* Ruler */}
           <div className="sticky top-0 z-20 flex border-b border-line bg-surface" style={{ height: RULER_H }}>
             <div style={{ width: HEADER_W }} className="sticky left-0 z-10 flex shrink-0 items-center border-r border-line bg-surface px-2 font-mono text-2xs text-muted tabular">
-              {formatTimecode(playhead, project.settings.frameRate)}
+              <PlayheadTimecode project={project} />
             </div>
-            <div className="relative flex-1 cursor-pointer" onPointerDown={startScrub} role="slider" aria-label="Playhead" aria-valuemin={0} aria-valuemax={durationSec} aria-valuenow={flicksToSeconds(playhead)} tabIndex={0}>
+            <div className="relative flex-1 cursor-pointer" onPointerDown={startScrub} role="slider" aria-label="Playhead" aria-valuemin={0} aria-valuemax={durationSec} tabIndex={0}>
               {shown.inPoint != null && (
                 <div
                   className="absolute inset-y-0 bg-accent/20"
@@ -371,7 +397,12 @@ export function TimelinePanel() {
                 }}
                 onDrop={(e) => onDrop(e, t)}
               >
-                {t.clipIds.map((id) => (
+                {t.clipIds
+                  .filter((id) => {
+                    const c = shown.clips[id]!;
+                    return c.start < visTo && c.start + c.duration > visFrom;
+                  })
+                  .map((id) => (
                   <ClipBlock
                     key={id}
                     clip={shown.clips[id]!}
@@ -397,9 +428,7 @@ export function TimelinePanel() {
           ))}
 
           {/* Overlays */}
-          <div className="pointer-events-none absolute bottom-0 z-10 w-px bg-danger" style={{ top: 0, left: HEADER_W + playheadX }} aria-hidden>
-            <div className="absolute -left-[5px] top-0 h-0 w-0 border-x-[5px] border-t-[7px] border-x-transparent border-t-danger" />
-          </div>
+          <PlayheadLine px={px} />
           {drag.guide != null && <div className="pointer-events-none absolute bottom-0 top-0 z-10 w-px bg-warn" style={{ left: HEADER_W + flicksToSeconds(drag.guide) * px }} aria-hidden />}
           {drag.marquee && (
             <div
@@ -752,3 +781,17 @@ function ClipMenu({ menu, project, onClose }: { menu: MenuState; project: Projec
 
 export { HEADER_W, ROW_H };
 export const useTimelineDuration = (p: Project | null) => useMemo(() => (p ? projectDuration(p) : 0), [p]);
+
+function PlayheadLine({ px }: { px: number }) {
+  const playhead = useEditorUi((s) => s.playhead);
+  return (
+    <div className="pointer-events-none absolute bottom-0 z-10 w-px bg-danger" style={{ top: 0, left: HEADER_W + flicksToSeconds(playhead) * px }} aria-hidden>
+      <div className="absolute -left-[5px] top-0 h-0 w-0 border-x-[5px] border-t-[7px] border-x-transparent border-t-danger" />
+    </div>
+  );
+}
+
+function PlayheadTimecode({ project }: { project: Project }) {
+  const playhead = useEditorUi((s) => s.playhead);
+  return <>{formatTimecode(playhead, project.settings.frameRate)}</>;
+}

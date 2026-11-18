@@ -19,8 +19,24 @@ Live detection: open **/compatibility** in any browser for that browser's actual
 | SharedArrayBuffer | With COOP/COEP | With COOP/COEP | With COOP/COEP | Single-thread FFmpeg |
 | AudioWorklet | Yes | Yes | Yes | — |
 
-Values in this table are expected behaviour. Measured so far (2026-11-18, Windows 11): the full e2e suite passes on **Chrome** and **Edge**.
-Firefox and Safari are not yet measured. Phase 8 completes the matrix from Playwright runs on each engine.
+Values in this table are expected behaviour from the specifications and vendor documentation.
+
+## Measured (2026-11-18, Windows 11)
+
+| Engine | e2e result | Notes |
+|---|---|---|
+| Chrome (stable) | **39/39 passing** | Primary target |
+| Edge (stable) | **39/39 passing** | Primary target |
+| Firefox (Playwright build) | **Not measured** | Windows blocked execution of the downloaded browser binary ("Permission denied"). We did not change OS security settings to get around it |
+| WebKit (Playwright build) | **Not measured** | Playwright reports missing host dependencies on this machine. Note: Playwright's WebKit on Windows is not Safari |
+
+Run `npm run test:e2e:engines` on a machine where these browsers launch to measure them. Paths that are known to differ have
+fallbacks in code, but these are **unverified on those engines**:
+- **No AAC encoder (Firefox):** export codec selection falls back to the first encodable codec, Opus in MP4/WebM.
+- **No MP3 encoder:** the LAME WASM encoder is used.
+- **No OPFS `createWritable` (older Safari):** outputs fall back to memory.
+- **No WebGL2:** pixel effects are reported as skipped, never silently dropped.
+- **No `showSaveFilePicker`:** files are saved by download only.
 
 ## Mobile
 

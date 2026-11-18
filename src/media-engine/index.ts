@@ -6,6 +6,10 @@ import { JobController, type Job } from './core/job';
 import type { ConvertOptions, ConvertResult, FileResult, FrameOptions, FrameResult, FramesOptions, GifImagesOptions, GifOptions, MediaInfo, Thumbnail, ThumbnailOptions, WaveformData } from './core/types';
 import type { RenderInput } from '@/render/render-project';
 import type { SoftSubtitleOptions } from './encode/subtitles-mux';
+import type { MotionAnalysis } from './decode/motion';
+export type { MotionAnalysis } from './decode/motion';
+import type { BenchOptions, BenchResult } from './bench';
+export type { BenchResult } from './bench';
 import { deleteScratchFile } from './encode/output-store';
 import { classifyFile, type Classification } from './import/classify';
 import { imageThumbnail, probeImage } from './import/image-probe';
@@ -114,6 +118,16 @@ export const mediaEngine = {
   /** Extract many frames into a ZIP archive. */
   frames(file: Blob, options: FramesOptions): Job<FileResult> {
     return getPool().run('frames', { file, options }, 'interactive');
+  },
+
+  /** Measure encode/decode/export speed on this device. */
+  benchmark(options: BenchOptions): Job<BenchResult> {
+    return getPool().run('benchmark', options, 'interactive');
+  },
+
+  /** Estimate frame-to-frame camera shift for stabilisation. */
+  analyzeMotion(file: Blob, width = 160): Job<MotionAnalysis> {
+    return getPool().run('motion', { file, width }, 'interactive');
   },
 
   /** Mux a WebVTT track into a copy of the video (no re-encode). */

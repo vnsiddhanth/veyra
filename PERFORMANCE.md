@@ -32,6 +32,29 @@ First measurements (Chrome, Windows 11, 12 logical cores, one run each, generate
 
 Re-encoding includes the validation pass, which decodes the first and last frames.
 
-No broader hardware benchmarks have been recorded yet. Phase 8 adds a benchmark page plus a Playwright suite with fixtures
-(short/long, 1080p/4K, 30/60/120 fps, VFR, multi-audio) that records decode fps, export fps and peak memory per browser.
-Results will be published here as measured, per device. There is no fixed promise.
+### Device benchmark (`/benchmark`, Phase 8)
+
+Measured by `e2e/reliability.spec.ts` on the development machine: Windows 11, 12 logical cores, headless.
+The test clip is 1080p30, 90 frames, H.264 (hardware encoder).
+
+| Browser | Encode | Decode | Two-layer export (decode + composite + encode) |
+|---|---|---|---|
+| Chrome | 83–90 fps | 580–790 fps | 45–49 fps (≈ 1.6× real time) |
+| Edge | 77 fps | 573 fps | 47 fps |
+
+### Preview playback (`e2e/preview.spec.ts`)
+
+| Project | Browser | Shown fps | Worker render time |
+|---|---|---|---|
+| 1080p60 + 720p picture-in-picture, full quality | Chrome | 53–59 | 0.9–1.3 ms |
+| same | Edge | 52–60 | 0.9–1.4 ms |
+
+Numbers vary run to run by about 10% and are much lower on machines without hardware video encode. Anyone can measure their own device on
+`/benchmark`. There is no fixed promise; results are published here as measured.
+
+### Phase 8 optimisations
+
+- **Timeline rendering:** the playhead, timecode and auto-scroll subscribe to the store on their own, so playback no longer re-renders the timeline every frame. Off-screen clips (beyond the viewport plus 400 px) are not rendered.
+- **Proxies:** a 540p proxy with 1 s key frames cuts decode cost for 4K or long-GOP sources in preview.
+- **Decoder reuse:** frame streams survive value-equal project updates, so edits do not restart decoders.
+- **GPU cleanup:** WebGL contexts are released explicitly after each render.

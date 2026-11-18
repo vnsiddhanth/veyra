@@ -59,6 +59,7 @@ export function SiteLayout() {
             <Link to="/editor" className="hover:text-fg">Editor</Link>
             <Link to="/tools" className="hover:text-fg">All tools</Link>
             <Link to="/compatibility" className="hover:text-fg">Browser support</Link>
+            <Link to="/benchmark" className="hover:text-fg">Benchmark</Link>
             <Link to="/privacy" className="hover:text-fg">Privacy</Link>
             <Link to="/#faq" className="hover:text-fg">FAQ</Link>
             <Link to="/#formats" className="hover:text-fg">Formats</Link>

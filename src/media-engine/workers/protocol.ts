@@ -16,6 +16,8 @@ import type {
 } from '../core/types';
 import type { RenderInput } from '@/render/render-project';
 import type { SoftSubtitleOptions } from '../encode/subtitles-mux';
+import type { MotionAnalysis } from '../decode/motion';
+import type { BenchOptions, BenchResult } from '../bench';
 
 export interface JobMap {
   probe: { input: { file: Blob }; output: MediaInfo };
@@ -27,6 +29,8 @@ export interface JobMap {
   gif: { input: { file: Blob; options: GifOptions }; output: FileResult };
   gifImages: { input: { files: Blob[]; options: GifImagesOptions }; output: FileResult };
   frames: { input: { file: Blob; options: FramesOptions }; output: FileResult };
+  benchmark: { input: BenchOptions; output: BenchResult };
+  motion: { input: { file: Blob; width: number }; output: MotionAnalysis };
   softSubtitles: { input: { file: Blob; options: SoftSubtitleOptions }; output: ConvertResult };
 }
 

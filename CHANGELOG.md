@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.0 — 2026-11-18 · Phase 8: Optimization & reliability
+
+### Added
+- **Stabilize video** tool, so every tool in the directory is now available.
+  - **Method:** translation-only motion analysis in the worker (coarse-to-fine luma block matching), moving-average path smoothing, and keyframed correction with automatic zoom, rendered through the shared engine.
+  - **Tests:** the e2e test checks that the analyser recovers injected jitter on more than 85% of frames, to ±1 px.
+- **Preview proxies:** 540p H.264, 1 s key frames.
+  - Created per video from the media card (P button) and stored in OPFS `/proxies`, keyed by fingerprint, so they persist and are shared between projects.
+  - The program monitor uses them (Proxies toggle). Export always uses the originals.
+- **Storage manager** on the Privacy page: site usage and quota, persistence status, and counts, sizes and Clear buttons for temporary outputs and proxies.
+- **Device benchmark page** (`/benchmark`): measured encode, decode and two-layer export fps on a generated clip, memory via `measureUserAgentSpecificMemory` where exposed, and copy as JSON.
+- **Preview crash recovery:** if the preview worker dies, the monitor rebuilds itself with a fresh canvas and worker and says so.
+- Explicit WebGL context release when renders finish (`PixelFx.dispose`, `Compositor.dispose`).
+- Playwright projects for Firefox and WebKit, with `npm run test:e2e:engines`.
+
+### Changed
+- The timeline no longer re-renders every frame during playback: the playhead line, timecode and auto-scroll subscribe on their own. Off-screen clips are culled.
+- `npm run test:e2e` runs the supported Chromium targets (Chrome and Edge).
+
 ## 0.7.0 — 2026-11-18 · Phase 7: Export pipeline
 
 ### Added

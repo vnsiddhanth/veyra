@@ -211,6 +211,7 @@ export async function renderProject(input: RenderInput, jobId: string, onProgres
     throw new MediaError('unknown', 'The export failed.', msg);
   } finally {
     mixer?.close();
+    compositor?.dispose();
     pool.dispose();
     if (scratch) {
       await scratch.writable.abort().catch(() => undefined);

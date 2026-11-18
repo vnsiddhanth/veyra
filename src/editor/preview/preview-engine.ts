@@ -40,12 +40,20 @@ export class PreviewEngine {
   onEnded: () => void = () => undefined;
   onWarnings: (w: string[]) => void = () => undefined;
   onStats: (s: PreviewStats) => void = () => undefined;
+  onCrash: (message: string) => void = () => undefined;
 
   constructor(canvas: HTMLCanvasElement) {
     this.worker = new Worker(new URL('../../render/preview.worker.ts', import.meta.url), { type: 'module', name: 'preview' });
     const off = canvas.transferControlToOffscreen();
     this.post({ kind: 'init', canvas: off }, [off]);
     this.worker.onmessage = (e: MessageEvent<PreviewOut>) => this.onMessage(e.data);
+    // A crashed worker (e.g. GPU/decoder failure, out of memory) cannot be revived with the same
+    // transferred canvas; the monitor rebuilds itself with a fresh canvas and worker.
+    this.worker.onerror = (e) => {
+      e.preventDefault();
+      this.stop();
+      this.onCrash(e.message || 'The preview stopped unexpectedly.');
+    };
   }
 
   private post(m: PreviewIn, transfer: Transferable[] = []) {

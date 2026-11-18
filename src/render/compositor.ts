@@ -76,6 +76,13 @@ export class Compositor {
     return this.fx;
   }
 
+  dispose() {
+    this.fx?.dispose();
+    this.fx = undefined;
+    this.scratch = null;
+    this.maskCanvas = null;
+  }
+
   /** Render one frame. `images` maps clip id → decoded image for media layers. */
   render(p: Project, layers: ResolvedLayer[], images: Map<string, LayerImage>, frameIndex: number): void {
     const ctx = this.ctx;

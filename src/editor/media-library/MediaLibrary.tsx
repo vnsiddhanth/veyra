@@ -5,7 +5,7 @@ import { Button, EmptyState, IconButton, Progress } from '@/components/ui/primit
 import { ACCEPT_ATTRIBUTE } from '@/media-engine';
 import type { Asset } from '@/project/schema/types';
 import { assetStatus, useLibraryStore } from '@/state/library-store';
-import { importFiles, reconnectMedia, relinkAsset, removeAsset, renameAsset } from '@/state/media-actions';
+import { createProxy, importFiles, reconnectMedia, relinkAsset, removeAsset, removeProxy, renameAsset } from '@/state/media-actions';
 import { selectProject, useProjectStore } from '@/state/project-store';
 import { formatBytes, formatDuration } from '@/utils/format';
 import { cn } from '@/utils/id';
@@ -166,6 +166,8 @@ function selectAsset(id: string) {
 function AssetCard({ asset }: { asset: Asset }) {
   const thumbs = useLibraryStore((s) => s.thumbs[asset.id]);
   const status = useLibraryStore((s) => assetStatus(asset.id, s));
+  const hasProxy = useLibraryStore((s) => !!s.proxies[asset.id]);
+  const proxyProgress = useLibraryStore((s) => s.proxyProgress[asset.id]);
   const error = useLibraryStore((s) => s.errors[asset.id]);
   const selected = useLibraryStore((s) => s.selectedAssetId === asset.id);
   const [renaming, setRenaming] = useState(false);
@@ -221,6 +223,11 @@ function AssetCard({ asset }: { asset: Asset }) {
               <IconAlert size={10} />
             </span>
           )}
+          {(hasProxy || proxyProgress != null) && (
+            <span className="absolute bottom-0.5 left-0.5 rounded-sm bg-black/70 px-1 font-mono text-2xs text-accent" title="Preview proxy">
+              {proxyProgress != null ? `proxy ${Math.round(proxyProgress * 100)}%` : 'proxy'}
+            </span>
+          )}
           <div className={cn('absolute right-0.5 top-0.5 gap-0.5 group-hover:flex group-focus-within:flex', selected ? 'flex' : 'hidden')}>
             {status === 'online' && asset.kind !== 'subtitle' && (
               <IconButton
@@ -232,6 +239,20 @@ function AssetCard({ asset }: { asset: Asset }) {
                 }}
               >
                 +
+              </IconButton>
+            )}
+            {status === 'online' && asset.kind === 'video' && (
+              <IconButton
+                label={hasProxy ? 'Delete preview proxy' : 'Create preview proxy (540p, for smoother preview)'}
+                className={cn('h-5 w-5 bg-black/70 text-2xs font-bold', hasProxy ? 'text-accent' : 'text-white')}
+                disabled={proxyProgress != null}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const run = hasProxy ? removeProxy(asset) : createProxy(asset);
+                  run.catch((err: unknown) => useEditorUi.getState().notify(`Proxy failed: ${err instanceof Error ? err.message : String(err)}`));
+                }}
+              >
+                P
               </IconButton>
             )}
             <IconButton

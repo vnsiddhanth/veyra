@@ -25,6 +25,7 @@ const ENGINES: Partial<Record<ToolEngine, ComponentType<{ tool: ToolDef }>>> = {
   slideshow: named(() => import('@/tools/compose/SlideshowTool'), 'SlideshowTool'),
   'subtitle-editor': named(() => import('@/tools/subtitles/SubtitleTools') as unknown as Promise<Record<'SubtitleEditorTool', ComponentType<{ tool: ToolDef }>>>, 'SubtitleEditorTool'),
   'soft-subtitles': named(() => import('@/tools/subtitles/SubtitleTools'), 'SoftSubtitlesTool'),
+  stabilize: named(() => import('@/tools/compose/StabilizeTool') as unknown as Promise<Record<'StabilizeTool', ComponentType<{ tool: ToolDef }>>>, 'StabilizeTool'),
   silence: named(() => import('@/tools/compose/SilenceTool') as Promise<Record<'SilenceTool', ComponentType<{ tool: ToolDef }>>>, 'SilenceTool'),
 };
 import { NotFoundPage } from './NotFoundPage';

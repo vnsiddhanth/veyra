@@ -29,7 +29,12 @@ interface LibraryState {
   errors: Record<string, string>;
   imports: ImportTask[];
   selectedAssetId: string | null;
+  /** Preview proxies by asset id, and progress (0..1) of proxies being built. */
+  proxies: Record<string, File>;
+  proxyProgress: Record<string, number>;
 
+  setProxy(assetId: string, file: File | null): void;
+  setProxyProgress(assetId: string, p: number | null): void;
   setFile(assetId: string, file: File): void;
   setThumbs(assetId: string, blobs: Blob[]): void;
   setStrip(assetId: string, blobs: Blob[], duration: number): void;
@@ -54,7 +59,25 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   errors: {},
   imports: [],
   selectedAssetId: null,
+  proxies: {},
+  proxyProgress: {},
 
+  setProxy(assetId, file) {
+    set((s) => {
+      const proxies = { ...s.proxies };
+      if (file) proxies[assetId] = file;
+      else delete proxies[assetId];
+      return { proxies };
+    });
+  },
+  setProxyProgress(assetId, p) {
+    set((s) => {
+      const proxyProgress = { ...s.proxyProgress };
+      if (p == null) delete proxyProgress[assetId];
+      else proxyProgress[assetId] = p;
+      return { proxyProgress };
+    });
+  },
   setFile(assetId, file) {
     set((s) => ({ files: { ...s.files, [assetId]: file } }));
   },
@@ -97,7 +120,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   reset() {
     Object.values(get().thumbs).forEach(revoke);
     Object.values(get().strips).forEach((s) => revoke(s.urls));
-    set({ files: {}, thumbs: {}, strips: {}, waveforms: {}, errors: {}, imports: [], selectedAssetId: null });
+    set({ files: {}, thumbs: {}, strips: {}, waveforms: {}, errors: {}, imports: [], selectedAssetId: null, proxies: {}, proxyProgress: {} });
   },
   select(assetId) {
     set({ selectedAssetId: assetId });

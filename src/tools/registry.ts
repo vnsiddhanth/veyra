@@ -58,16 +58,6 @@ export const CATEGORY_LABELS: Record<ToolCategory, string> = {
   utility: 'Inspect & utilities',
 };
 
-const planned = (
-  slug: string,
-  title: string,
-  summary: string,
-  category: ToolCategory,
-  phase: number,
-  keywords: string[] = [],
-  popular = false,
-): ToolDef => ({ slug, title, summary, category, status: 'planned', phase, engine: 'none', keywords, popular });
-
 const tool = (
   slug: string,
   title: string,
@@ -123,7 +113,7 @@ export const TOOLS: ToolDef[] = [
   tool('reverse-video', 'Reverse video', 'Play a clip backwards.', 'edit', 3, 'speed', ['backwards'], {}),
   tool('change-speed', 'Change video speed', 'Speed up or slow down a video, with pitch-corrected audio.', 'edit', 3, 'speed', ['slow motion', 'fast forward'], {}),
   tool('aspect-ratio-converter', 'Aspect ratio converter', 'Convert between 16:9, 9:16, 1:1, 4:5 with padding, blur fill or crop.', 'edit', 3, 'convert', ['vertical', 'square'], { mode: 'aspect' }),
-  planned('stabilize-video', 'Stabilize video', 'Reduce camera shake (feasibility under evaluation for in-browser processing).', 'edit', 8, ['shaky']),
+  tool('stabilize-video', 'Stabilize video', 'Reduce handheld camera shake (side-to-side and up-down).', 'edit', 8, 'stabilize', ['shaky', 'steady']),
   // Audio
   tool('mute-video', 'Mute video', 'Remove the audio track without re-encoding the video.', 'audio', 3, 'convert', ['remove sound'], { mode: 'mute', action: 'Remove audio' }),
   tool('extract-audio', 'Extract audio', 'Save a video’s audio track as a separate file.', 'audio', 3, 'convert', ['rip audio'], { popular: true, mode: 'audio', action: 'Extract audio' }),

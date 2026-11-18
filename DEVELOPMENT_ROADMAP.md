@@ -93,3 +93,15 @@ Deferred: speed ramps and curve bezier handles. Proxies move to Phase 8.
 Acceptance criterion **met in Chrome**: `e2e/export.spec.ts` exports a two-clip timeline with a crossfade and a title. It proves cut
 timing (frame-exact source frames on both sides of the transition), the crossfade (the frame at the cut equals the 50/50 blend), container,
 codecs, duration and audible audio.
+
+## Phase 8 status (2026-11-18)
+
+- **Usable during demanding work:** playback no longer re-renders the timeline, proxies exist for heavy media, and decoders and GPU contexts are released.
+- **Fails gracefully at device limits:**
+  - encoder and resolution checks before rendering;
+  - quota errors reported;
+  - the preview worker restarts after a crash;
+  - outputs fall back to memory without OPFS streams;
+  - pixel effects report themselves when WebGL2 is missing.
+- **Measured:** encode, decode and export speed come from the benchmark page and are recorded in PERFORMANCE.md.
+- **Not achieved:** Firefox/WebKit runs. This host would not launch the Playwright Firefox and WebKit builds (OS execution policy; missing host dependencies). The projects are configured; anyone with a capable host can run `npm run test:e2e:engines`.

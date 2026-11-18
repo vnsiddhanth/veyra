@@ -1,8 +1,11 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * Real-browser media tests. Uses the locally installed Chrome and Edge (no browser download).
- * Firefox/WebKit projects can be added after `npx playwright install firefox webkit`.
+ * Real-browser media tests.
+ * - chrome / msedge: the locally installed browsers (the supported targets; must pass).
+ * - firefox / webkit: Playwright's builds (`npx playwright install firefox webkit`). Run explicitly with
+ *   `--project=firefox` / `--project=webkit` to measure cross-engine support; results are recorded in
+ *   BROWSER_COMPATIBILITY.md. Playwright's WebKit on Windows is not Safari and lacks some media features.
  */
 export default defineConfig({
   testDir: 'e2e',
@@ -21,6 +24,8 @@ export default defineConfig({
   projects: [
     { name: 'chrome', use: { channel: 'chrome' } },
     { name: 'msedge', use: { channel: 'msedge' } },
+    { name: 'firefox', use: { browserName: 'firefox' } },
+    { name: 'webkit', use: { browserName: 'webkit' } },
   ],
   webServer: {
     command: 'npm run dev -- --port 5174 --strictPort',

@@ -32,3 +32,29 @@ MKV, no-audio clip).
 
 Each phase in DEVELOPMENT_ROADMAP.md lists acceptance criteria. A feature moves to **Verified** in FEATURE_MATRIX.md only when its
 acceptance test passes in at least Chromium, with results for other engines recorded.
+
+
+## Test inventory (end of Phase 8)
+
+- **Unit (Vitest), 104 tests:**
+  - time maths, history, timeline ops and edit ops
+  - render evaluation (keyframes, transitions, audio gain)
+  - ZIP writer, split points, silence detection
+  - LUT parser, motion estimation, stabilisation smoothing
+  - project validation, classification, subtitles, registry, media actions
+- **e2e (Playwright), 39 tests per Chromium browser:**
+
+| Spec | Covers |
+|---|---|
+| `trim.spec.ts` | Trim (frame-exact), cancel, damaged input |
+| `tools.spec.ts` | Thumbnail, metadata, project reload |
+| `tools-phase3.spec.ts` | 18 standalone tools, re-parsed in Node, with frame checks for speed, reverse and merge |
+| `timeline.spec.ts` | Real pointer edits asserted on the model |
+| `preview.spec.ts` | Pixel-exact preview, playback rate |
+| `pro-editing.spec.ts` | Keyframes, effects, mixer, subtitles |
+| `export.spec.ts` | Exported frames, crossfade blend and audio match the timeline |
+| `reliability.spec.ts` | Stabiliser accuracy, proxies, storage manager, benchmark |
+
+- **Commands:**
+  - `npm run test:e2e`: Chrome + Edge, the supported targets.
+  - `npm run test:e2e:engines`: Firefox + WebKit; needs `npx playwright install firefox webkit` and a host where they launch.

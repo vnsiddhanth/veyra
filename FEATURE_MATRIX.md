@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 7).
+Last updated: 2026-11-18 (end of Phase 8).
 
 ## Phase 1 — Foundation
 
@@ -130,9 +130,20 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | Offline-media guard | Implemented | `ExportDialog.tsx` | — | — |
 | Remove-your-own-overlay guide | Available | `ToolPage.tsx` | — | Only for overlays added in Veyra projects |
 
+## Phase 8 — Optimization & reliability
+
+| Feature | Status | Location | Tests | Known limitations |
+|---|---|---|---|---|
+| Stabilize video (translation) | Verified (recovers injected shake; valid output) | `decode/motion.ts`, `StabilizeTool.tsx` | `motion.test.ts`, `reliability.spec.ts` | No rotation or rolling-shutter correction; integer-pixel analysis |
+| Preview proxies (OPFS, persisted) | Verified | `storage/proxies.ts`, `media-actions.ts` | `reliability.spec.ts` | Built on demand (no automatic proxying yet) |
+| Storage manager | Verified | `components/StorageManager.tsx` | `reliability.spec.ts` | — |
+| Device benchmark page | Verified | `media-engine/bench.ts`, `pages/BenchmarkPage.tsx` | `reliability.spec.ts` | Memory figure only where the browser exposes it |
+| Timeline render performance (playhead isolation, culling) | Implemented | `TimelinePanel.tsx` | e2e regression | — |
+| Preview crash recovery, GPU context release | Implemented | `preview-engine.ts`, `pixel-fx.ts` | — | Crash path not forced in tests |
+| Firefox / WebKit e2e | Not measured (host blocked browser launch) | `playwright.config.ts` | — | See BROWSER_COMPATIBILITY.md |
+
 ## Later phases (summary)
 
 | Area | Status | Phase |
 |---|---|---|
-| Firefox/WebKit e2e runs | Not started | 3 |
 | Remaining tools (subtitle editor, soft subtitles, stabilise, overlay removal) | Not started | 6–8 |

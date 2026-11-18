@@ -2,7 +2,7 @@
  * Program monitor: the composed timeline at the playhead, rendered by the preview worker with the
  * export compositor. Playback is clocked by Web Audio.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, IconButton } from '@/components/ui/primitives';
 import { useLibraryStore } from '@/state/library-store';
 import { selectProject, useProjectStore } from '@/state/project-store';
@@ -20,14 +20,22 @@ const QUALITY: [string, number][] = [
 
 export function ProgramMonitor() {
   const project = useProjectStore(selectProject);
-  const files = useLibraryStore((s) => s.files);
+  const originals = useLibraryStore((s) => s.files);
+  const proxies = useLibraryStore((s) => s.proxies);
+  const useProxies = useEditorUi((s) => s.useProxies);
+  const files = useMemo(() => (useProxies ? { ...originals, ...Object.fromEntries(Object.entries(proxies).filter(([id]) => !!originals[id])) } : originals), [originals, proxies, useProxies]);
+  const filesRef = useRef(files);
+  filesRef.current = files;
   const playhead = useEditorUi((s) => s.playhead);
   const playing = useEditorUi((s) => s.playing);
   const hostRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<PreviewEngine | null>(null);
   const [quality, setQuality] = useState(0.5);
+  const qualityRef = useRef(quality);
+  qualityRef.current = quality;
   const [warnings, setWarnings] = useState<string[]>([]);
   const [stats, setStats] = useState<PreviewStats | null>(null);
+  const [generation, setGeneration] = useState(0);
   const projectId = project?.id;
   const aspect = project ? project.settings.width / project.settings.height : 16 / 9;
 
@@ -47,13 +55,24 @@ export function ProgramMonitor() {
     engine.onEnded = () => useEditorUi.getState().setPlaying(false);
     engine.onWarnings = setWarnings;
     engine.onStats = setStats;
+    engine.onCrash = (msg) => {
+      useEditorUi.getState().notify(`Preview restarted after an error: ${msg}`);
+      setGeneration((g) => g + 1);
+    };
+    const st = useProjectStore.getState().history?.present;
+    if (st) {
+      engine.setProject(st, flicksToSeconds(projectDuration(st)));
+      engine.setFiles(Object.fromEntries(Object.entries(filesRef.current).filter(([, f]) => !!f)) as Record<string, Blob>);
+      engine.setQuality(qualityRef.current);
+      engine.seek(useEditorUi.getState().playhead);
+    }
     return () => {
       engine.dispose();
       engineRef.current = null;
       canvas.remove();
       useEditorUi.getState().setPlaying(false);
     };
-  }, [projectId]);
+  }, [projectId, generation]);
 
   useEffect(() => {
     const e = engineRef.current;
@@ -135,7 +154,13 @@ export function ProgramMonitor() {
             {stats.fps} fps · {stats.renderMs.toFixed(1)} ms · {stats.dropped} skipped
           </span>
         )}
-        <label className="ml-auto flex items-center gap-1 text-2xs text-faint">
+        {Object.keys(proxies).length > 0 && (
+          <label className="ml-auto flex items-center gap-1 text-2xs text-faint" title="Preview from 540p proxies. Export always uses the original media.">
+            <input type="checkbox" checked={useProxies} onChange={(e) => useEditorUi.getState().setUseProxies(e.target.checked)} className="accent-[var(--c-accent)]" />
+            Proxies
+          </label>
+        )}
+        <label className={`${Object.keys(proxies).length > 0 ? 'ml-2' : 'ml-auto'} flex items-center gap-1 text-2xs text-faint`}>
           Preview
           <select value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="h-6 rounded-sm border border-line bg-surface-2 px-1" aria-label="Preview quality">
             {QUALITY.map(([l, v]) => (

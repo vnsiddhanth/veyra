@@ -10,6 +10,7 @@ const ToolPage = lazy(() => import('@/pages/ToolPage'));
 const EditorPage = lazy(() => import('@/pages/EditorPage'));
 const CompatibilityPage = lazy(() => import('@/pages/CompatibilityPage'));
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
+const BenchmarkPage = lazy(() => import('@/pages/BenchmarkPage'));
 const DevFixturesPage = lazy(() => import('@/pages/DevFixturesPage'));
 
 function Loading() {
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
       { path: '/tools/:slug', element: withSuspense(<ToolPage />) },
       { path: '/compatibility', element: withSuspense(<CompatibilityPage />) },
       { path: '/privacy', element: withSuspense(<PrivacyPage />) },
+      { path: '/benchmark', element: withSuspense(<BenchmarkPage />) },
       ...(import.meta.env.DEV ? [{ path: '/dev/fixtures', element: withSuspense(<DevFixturesPage />) }] : []),
       { path: '*', element: <NotFoundPage /> },
     ],

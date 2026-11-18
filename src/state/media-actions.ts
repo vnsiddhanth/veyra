@@ -2,6 +2,7 @@
  * Media import / relink orchestration. Connects the media engine, storage and stores.
  * No React here; UI components call these functions.
  */
+import { deleteProxy, getProxy, saveProxy } from '@/storage/proxies';
 import { mediaEngine, MediaError, classifyFile } from '@/media-engine';
 import { parseSubtitles } from '@/media-engine/subtitles/parse';
 import { settingsFromMedia } from '@/project/schema/factory';
@@ -141,6 +142,13 @@ export async function ensureAnalysis(asset: Asset, file: File | undefined): Prom
   if (!info || asset.kind === 'image' || asset.kind === 'subtitle') return;
   const tasks: Promise<void>[] = [];
   const v = info.video[0];
+  if (v && !lib().proxies[asset.id]) {
+    tasks.push(
+      getProxy(asset.fingerprint).then((f) => {
+        if (f) lib().setProxy(asset.id, f);
+      }),
+    );
+  }
   if (v && !lib().strips[asset.id]) {
     tasks.push(
       (async () => {
@@ -258,4 +266,44 @@ export function renameAsset(assetId: string, name: string): void {
   const trimmed = name.trim().slice(0, 200);
   if (!trimmed) return;
   useProjectStore.getState().apply((p) => ({ ...p, assets: p.assets.map((a) => (a.id === assetId ? { ...a, name: trimmed } : a)) }));
+}
+
+
+/** Height of preview proxies. */
+export const PROXY_HEIGHT = 540;
+
+/**
+ * Build a preview proxy (540p H.264/AAC, 1 s key frames for fast seeking) for a video asset.
+ * The validated result is copied into the persistent proxy store and the scratch output released.
+ */
+export async function createProxy(asset: Asset): Promise<void> {
+  const lib = useLibraryStore.getState;
+  const file = lib().files[asset.id];
+  const info = asset.info;
+  if (!file || !info?.video.length) throw new Error('Reconnect the media first.');
+  if (lib().proxyProgress[asset.id] != null) return;
+  const h = Math.min(PROXY_HEIGHT, info.height);
+  const w = Math.max(2, Math.round((info.width * h) / info.height / 2) * 2);
+  lib().setProxyProgress(asset.id, 0);
+  const job = mediaEngine.convert(file, {
+    container: 'mp4',
+    copy: 'never',
+    video: { width: w, height: h, fit: 'fill', bitrate: 'medium', keyFrameInterval: 1 },
+    audio: info.audio.length ? { bitrate: 128_000 } : { discard: true },
+    fileName: `proxy-${asset.name}`,
+  });
+  job.onProgress((p) => lib().setProxyProgress(asset.id, p));
+  try {
+    const result = await job.result;
+    const stored = await saveProxy(asset.fingerprint, result.file);
+    await mediaEngine.releaseOutput(result);
+    if (stored) lib().setProxy(asset.id, stored);
+  } finally {
+    lib().setProxyProgress(asset.id, null);
+  }
+}
+
+export async function removeProxy(asset: Asset): Promise<void> {
+  await deleteProxy(asset.fingerprint);
+  useLibraryStore.getState().setProxy(asset.id, null);
 }

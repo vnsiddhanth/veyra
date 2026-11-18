@@ -11,6 +11,8 @@ import { computeWaveform, extractFrame } from '../decode/frames';
 import { extractFramesZip, imagesToGif, videoToGif } from '../encode/images';
 import { renderProject } from '@/render/render-project';
 import { addSoftSubtitles } from '../encode/subtitles-mux';
+import { analyzeMotion } from '../decode/motion';
+import { runBenchmark } from '../bench';
 import { canEncodeAudio } from 'mediabunny';
 import { registerMp3Encoder } from '@mediabunny/mp3-encoder';
 import type { FromWorker, JobInput, JobOutput, JobType, ToWorker } from './protocol';
@@ -40,6 +42,8 @@ const handlers: { [K in JobType]: Handler<K> } = {
   gif: (input, progress, signal) => videoToGif(input.file, input.options, progress, signal),
   gifImages: (input, progress, signal) => imagesToGif(input.files, input.options, progress, signal),
   frames: (input, progress, signal, jobId) => extractFramesZip(input.file, input.options, jobId, progress, signal),
+  benchmark: (input, progress, signal) => runBenchmark(input, progress, signal),
+  motion: (input, progress, signal) => analyzeMotion(input.file, input.width, progress, signal),
   softSubtitles: (input, progress, signal, jobId) => addSoftSubtitles(input.file, input.options, jobId, progress, signal),
 };
 
