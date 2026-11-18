@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 4).
+Last updated: 2026-11-18 (end of Phase 5).
 
 ## Phase 1 — Foundation
 
@@ -95,12 +95,21 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | Detach audio, transitions, text clips | Tested | `edit.ts` | unit | — |
 | Undo/redo for every gesture (one step per drag) | Verified | `project-store.ts` | e2e | — |
 
+## Phase 5 — Preview & composition
+
+| Feature | Status | Location | Tests | Known limitations |
+|---|---|---|---|---|
+| Program monitor (worker + OffscreenCanvas, shared compositor) | Verified | `src/render/preview.worker.ts`, `src/editor/preview` | `preview.spec.ts` (pixel match) | Needs `transferControlToOffscreen` (all current engines) |
+| Audio-clocked playback, streamed mixdown | Verified (Chrome/Edge) | `preview-engine.ts` | `preview.spec.ts` | Pitch follows speed unless “Keep pitch” is on |
+| Text and image overlays, transitions, filter and pixel effects in preview | Implemented (same code as export, verified via tools) | `src/render` | Phase 3 e2e | — |
+| Preview quality (Full, 1/2, 1/4), frame dropping, stats | Verified | `ProgramMonitor.tsx` | `preview.spec.ts` | — |
+| 1080p two-layer playback | Verified: 59 fps (headless Chrome, dev machine) | — | `preview.spec.ts` | Not yet measured on low-end hardware (Phase 8) |
+
 ## Later phases (summary)
 
 | Area | Status | Phase |
 |---|---|---|
 | Firefox/WebKit e2e runs | Not started | 3 |
 | Remaining tools (subtitle editor, soft subtitles, stabilise, overlay removal) | Not started | 6–8 |
-| WebGL2 compositor, program monitor, audio clock | Not started | 5 |
 | Effects, transitions, text, keyframe UI, color, masks, chroma key | Not started (schema ready) | 5–6 |
 | Timeline export | Not started | 7 |

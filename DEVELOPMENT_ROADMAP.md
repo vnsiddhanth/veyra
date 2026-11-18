@@ -74,3 +74,10 @@ Decisions:
 
 Acceptance criterion **met**: clips from several files are assembled across tracks and their positions and durations edited with
 mouse and keyboard, with undo/redo. Verified by `e2e/timeline.spec.ts` with real pointer input, asserting on the project model.
+
+## Phase 5 status (2026-11-18)
+
+Acceptance criterion **met in Chrome/Edge**: the preview matches the timeline at any playhead position, checked pixel-for-pixel against
+independently decoded source frames. A 1080p60 two-layer project plays at full rate on the development machine (59 fps measured).
+Compositing is Canvas 2D with a WebGL2 pass for per-pixel effects. A full WebGL2/WebGPU layer compositor is an optimisation for Phase 8,
+if profiling on low-end devices calls for it.

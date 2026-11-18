@@ -39,8 +39,8 @@ export class ClipFrameStream {
   private readonly sink: CanvasSink;
 
   constructor(
-    private readonly project: Project,
-    private readonly clip: Clip,
+    private project: Project,
+    private clip: Clip,
     private readonly asset: Asset,
     track: InputVideoTrack,
     renderScale: number,
@@ -90,7 +90,34 @@ export class ClipFrameStream {
 
   /** Whether this stream was built for the same clip timing (edits create new clip objects). */
   matches(project: Project, clip: Clip): boolean {
-    return clip === this.clip && project.settings === this.project.settings && project.transitions === this.project.transitions;
+    if (clip === this.clip && project.settings === this.project.settings && project.transitions === this.project.transitions) return true;
+    // Value comparison: projects posted to a worker are fresh copies on every edit.
+    const a = this.clip;
+    const fr = (x: Project) => `${x.settings.frameRate.num}/${x.settings.frameRate.den}:${x.settings.width}x${x.settings.height}`;
+    const trs = (x: Project, id: string) =>
+      Object.values(x.transitions)
+        .filter((t) => t.fromClipId === id || t.toClipId === id)
+        .map((t) => `${t.fromClipId}>${t.toClipId}:${t.duration}`)
+        .sort()
+        .join();
+    return (
+      a.start === clip.start &&
+      a.duration === clip.duration &&
+      a.sourceIn === clip.sourceIn &&
+      a.speed === clip.speed &&
+      a.reversed === clip.reversed &&
+      a.assetId === clip.assetId &&
+      a.transform.scaleX === clip.transform.scaleX &&
+      fr(this.project) === fr(project) &&
+      trs(this.project, a.id) === trs(project, clip.id) &&
+      JSON.stringify(a.keyframes.scale ?? null) === JSON.stringify(clip.keyframes.scale ?? null)
+    );
+  }
+
+  /** Point at the latest project/clip objects (after a value-equal update). */
+  rebind(project: Project, clip: Clip) {
+    this.project = project;
+    this.clip = clip;
   }
 
   close() {
@@ -108,9 +135,34 @@ export class MediaPool {
   readonly warnings = new Set<string>();
 
   constructor(
-    private readonly files: ReadonlyMap<string, Blob>,
-    private readonly renderScale: number,
+    private files: ReadonlyMap<string, Blob>,
+    private renderScale: number,
   ) {}
+
+  /** Replace the file map (media reconnected/removed). Inputs for changed files are reopened. */
+  setFiles(files: ReadonlyMap<string, Blob>) {
+    for (const [id, input] of this.inputs) {
+      if (files.get(id) !== this.files.get(id)) {
+        input.dispose();
+        this.inputs.delete(id);
+        this.videoTracks.delete(id);
+        this.stills.delete(id);
+        for (const [cid, st] of this.streams) {
+          st.close();
+          this.streams.delete(cid);
+        }
+      }
+    }
+    this.files = files;
+  }
+
+  /** Change the decode scale (preview quality); drops streams so they re-open at the new size. */
+  setScale(scale: number) {
+    if (scale === this.renderScale) return;
+    this.renderScale = scale;
+    for (const s of this.streams.values()) s.close();
+    this.streams.clear();
+  }
 
   input(assetId: string): Input | null {
     const file = this.files.get(assetId);
@@ -154,7 +206,7 @@ export class MediaPool {
     if (s && !s.matches(project, clip)) {
       s.close();
       s = undefined;
-    }
+    } else s?.rebind(project, clip);
     if (!s) {
       const track = await this.videoTrack(asset.id);
       if (!track) return null;

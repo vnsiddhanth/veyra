@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 — 2026-11-18 · Phase 5: Preview & composition
+
+### Added
+- **Program monitor.**
+  - A dedicated preview worker renders the timeline into a transferred OffscreenCanvas, using the same compositor, frame streams and mixer as export.
+  - Playback is clocked by an AudioContext. The worker streams mixed PCM blocks ahead of the clock, and late frames are skipped rather than queued.
+  - Preview quality: Full, 1/2 or 1/4.
+  - Edits made during playback are heard immediately (audio is re-mixed from the playhead).
+  - Warnings for offline media and for effects that cannot run.
+- Monitor tabs: Program and Source. Choosing media in the library switches to Source.
+- Transport bar: start/end, previous/next edit, frame step, play/pause, timecode, live fps/render-time/skip statistics. Shortcuts: K stops, L plays.
+- Frame streams survive value-equal project updates, so edits do not restart every decoder.
+- e2e `preview.spec.ts`: preview pixels match independently decoded source frames at several playhead positions and after a trim. A 1080p60 picture-in-picture project plays at ≥ 24 fps (measured 59 fps in headless Chrome on the dev machine).
+
 ## 0.4.0 — 2026-11-18 · Phase 4: Timeline engine
 
 ### Added

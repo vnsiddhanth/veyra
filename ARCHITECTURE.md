@@ -204,3 +204,15 @@ No analytics, no ad SDKs, no fonts from third-party CDNs.
 - Subtitle text is rendered as text nodes or canvas text, never as HTML.
 - Project files are validated against the schema. Unknown fields are dropped and there is no `eval`.
 - Parsing of untrusted media happens inside workers. A crash there kills only the worker.
+
+
+## Rendering (Phases 3–5)
+
+```
+Project ──resolveFrame(t)──▶ layers ──MediaPool (ClipFrameStream per clip, stills)──▶ images
+                                   └──Compositor (Canvas 2D + PixelFx WebGL2)──▶ OffscreenCanvas
+                         audibleClips ──AudioMixer (per-clip readers, WSOLA, EQ, comp, ducking)──▶ PCM
+Export:  media worker  → CanvasSource + AudioSampleSource → Mediabunny Output → OPFS → validateOutput
+Preview: preview worker → transferred canvas; PCM blocks → main-thread AudioContext (the clock)
+```
+The same code paths produce preview and export frames.

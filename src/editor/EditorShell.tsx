@@ -74,6 +74,11 @@ export function EditorShell() {
         const ui = useEditorUi.getState();
         ui.setMonitor('program');
         ui.setPlaying(!ui.playing);
+      } else if (e.key === 'k' || e.key === 'K') {
+        useEditorUi.getState().setPlaying(false);
+      } else if (e.key === 'l' || e.key === 'L') {
+        useEditorUi.getState().setMonitor('program');
+        useEditorUi.getState().setPlaying(true);
       } else if (e.key === 's' || e.key === 'S') {
         cmd.splitAtPlayhead();
       } else if (e.key === 'm' || e.key === 'M') {

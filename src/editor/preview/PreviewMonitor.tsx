@@ -3,13 +3,45 @@ import { IconFilm } from '@/components/ui/icons';
 import { EmptyState } from '@/components/ui/primitives';
 import { useLibraryStore } from '@/state/library-store';
 import { selectProject, useProjectStore } from '@/state/project-store';
+import { cn } from '@/utils/id';
+import { useEditorUi } from '../editor-ui-store';
+import { ProgramMonitor } from './ProgramMonitor';
 
-/**
- * Source monitor: plays the selected library asset through the browser's media element
- * (Blob URL, no copy). The composited timeline program monitor replaces this in Phase 5;
- * until then the monitor is labelled "Source" so it never implies it shows the edit.
- */
+/** Monitor area: Program (composited timeline) or Source (the selected library asset). */
 export function PreviewMonitor() {
+  const monitor = useEditorUi((s) => s.monitor);
+  const selectedId = useLibraryStore((s) => s.selectedAssetId);
+  // Picking media in the library shows it in the source monitor.
+  useEffect(() => {
+    if (selectedId) useEditorUi.getState().setMonitor('source');
+  }, [selectedId]);
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-8 shrink-0 items-center gap-1 border-b border-line px-2" role="tablist" aria-label="Monitor">
+        {(['program', 'source'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={monitor === m}
+            onClick={() => useEditorUi.getState().setMonitor(m)}
+            className={cn('rounded-sm px-2 py-0.5 text-2xs font-semibold uppercase tracking-wider', monitor === m ? 'bg-surface-3 text-fg' : 'text-muted hover:text-fg')}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+      {/* Program stays mounted (its worker keeps decoders warm); it is hidden while Source shows. */}
+      <div className={cn('min-h-0 flex-1 flex-col', monitor === 'program' ? 'flex' : 'hidden')}>
+        <ProgramMonitor />
+      </div>
+      {monitor === 'source' && <SourceMonitor />}
+    </div>
+  );
+}
+
+/** Source monitor: plays the selected library asset through the browser's media element (Blob URL, no copy). */
+function SourceMonitor() {
   const project = useProjectStore(selectProject);
   const selectedId = useLibraryStore((s) => s.selectedAssetId);
   const file = useLibraryStore((s) => (selectedId ? s.files[selectedId] : undefined));
@@ -28,14 +60,13 @@ export function PreviewMonitor() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-line px-3">
-        <span className="rounded-sm bg-surface-3 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-muted">Source</span>
+      <div className="flex h-7 shrink-0 items-center gap-2 border-b border-line px-3">
         <span className="truncate text-xs text-muted">{asset ? asset.name : 'No media selected'}</span>
       </div>
       <div className="flex min-h-0 flex-1 items-center justify-center bg-black p-3">
         {!asset ? (
           <EmptyState icon={<IconFilm size={26} />} title="Select media to preview it">
-            The program monitor, which shows your composed timeline, arrives with the compositor (Phase 5).
+            The Program tab shows your composed timeline.
           </EmptyState>
         ) : !file ? (
           <EmptyState title="Media offline">Reconnect or locate this file in the media panel to preview it.</EmptyState>
