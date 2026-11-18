@@ -87,3 +87,9 @@ if profiling on low-end devices calls for it.
 Acceptance criterion **met**: a multitrack project has independently editable visual elements (transform, keyframes, effects, text) and
 audio elements (volume/pan/fades, effects, track mixer), all undoable, with the preview reflecting edits (`e2e/pro-editing.spec.ts`).
 Deferred: speed ramps and curve bezier handles. Proxies move to Phase 8.
+
+## Phase 7 status (2026-11-18)
+
+Acceptance criterion **met in Chrome**: `e2e/export.spec.ts` exports a two-clip timeline with a crossfade and a title. It proves cut
+timing (frame-exact source frames on both sides of the transition), the crossfade (the frame at the cut equals the 50/50 blend), container,
+codecs, duration and audible audio.

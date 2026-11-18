@@ -373,7 +373,7 @@ export function parseProject(input: unknown): Project {
     inPoint: o.inPoint == null ? null : int(o.inPoint, 'project.inPoint', 0),
     outPoint: o.outPoint == null ? null : int(o.outPoint, 'project.outPoint', 0),
     exportPrefs: {
-      container: oneOf(ep.container ?? 'mp4', 'project.exportPrefs.container', ['mp4', 'webm'] as const),
+      container: oneOf(ep.container ?? 'mp4', 'project.exportPrefs.container', ['mp4', 'webm', 'mov', 'mkv', 'm4a', 'wav', 'flac', 'ogg'] as const),
       videoCodec: optStr(ep.videoCodec, 'project.exportPrefs.videoCodec'),
       audioCodec: optStr(ep.audioCodec, 'project.exportPrefs.audioCodec'),
       width: ep.width == null ? null : int(ep.width, 'project.exportPrefs.width', 16, 16384),

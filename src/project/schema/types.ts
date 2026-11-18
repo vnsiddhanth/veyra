@@ -145,7 +145,7 @@ export interface Marker {
 }
 
 export interface ExportPreferences {
-  container: 'mp4' | 'webm';
+  container: 'mp4' | 'webm' | 'mov' | 'mkv' | 'm4a' | 'wav' | 'flac' | 'ogg';
   videoCodec: string | null;
   audioCodec: string | null;
   width: number | null;

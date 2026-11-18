@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 6).
+Last updated: 2026-11-18 (end of Phase 7).
 
 ## Phase 1 — Foundation
 
@@ -119,10 +119,20 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | Speed ramps | Not started | — | — | Constant speed only |
 | Proxies | Not started (Phase 8) | — | — | — |
 
+## Phase 7 — Export pipeline
+
+| Feature | Status | Location | Tests | Known limitations |
+|---|---|---|---|---|
+| Timeline render (video + audio mixdown) | Verified (frame-exact cuts, crossfade blend, audio) | `src/render/render-project.ts` | `export.spec.ts` | Export speed depends on WebCodecs hardware support |
+| Export dialog (formats, capability-filtered codecs, size, quality, range) | Verified (MP4) | `src/editor/export/ExportDialog.tsx` | `export.spec.ts` | — |
+| Output validation before download | Verified | `validateOutput` | all export tests | Decode check samples first/last frames |
+| Streaming "Save to a folder" | Implemented (Chromium) | `ExportDialog.tsx` | Manual | Firefox/Safari: download only |
+| Offline-media guard | Implemented | `ExportDialog.tsx` | — | — |
+| Remove-your-own-overlay guide | Available | `ToolPage.tsx` | — | Only for overlays added in Veyra projects |
+
 ## Later phases (summary)
 
 | Area | Status | Phase |
 |---|---|---|
 | Firefox/WebKit e2e runs | Not started | 3 |
 | Remaining tools (subtitle editor, soft subtitles, stabilise, overlay removal) | Not started | 6–8 |
-| Timeline export | Not started | 7 |

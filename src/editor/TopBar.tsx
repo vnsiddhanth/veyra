@@ -8,6 +8,7 @@ import { formatTimecode, rateToNumber } from '@/utils/time';
 import { projectDuration } from '@/timeline/model/ops';
 import { cn } from '@/utils/id';
 import { useEditorUi } from './editor-ui-store';
+import { ExportDialog } from './export/ExportDialog';
 
 const SAVE_LABEL = { saved: 'Saved', dirty: 'Unsaved changes', saving: 'Saving…', error: 'Save failed' } as const;
 
@@ -18,6 +19,7 @@ export function TopBar() {
   const canUndo = useProjectStore((s) => (s.history?.past.length ?? 0) > 0);
   const canRedo = useProjectStore((s) => (s.history?.future.length ?? 0) > 0);
   const [editingName, setEditingName] = useState(false);
+  const [exporting, setExporting] = useState(false);
   if (!project) return null;
   const { width, height, frameRate } = project.settings;
   const mod = navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl';
@@ -83,6 +85,20 @@ export function TopBar() {
       >
         <IconDownload /> Project file
       </Button>
+      <Button
+        size="sm"
+        variant="primary"
+        className="ml-1"
+        onClick={() => {
+          useEditorUi.getState().setPlaying(false);
+          setExporting(true);
+        }}
+        disabled={Object.keys(project.clips).length === 0}
+        title="Render the timeline to a video file (Ctrl+E)"
+      >
+        Export
+      </Button>
+      {exporting && <ExportDialog project={project} onClose={() => setExporting(false)} />}
     </header>
   );
 }

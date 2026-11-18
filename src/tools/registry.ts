@@ -135,7 +135,7 @@ export const TOOLS: ToolDef[] = [
   tool('adjust-colors', 'Adjust brightness, contrast & saturation', 'Basic color correction for a whole video.', 'visual', 3, 'decor', ['brightness', 'contrast', 'saturation'], { mode: 'look' }),
   tool('add-text', 'Add text to video', 'Place animated titles or captions on a video.', 'visual', 3, 'decor', ['caption', 'title'], { mode: 'text' }),
   tool('add-watermark', 'Add watermark', 'Overlay your logo or text on a video.', 'visual', 3, 'decor', ['logo'], { mode: 'watermark' }),
-  planned('remove-overlay', 'Remove your own overlay', 'Re-export a project without an overlay you added earlier.', 'visual', 7, []),
+  tool('remove-overlay', 'Remove your own overlay', 'Re-export one of your projects without an overlay you added earlier.', 'visual', 7, 'guide', ['remove text', 'remove logo']),
   tool('add-transitions', 'Add transitions', 'Join clips with fades, wipes and slides.', 'visual', 3, 'merge', ['fade'], {}),
   {
     slug: 'thumbnail-maker',

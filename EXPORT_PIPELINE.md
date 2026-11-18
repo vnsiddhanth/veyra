@@ -1,6 +1,6 @@
 # Export Pipeline
 
-Status: single-file conversion verified (Phase 2). The project renderer (`src/render/render-project.ts`) is implemented and verified through the Phase 3 tools. The editor export UI arrives in Phase 7.
+Status: **implemented and verified**. Single-file conversion (Phase 2), project rendering (Phase 3) and the editor export dialog (Phase 7) all work. `e2e/export.spec.ts` checks that exports match the timeline frame by frame.
 
 ## Single-file tools (Phase 2–3)
 
@@ -12,7 +12,7 @@ Status: single-file conversion verified (Phase 2). The project renderer (`src/re
 - Progress comes from `conversion.onProgress`. It is real, never simulated.
 - Cancel calls `conversion.cancel()` and the partial output is deleted.
 
-## Timeline export (Phase 7)
+## Timeline export (implemented)
 
 ```
 for each output frame t (flicks, on the export frame grid):
@@ -38,3 +38,13 @@ both → Mediabunny Output (MP4 or WebM) → target
 5. Decode the first and last video frame. Decode one audio chunk.
 
 Only then does the UI show "Export complete" with the download. A validation failure is shown as an error with details.
+
+## Editor export flow (Phase 7)
+
+1. The dialog collects format, codecs, size, quality and range, and checks that every used asset is online.
+2. `mediaEngine.render({ project, files, settings })` runs in the media worker:
+   - frames are rendered through the compositor into `CanvasSource`;
+   - the mixdown goes to `AudioSampleSource` in 2048-sample blocks;
+   - the muxer writes to an OPFS stream.
+3. The output is validated. Only then does the dialog show the result card: a preview, the checks, and a download link. On Chromium it also offers a streaming "Save to a folder".
+4. Cancel aborts the worker job, and the partial OPFS file is deleted.

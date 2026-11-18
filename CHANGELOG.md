@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.7.0 — 2026-11-18 · Phase 7: Export pipeline
+
+### Added
+- **Export dialog** in the editor (Export button or Ctrl+E).
+  - **Formats:** MP4, WebM, MOV and MKV, plus audio-only M4A, WAV, FLAC and Ogg.
+  - **Codecs:** video and audio codec lists filtered by this browser's encoder probe.
+  - **Size and quality:** resolution presets that keep the project aspect, quality presets (Small, Balanced, High, Maximum) or a custom bitrate, and a size estimate.
+  - **Range:** whole timeline or in/out.
+- Offline media blocks export with a list of the files to reconnect; there is no silent gap-filling.
+- Export choices are remembered with the project (no undo step).
+- Chromium **Save to a folder**: streams the validated OPFS result to a user-chosen file with `showSaveFilePicker`, with no in-memory copy.
+- **Remove your own overlay**: a guide page for the lossless workflow (hide or delete the overlay clip, re-export). We do not offer removing watermarks baked into other people's pixels.
+- e2e `export.spec.ts` acceptance test:
+  - **Frame checks:** frames before and after a crossfade match their source frames.
+  - **Blend check:** the frame at the cut equals the 50/50 blend of both sources.
+  - **Audio:** the export is audible.
+  - **Format:** container, codecs and duration are checked in Node.
+
+### Changed
+- `ExportPreferences.container` accepts every export format.
+
 ## 0.6.0 — 2026-11-18 · Phase 6: Pro editing
 
 ### Added

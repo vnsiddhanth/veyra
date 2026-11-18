@@ -64,6 +64,9 @@ export function EditorShell() {
       } else if (mod && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         cmd.selectAll();
+      } else if (mod && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        document.querySelector<HTMLButtonElement>('header button[title^="Render the timeline"]')?.click();
       } else if (mod && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         cmd.splitAtPlayhead();

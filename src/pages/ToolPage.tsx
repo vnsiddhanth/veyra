@@ -61,6 +61,26 @@ export default function ToolPage() {
         <Suspense fallback={<p className="text-sm text-muted">Loading tool…</p>}>
           <EngineView tool={tool} />
         </Suspense>
+      ) : tool.engine === 'guide' ? (
+        <div className="space-y-3 rounded-lg border border-line bg-surface p-6 text-sm leading-relaxed">
+          <h2 className="text-base font-semibold">How to remove an overlay you added in {BRAND.name}</h2>
+          <p className="text-muted">
+            Overlays you add in the editor (titles, logos, captions) stay as separate clips in your project, so removing them is lossless: nothing is
+            painted out or guessed. This works for your own {BRAND.name} projects. It cannot remove watermarks that are already part of someone
+            else’s video pixels, and we don’t offer that.
+          </p>
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>
+              Open the project in the{' '}
+              <Link to="/editor" className="text-accent hover:underline">
+                editor
+              </Link>
+              .
+            </li>
+            <li>Select the overlay clip on its text or overlay track and press Delete, or hide the whole track with its eye icon.</li>
+            <li>Press Export (Ctrl+E). The new file is rendered from your original media without the overlay.</li>
+          </ol>
+        </div>
       ) : tool.engine === 'inspect' ? (
         <InspectTool tool={tool} />
       ) : tool.engine === 'trim' ? (
