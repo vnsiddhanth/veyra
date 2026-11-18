@@ -81,3 +81,9 @@ Acceptance criterion **met in Chrome/Edge**: the preview matches the timeline at
 independently decoded source frames. A 1080p60 two-layer project plays at full rate on the development machine (59 fps measured).
 Compositing is Canvas 2D with a WebGL2 pass for per-pixel effects. A full WebGL2/WebGPU layer compositor is an optimisation for Phase 8,
 if profiling on low-end devices calls for it.
+
+## Phase 6 status (2026-11-18)
+
+Acceptance criterion **met**: a multitrack project has independently editable visual elements (transform, keyframes, effects, text) and
+audio elements (volume/pan/fades, effects, track mixer), all undoable, with the preview reflecting edits (`e2e/pro-editing.spec.ts`).
+Deferred: speed ramps and curve bezier handles. Proxies move to Phase 8.

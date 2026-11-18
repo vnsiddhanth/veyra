@@ -4,7 +4,7 @@ Statuses: **Not started** · **In progress** · **Implemented** (code exists) ·
 **Verified** (acceptance criteria checked against real media in a real browser).
 "Verified" lists the browser it was verified in. Other engines are pending until Playwright runs exist (Phase 2).
 
-Last updated: 2026-11-18 (end of Phase 5).
+Last updated: 2026-11-18 (end of Phase 6).
 
 ## Phase 1 — Foundation
 
@@ -105,11 +105,24 @@ Verified = the tool's e2e test passes on Chrome **and** Edge and the output is r
 | Preview quality (Full, 1/2, 1/4), frame dropping, stats | Verified | `ProgramMonitor.tsx` | `preview.spec.ts` | — |
 | 1080p two-layer playback | Verified: 59 fps (headless Chrome, dev machine) | — | `preview.spec.ts` | Not yet measured on low-end hardware (Phase 8) |
 
+## Phase 6 — Pro editing
+
+| Feature | Status | Location | Tests | Known limitations |
+|---|---|---|---|---|
+| Clip inspector (timing, transform, crop, blend, text) | Verified (transform/keyframes) | `src/editor/inspector/ClipInspector.tsx` | `pro-editing.spec.ts` | — |
+| Keyframes + curve editor with easing presets | Verified (opacity incl. preview pixels) | `ClipInspector.tsx`, `edit.ts` | unit + e2e | No bezier handles in UI |
+| Effects stack (colour, stylise, blur, pixel FX, LUT, chroma key, masks, text animation) | Verified (stack ops); effects verified via Phase 3 tools | `EFFECTS`, `pixel-fx.ts` | e2e | Pixel effects need WebGL2; LUT ≤ 33³ |
+| Audio: volume/pan/fades, keep pitch, EQ, compressor, ducking | Implemented | `audio-mix.ts` | Phase 3 e2e (speed with pitch) | Ducking is a level-triggered gate, not a sidechain compressor |
+| Track mixer (volume, mute, solo) | Verified | `TrackMixer.tsx` | e2e | No metering yet |
+| Subtitle editor tool | Verified | `src/tools/subtitles` | e2e | — |
+| Soft subtitles (WebVTT mux, no re-encode) | Verified (MP4) | `subtitles-mux.ts` | e2e | Our probe doesn't list subtitle tracks; presence checked by codec tag |
+| Speed ramps | Not started | — | — | Constant speed only |
+| Proxies | Not started (Phase 8) | — | — | — |
+
 ## Later phases (summary)
 
 | Area | Status | Phase |
 |---|---|---|
 | Firefox/WebKit e2e runs | Not started | 3 |
 | Remaining tools (subtitle editor, soft subtitles, stabilise, overlay removal) | Not started | 6–8 |
-| Effects, transitions, text, keyframe UI, color, masks, chroma key | Not started (schema ready) | 5–6 |
 | Timeline export | Not started | 7 |

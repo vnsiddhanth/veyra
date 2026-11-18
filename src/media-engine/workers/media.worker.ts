@@ -10,6 +10,7 @@ import { sweepScratchFiles } from '../encode/output-store';
 import { computeWaveform, extractFrame } from '../decode/frames';
 import { extractFramesZip, imagesToGif, videoToGif } from '../encode/images';
 import { renderProject } from '@/render/render-project';
+import { addSoftSubtitles } from '../encode/subtitles-mux';
 import { canEncodeAudio } from 'mediabunny';
 import { registerMp3Encoder } from '@mediabunny/mp3-encoder';
 import type { FromWorker, JobInput, JobOutput, JobType, ToWorker } from './protocol';
@@ -39,6 +40,7 @@ const handlers: { [K in JobType]: Handler<K> } = {
   gif: (input, progress, signal) => videoToGif(input.file, input.options, progress, signal),
   gifImages: (input, progress, signal) => imagesToGif(input.files, input.options, progress, signal),
   frames: (input, progress, signal, jobId) => extractFramesZip(input.file, input.options, jobId, progress, signal),
+  softSubtitles: (input, progress, signal, jobId) => addSoftSubtitles(input.file, input.options, jobId, progress, signal),
 };
 
 // MP3 has no WebCodecs encoder in most browsers; register the LAME-based WASM encoder as a fallback.

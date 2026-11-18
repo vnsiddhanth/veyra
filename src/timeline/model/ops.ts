@@ -110,7 +110,7 @@ export function renameTrack(p: Project, trackId: string, name: string): Project 
   return withTrack(p, { ...getTrack(p, trackId), name: trimmed });
 }
 
-export function setTrackFlags(p: Project, trackId: string, flags: Partial<Pick<Track, 'locked' | 'muted' | 'hidden'>>): Project {
+export function setTrackFlags(p: Project, trackId: string, flags: Partial<Pick<Track, 'locked' | 'muted' | 'hidden' | 'solo' | 'volume'>>): Project {
   return withTrack(p, { ...getTrack(p, trackId), ...flags });
 }
 

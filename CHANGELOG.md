@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.6.0 — 2026-11-18 · Phase 6: Pro editing
+
+### Added
+- **Clip inspector:**
+  - **Timing:** name, timing readouts, speed and reverse.
+  - **Transform:** position, scale, rotation, flip, crop, blend mode.
+  - **Text:** content, font, size, weight, alignment, colour, box, outline, shadow, spacing.
+  - **Effects stack:** add from a grouped catalog, enable, reorder, remove, per-parameter controls, .cube LUT loader (≤ 33³).
+  - **Audio:** volume, pan, fades, keep pitch, and an audio effects stack (3-band EQ, compressor, ducking with a side-chain track).
+  - **Detach audio.**
+- **Keyframes** on opacity, X, Y, scale, rotation and volume: add or remove at the playhead, jump to the previous or next keyframe. Writing to an animated property sets a keyframe.
+- **Curve editor:** an SVG graph of the animated value. Double-click adds a point, drag moves it in time and value, and each keyframe's outgoing easing is selectable (linear, ease-in, ease-out, ease-in-out, hold).
+- Slider and point drags edit live and collapse into **one undo step** (`live-edit.ts`).
+- **Track mixer:** per-track volume fader, mute and solo. The schema gains `Track.volume` and `Track.solo`; older projects default to 1 and false.
+- **Subtitle editor** tool: load SRT/VTT, edit cue text and timing, shift all cues, add cues at the video time, live preview, overlap warnings, SRT/VTT export (re-parsed before download).
+- **Add subtitles** tool: soft WebVTT track muxed into MP4/MKV/WebM with packet copy (no re-encode), checked for the subtitle codec tag.
+- Subtitle files go onto text tracks in the editor, with clip length = last cue end.
+- Escape also clears the library selection.
+- e2e `pro-editing.spec.ts`: keyframes (model and preview pixels), undo granularity, effects stack, mixer, soft subtitles, subtitle editor.
+
+### Not implemented (stated honestly)
+- Speed ramps (keyframed speed). Constant speed and reverse are supported.
+- Bezier handles in the curve editor (the schema supports `bezier` easing; the UI offers presets).
+
 ## 0.5.0 — 2026-11-18 · Phase 5: Preview & composition
 
 ### Added

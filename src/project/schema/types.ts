@@ -45,6 +45,10 @@ export interface Track {
   locked: boolean;
   muted: boolean;
   hidden: boolean;
+  /** Only solo'd tracks are heard when any track is solo'd. */
+  solo: boolean;
+  /** Linear track gain (mixer fader). */
+  volume: number;
   /** Clip ids ordered by start time. Clips never overlap within a track. */
   clipIds: string[];
 }

@@ -4,9 +4,11 @@ import type { Project } from '@/project/schema/types';
 import { useLibraryStore } from '@/state/library-store';
 import { selectProject, useProjectStore } from '@/state/project-store';
 import { formatBytes, formatDate } from '@/utils/format';
-import { COMMON_FRAME_RATES, formatTimecode, rateToNumber } from '@/utils/time';
+import { COMMON_FRAME_RATES, rateToNumber } from '@/utils/time';
 import { useEditorUi } from '../editor-ui-store';
 import { MarkerInspector, TransitionInspector } from './TimelineItemInspectors';
+import { ClipInspector } from './ClipInspector';
+import { TrackMixer } from './TrackMixer';
 
 const RESOLUTIONS: Array<[string, number, number]> = [
   ['4K UHD 3840×2160', 3840, 2160],
@@ -36,19 +38,7 @@ export function Inspector() {
         <h2 className="text-xs font-semibold">{clip ? 'Clip' : asset ? 'Media' : 'Project'}</h2>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto pb-4">
-        {clip && (
-          <>
-            <SectionTitle>Clip</SectionTitle>
-            <dl className="px-3">
-              <Field label="Name">{clip.name}</Field>
-              <Field label="Start">{formatTimecode(clip.start, project.settings.frameRate)}</Field>
-              <Field label="Duration">{formatTimecode(clip.duration, project.settings.frameRate)}</Field>
-              <Field label="Source in">{formatTimecode(clip.sourceIn, project.settings.frameRate)}</Field>
-              <Field label="Speed">{clip.speed}×</Field>
-            </dl>
-            <p className="px-3 pt-2 text-2xs leading-relaxed text-faint">Transform, effects, audio and keyframe controls arrive with the compositor and pro-editing phases (5–6).</p>
-          </>
-        )}
+        {clip && <ClipInspector project={project} clip={clip} />}
         {asset ? (
           <>
             {asset.info ? (
@@ -123,6 +113,7 @@ function ProjectSettings({ project }: { project: Project }) {
           {hasClips && <span className="mt-1 block text-2xs text-faint">Changing the frame rate keeps clip times; new edits snap to the new frame grid.</span>}
         </label>
       </div>
+      <TrackMixer project={project} />
       <SectionTitle>Project</SectionTitle>
       <dl className="px-3">
         <Field label="Media">{project.assets.length}</Field>

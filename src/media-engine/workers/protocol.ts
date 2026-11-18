@@ -15,6 +15,7 @@ import type {
   WaveformData,
 } from '../core/types';
 import type { RenderInput } from '@/render/render-project';
+import type { SoftSubtitleOptions } from '../encode/subtitles-mux';
 
 export interface JobMap {
   probe: { input: { file: Blob }; output: MediaInfo };
@@ -26,6 +27,7 @@ export interface JobMap {
   gif: { input: { file: Blob; options: GifOptions }; output: FileResult };
   gifImages: { input: { files: Blob[]; options: GifImagesOptions }; output: FileResult };
   frames: { input: { file: Blob; options: FramesOptions }; output: FileResult };
+  softSubtitles: { input: { file: Blob; options: SoftSubtitleOptions }; output: ConvertResult };
 }
 
 export type JobType = keyof JobMap;

@@ -218,8 +218,9 @@ export interface AudioSourceClip {
 export function audibleClips(p: Project): AudioSourceClip[] {
   const assets = new Map(p.assets.map((a) => [a.id, a]));
   const out: AudioSourceClip[] = [];
+  const anySolo = p.tracks.some((t) => t.solo && t.kind !== 'text');
   for (const track of p.tracks) {
-    if (track.muted || track.kind === 'text') continue;
+    if (track.muted || track.kind === 'text' || (anySolo && !track.solo) || (track.volume ?? 1) <= 0) continue;
     for (const id of track.clipIds) {
       const clip = p.clips[id]!;
       const asset = clip.assetId ? assets.get(clip.assetId) : undefined;

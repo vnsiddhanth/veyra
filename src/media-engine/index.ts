@@ -5,6 +5,7 @@ import { MediaError } from './core/errors';
 import { JobController, type Job } from './core/job';
 import type { ConvertOptions, ConvertResult, FileResult, FrameOptions, FrameResult, FramesOptions, GifImagesOptions, GifOptions, MediaInfo, Thumbnail, ThumbnailOptions, WaveformData } from './core/types';
 import type { RenderInput } from '@/render/render-project';
+import type { SoftSubtitleOptions } from './encode/subtitles-mux';
 import { deleteScratchFile } from './encode/output-store';
 import { classifyFile, type Classification } from './import/classify';
 import { imageThumbnail, probeImage } from './import/image-probe';
@@ -113,6 +114,11 @@ export const mediaEngine = {
   /** Extract many frames into a ZIP archive. */
   frames(file: Blob, options: FramesOptions): Job<FileResult> {
     return getPool().run('frames', { file, options }, 'interactive');
+  },
+
+  /** Mux a WebVTT track into a copy of the video (no re-encode). */
+  softSubtitles(file: Blob, options: SoftSubtitleOptions): Job<ConvertResult> {
+    return getPool().run('softSubtitles', { file, options }, 'interactive');
   },
 
   /** Free the on-disk storage of a conversion result once the user is done with it. */

@@ -153,8 +153,8 @@ export const TOOLS: ToolDef[] = [
   tool('slideshow-maker', 'Slideshow maker', 'Turn photos into a video with transitions, pan & zoom and music.', 'visual', 3, 'slideshow', ['photos to video'], {}),
   tool('images-to-video', 'Images to video', 'Create a video from an image sequence.', 'visual', 3, 'slideshow', ['timelapse'], {}),
   // Subtitles
-  planned('subtitle-editor', 'Subtitle editor', 'Edit SRT/VTT timing and text with a live preview.', 'subtitles', 6, ['srt', 'vtt', 'captions']),
-  planned('add-subtitles', 'Add subtitles', 'Attach a soft subtitle track to a video file.', 'subtitles', 6, ['captions']),
+  tool('subtitle-editor', 'Subtitle editor', 'Edit SRT/VTT timing and text with a live preview.', 'subtitles', 6, 'subtitle-editor', ['srt', 'vtt', 'captions']),
+  tool('add-subtitles', 'Add subtitles', 'Attach a soft (switchable) subtitle track to a video, without re-encoding.', 'subtitles', 6, 'soft-subtitles', ['captions']),
   tool('burn-subtitles', 'Burn in subtitles', 'Render SRT/VTT subtitles permanently into the picture.', 'subtitles', 3, 'decor', ['hardcode'], { mode: 'subtitles' }),
   // Inspect & utilities (available)
   inspect('video-metadata', 'Video metadata viewer', 'See container, codecs, bitrate, frame rate, HDR and every track in a file.', 'all', ['info', 'mediainfo', 'codec'], true),

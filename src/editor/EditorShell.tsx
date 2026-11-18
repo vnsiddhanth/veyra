@@ -107,6 +107,7 @@ export function EditorShell() {
         ui.setZoom(ui.pxPerSecond * (e.key === '-' ? 1 / 1.4 : 1.4));
       } else if (e.key === 'Escape') {
         useEditorUi.getState().selectClips([]);
+        useLibraryStore.getState().select(null);
       }
     };
     window.addEventListener('keydown', onKey);

@@ -418,7 +418,11 @@ export class AudioMixer {
         add(acc, tmp);
       }
     }
-    for (const acc of perTrack.values()) add(mix, acc);
+    for (const [trackId, acc] of perTrack) {
+      const vol = this.project.tracks.find((t) => t.id === trackId)?.volume ?? 1;
+      if (vol !== 1) for (let ch = 0; ch < 2; ch++) for (let i = 0; i < frames; i++) acc[ch]![i] = acc[ch]![i]! * vol;
+      add(mix, acc);
+    }
 
     // Ducking: lower a clip while its side-chain track carries signal above −40 dBFS.
     for (const { r, fx } of ducked) {
@@ -439,6 +443,8 @@ export class AudioMixer {
           tmp[1][i] = tmp[1][i]! * g;
         }
       }
+      const vol = r.src.track.volume ?? 1;
+      if (vol !== 1) for (let ch = 0; ch < 2; ch++) for (let i = 0; i < frames; i++) tmp[ch]![i] = tmp[ch]![i]! * vol;
       add(mix, tmp);
     }
 

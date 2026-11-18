@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
 };
 
 export function createTrack(kind: TrackKind, name: string): Track {
-  return { id: createId('trk'), kind, name, locked: false, muted: false, hidden: false, clipIds: [] };
+  return { id: createId('trk'), kind, name, locked: false, muted: false, hidden: false, solo: false, volume: 1, clipIds: [] };
 }
 
 export function createProject(name = 'Untitled project', settings: Partial<ProjectSettings> = {}): Project {
@@ -106,6 +106,7 @@ export function summarize(p: Project): ProjectSummary {
 
 /** Source duration of an asset in flicks; Infinity for stills/generated media. */
 export function assetSourceDuration(asset: Asset | undefined): Flicks {
+  if (asset?.kind === 'subtitle' && asset.subtitles?.length) return secondsToFlicks(Math.max(...asset.subtitles.map((c) => c.end)));
   if (!asset || !asset.info || asset.kind === 'image') return Number.POSITIVE_INFINITY;
   return secondsToFlicks(asset.info.duration);
 }

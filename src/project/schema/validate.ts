@@ -309,6 +309,8 @@ function track(v: unknown, path: string): Track {
     locked: bool(o.locked ?? false, `${path}.locked`),
     muted: bool(o.muted ?? false, `${path}.muted`),
     hidden: bool(o.hidden ?? false, `${path}.hidden`),
+    solo: bool(o.solo ?? false, `${path}.solo`),
+    volume: num(o.volume ?? 1, `${path}.volume`, 0, 4),
     clipIds: arr(o.clipIds, `${path}.clipIds`).map((c, i) => id(c, `${path}.clipIds[${i}]`)),
   };
 }

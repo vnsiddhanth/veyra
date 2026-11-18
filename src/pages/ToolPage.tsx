@@ -23,6 +23,8 @@ const ENGINES: Partial<Record<ToolEngine, ComponentType<{ tool: ToolDef }>>> = {
   'audio-track': named(() => import('@/tools/compose/AudioTrackTool'), 'AudioTrackTool'),
   decor: named(() => import('@/tools/compose/DecorTool'), 'DecorTool'),
   slideshow: named(() => import('@/tools/compose/SlideshowTool'), 'SlideshowTool'),
+  'subtitle-editor': named(() => import('@/tools/subtitles/SubtitleTools') as unknown as Promise<Record<'SubtitleEditorTool', ComponentType<{ tool: ToolDef }>>>, 'SubtitleEditorTool'),
+  'soft-subtitles': named(() => import('@/tools/subtitles/SubtitleTools'), 'SoftSubtitlesTool'),
   silence: named(() => import('@/tools/compose/SilenceTool') as Promise<Record<'SilenceTool', ComponentType<{ tool: ToolDef }>>>, 'SilenceTool'),
 };
 import { NotFoundPage } from './NotFoundPage';
