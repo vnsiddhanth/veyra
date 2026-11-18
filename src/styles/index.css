@@ -1,0 +1,139 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. The editor is always dark (color-critical work). Marketing pages follow
+ * the system theme. Components use the semantic tokens (bg-surface, text-muted...), never raw palette values.
+ */
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-surface-3: var(--c-surface-3);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-fg: var(--c-fg);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-accent: var(--c-accent);
+  --color-accent-fg: var(--c-accent-fg);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-ok: var(--c-ok);
+  --color-warn: var(--c-warn);
+  --color-danger: var(--c-danger);
+  --color-track-video: #3d6bd8;
+  --color-track-audio: #2f9e74;
+  --color-track-text: #b2712f;
+  --color-track-overlay: #8a59c9;
+
+  --text-2xs: 0.6875rem;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+}
+
+:root {
+  --c-canvas: #f7f7f5;
+  --c-surface: #ffffff;
+  --c-surface-2: #f1f1ee;
+  --c-surface-3: #e7e7e3;
+  --c-line: #e3e3de;
+  --c-line-strong: #cfcfc8;
+  --c-fg: #17181b;
+  --c-muted: #5b5e66;
+  --c-faint: #8a8d94;
+  --c-accent: #c98a0d;
+  --c-accent-fg: #17181b;
+  --c-accent-soft: #fbf0d6;
+  --c-ok: #1f8a5b;
+  --c-warn: #a86a00;
+  --c-danger: #c23b3b;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --c-canvas: #0d0e11;
+    --c-surface: #15171b;
+    --c-surface-2: #1c1f24;
+    --c-surface-3: #262a31;
+    --c-line: #262a31;
+    --c-line-strong: #353a43;
+    --c-fg: #e9eaec;
+    --c-muted: #a0a4ad;
+    --c-faint: #6c717b;
+    --c-accent: #f5b942;
+    --c-accent-fg: #15171b;
+    --c-accent-soft: #3a2f17;
+    --c-ok: #43c08a;
+    --c-warn: #e8a93a;
+    --c-danger: #ef6b6b;
+    color-scheme: dark;
+  }
+}
+
+/* The editor workspace forces dark regardless of system theme. */
+:root[data-theme='dark'],
+.theme-dark {
+  --c-canvas: #0d0e11;
+  --c-surface: #15171b;
+  --c-surface-2: #1c1f24;
+  --c-surface-3: #262a31;
+  --c-line: #262a31;
+  --c-line-strong: #353a43;
+  --c-fg: #e9eaec;
+  --c-muted: #a0a4ad;
+  --c-faint: #6c717b;
+  --c-accent: #f5b942;
+  --c-accent-fg: #15171b;
+  --c-accent-soft: #3a2f17;
+  --c-ok: #43c08a;
+  --c-warn: #e8a93a;
+  --c-danger: #ef6b6b;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--c-canvas);
+  color: var(--c-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 1px;
+}
+
+/* Compact scrollbars inside the editor. */
+.theme-dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.theme-dark ::-webkit-scrollbar-thumb {
+  background: var(--c-surface-3);
+  border: 2px solid var(--c-surface);
+  border-radius: 6px;
+}
+.theme-dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
