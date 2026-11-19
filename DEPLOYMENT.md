@@ -22,7 +22,7 @@ The configs below already do both, plus a strict Content-Security-Policy and lon
 
 ## Cloudflare (recommended — free, global CDN) — **this is how veyra is deployed**
 
-Live: **https://veyra.siddhanth-n-vishnubhotla.workers.dev**
+Live: **https://veyraedit.pages.dev** (Cloudflare Pages, primary) — also mirrored at https://veyra.siddhanth-n-vishnubhotla.workers.dev
 
 Cloudflare now serves static sites through **Workers static assets** (the successor to Pages). `wrangler.toml` points at `dist/`,
 enables single-page-app routing, and `dist/_headers` supplies the isolation and security headers.
@@ -31,7 +31,7 @@ enables single-page-app routing, and `dist/_headers` supplies the isolation and 
 
 ```powershell
 npx.cmd wrangler@4 login     # once: authorise Wrangler in your browser
-npm run deploy               # build + upload
+npm run deploy               # build + upload to veyraedit.pages.dev
 ```
 
 On Windows PowerShell use `npx.cmd`, because the default script policy blocks `npx.ps1`. If the browser sign-in fails with

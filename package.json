@@ -14,7 +14,7 @@
     "test:e2e": "playwright test --project=chrome --project=msedge",
     "test:all": "npm run typecheck && npm test && playwright test",
     "test:e2e:engines": "playwright test --project=firefox --project=webkit",
-    "deploy": "npm run build && npx --yes wrangler@4 deploy"
+    "deploy": "cross-env VEYRA_SITE_URL=https://veyraedit.pages.dev npm run build && npx --yes wrangler@4 pages deploy dist --project-name veyraedit --branch main --commit-dirty=true"
   },
   "dependencies": {
     "@mediabunny/mp3-encoder": "^1.66.0",
@@ -33,6 +33,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
+    "cross-env": "^7.0.3",
     "fake-indexeddb": "^6.2.8",
     "jsdom": "^31.0.1",
     "tailwindcss": "^4.3.5",

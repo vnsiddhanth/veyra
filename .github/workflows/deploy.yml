@@ -38,5 +38,11 @@ jobs:
         run: npx vitest run
       - if: steps.secrets.outputs.ok == 'true'
         run: npm run build
+        env:
+          VEYRA_SITE_URL: https://veyraedit.pages.dev
+      # Main address: https://veyraedit.pages.dev (Cloudflare Pages).
+      - if: steps.secrets.outputs.ok == 'true'
+        run: npx --yes wrangler@4 pages deploy dist --project-name veyraedit --branch main --commit-dirty=true
+      # Kept in sync: https://veyra.siddhanth-n-vishnubhotla.workers.dev
       - if: steps.secrets.outputs.ok == 'true'
         run: npx --yes wrangler@4 deploy
