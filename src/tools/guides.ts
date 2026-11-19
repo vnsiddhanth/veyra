@@ -64,6 +64,7 @@ export const TOOL_GUIDES: Record<string, ToolGuide> = {
   'change-resolution': {
     when: 'You need a standard size like 1080p or 720p.',
     steps: [DROP, 'Pick a resolution — the exact output size is shown next to each option.', 'Press Rescale.', DOWNLOAD],
+    tips: ['Going down (4K → 1080p) makes files smaller. Going up (720p → 4K) only enlarges the frame: it cannot add detail the camera did not record.'],
   },
   'repair-video': {
     when: 'A file plays badly, will not seek, or an app rejects it, but the picture itself is fine.',

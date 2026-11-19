@@ -368,10 +368,27 @@ export function ConvertTool({ tool }: { tool: ToolDef }) {
     case 'resolution':
       controls = (
         <>
-          <SelectField label="Resolution" value={String(resP)} onChange={(v) => setResP(Number(v))} options={RESOLUTIONS.map(([l, p]) => [String(p), `${l} → ${scaleToP(info, p).width}×${scaleToP(info, p).height}`] as const)} />
+          <SelectField
+            label="Resolution"
+            value={String(resP)}
+            onChange={(v) => setResP(Number(v))}
+            options={RESOLUTIONS.map(([l, p]) => {
+              const s = scaleToP(info, p);
+              const srcP = Math.min(info.width, info.height);
+              const tag = p > srcP ? ' (upscale)' : p === srcP ? ' (same as source)' : '';
+              return [String(p), `${l} → ${s.width}×${s.height}${tag}`] as const;
+            })}
+            hint={`Source: ${info.width}×${info.height}.`}
+          />
           {containerSelect}
           {codecSelect}
           {audioToggle}
+          {resP > Math.min(info.width, info.height) && (
+            <p role="note" className="rounded-md border border-line bg-surface-2 p-3 text-sm text-muted md:col-span-3">
+              <strong className="text-fg">Upscaling won’t make it sharper.</strong> It enlarges the frame to {scaleToP(info, resP).width}×{scaleToP(info, resP).height}, but it can’t add
+              detail the camera didn’t record, so it will look about the same with a bigger file. Use it when a platform or editor needs that exact size.
+            </p>
+          )}
         </>
       );
       break;

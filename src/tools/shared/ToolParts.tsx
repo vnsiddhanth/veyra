@@ -238,7 +238,7 @@ export function JobArea<T>({
       {state.status === 'cancelled' && <p className="text-sm text-muted">Cancelled. Nothing was saved.</p>}
       {state.status !== 'running' && (
         <div className="flex items-center gap-3">
-          <Button variant="primary" size="lg" onClick={onRun} disabled={!!disabledReason}>
+          <Button variant="primary" size="lg" onClick={onRun} disabled={!!disabledReason} data-run="">
             {action}
           </Button>
           {disabledReason && <span className="text-xs text-muted">{disabledReason}</span>}
