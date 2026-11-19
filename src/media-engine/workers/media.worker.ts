@@ -95,9 +95,15 @@ self.onmessage = async (event: MessageEvent<ToWorker>) => {
     const error =
       err instanceof MediaError
         ? err
-        : err instanceof RangeError || (err instanceof DOMException && err.name === 'QuotaExceededError')
-          ? new MediaError('out-of-memory', 'The device ran out of memory while processing this file.', String(err))
-          : MediaError.from(err);
+        : err instanceof DOMException && err.name === 'QuotaExceededError'
+          ? new MediaError(
+              'storage',
+              'Not enough free storage space to save the result. Free some disk space, or clear old results and preview copies on the Privacy page, then try again. Your original file is untouched.',
+              String(err),
+            )
+          : err instanceof RangeError
+            ? new MediaError('out-of-memory', 'The device ran out of memory while processing this file.', String(err))
+            : MediaError.from(err);
     post({ kind: 'error', jobId: msg.jobId, error: error.toJSON() });
   } finally {
     controllers.delete(msg.jobId);

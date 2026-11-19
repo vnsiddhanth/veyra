@@ -26,14 +26,24 @@ export async function getProxy(fingerprint: string): Promise<File | null> {
   }
 }
 
-/** Copy a finished proxy into the proxy store (streamed, no full in-memory copy). */
+/**
+ * Copy a finished proxy into the proxy store (streamed, no full in-memory copy). Proxies are an
+ * optimisation: if storage is full the partial file is removed and null is returned, so preview
+ * simply keeps using the original media.
+ */
 export async function saveProxy(fingerprint: string, file: Blob): Promise<File | null> {
   const d = await dir();
   if (!d) return null;
-  const h = await d.getFileHandle(nameFor(fingerprint), { create: true });
-  const w = await (h as unknown as { createWritable(): Promise<FileSystemWritableFileStream> }).createWritable();
-  await file.stream().pipeTo(w as unknown as WritableStream<Uint8Array>);
-  return h.getFile();
+  try {
+    const h = await d.getFileHandle(nameFor(fingerprint), { create: true });
+    const w = await (h as unknown as { createWritable(): Promise<FileSystemWritableFileStream> }).createWritable();
+    await file.stream().pipeTo(w as unknown as WritableStream<Uint8Array>);
+    return await h.getFile();
+  } catch (e) {
+    await d.removeEntry(nameFor(fingerprint)).catch(() => undefined);
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') return null;
+    throw e;
+  }
 }
 
 export async function deleteProxy(fingerprint: string): Promise<void> {
