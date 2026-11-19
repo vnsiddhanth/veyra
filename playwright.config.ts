@@ -7,6 +7,9 @@ import { defineConfig } from '@playwright/test';
  *   `--project=firefox` / `--project=webkit` to measure cross-engine support; results are recorded in
  *   BROWSER_COMPATIBILITY.md. Playwright's WebKit on Windows is not Safari and lacks some media features.
  */
+/** Set PW_BASE_URL to test a deployed site (e.g. production) instead of starting the dev server. */
+const remote = process.env.PW_BASE_URL;
+
 export default defineConfig({
   testDir: 'e2e',
   timeout: 90_000,
@@ -15,9 +18,9 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [['list']],
-  globalSetup: './e2e/global-setup.ts',
+  globalSetup: remote ? undefined : './e2e/global-setup.ts',
   use: {
-    baseURL: 'http://localhost:5174',
+    baseURL: remote ?? 'http://localhost:5174',
     acceptDownloads: true,
     trace: 'retain-on-failure',
   },
@@ -27,10 +30,12 @@ export default defineConfig({
     { name: 'firefox', use: { browserName: 'firefox' } },
     { name: 'webkit', use: { browserName: 'webkit' } },
   ],
-  webServer: {
-    command: 'npm run dev -- --port 5174 --strictPort',
-    url: 'http://localhost:5174',
-    reuseExistingServer: true,
-    timeout: 60_000,
-  },
+  webServer: remote
+    ? undefined
+    : {
+        command: 'npm run dev -- --port 5174 --strictPort',
+        url: 'http://localhost:5174',
+        reuseExistingServer: true,
+        timeout: 60_000,
+      },
 });

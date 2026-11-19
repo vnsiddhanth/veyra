@@ -2,6 +2,8 @@
 
 [![Engines](https://github.com/vnsiddhanth/veyra/actions/workflows/engines.yml/badge.svg)](https://github.com/vnsiddhanth/veyra/actions/workflows/engines.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**Live: https://veyra.siddhanth-n-vishnubhotla.workers.dev**
+
 A free, local-first video editor and set of video tools that run entirely in the browser.
 It has no uploads, no account, no watermark and no export limits. Media is processed on the user's device with WebCodecs and
 [Mediabunny](https://mediabunny.dev) in Web Workers.

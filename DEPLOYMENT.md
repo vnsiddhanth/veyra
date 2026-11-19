@@ -20,29 +20,43 @@ npm run preview      # optional: serve dist/ locally at http://localhost:4173 to
 
 The configs below already do both, plus a strict Content-Security-Policy and long-term caching of hashed assets.
 
-## Cloudflare Pages (recommended — free, global CDN)
+## Cloudflare (recommended — free, global CDN) — **this is how veyra is deployed**
 
-### One command from your computer
+Live: **https://veyra.siddhanth-n-vishnubhotla.workers.dev**
+
+Cloudflare now serves static sites through **Workers static assets** (the successor to Pages). `wrangler.toml` points at `dist/`,
+enables single-page-app routing, and `dist/_headers` supplies the isolation and security headers.
+
+### Deploy from your computer
 
 ```powershell
-npx.cmd wrangler@4 login     # once: opens your browser to sign in to Cloudflare
-npm run deploy               # builds and uploads dist/ to the "veyra" Pages project
+npx.cmd wrangler@4 login     # once: authorise Wrangler in your browser
+npm run deploy               # build + upload
 ```
 
-The first deploy creates the project and prints its address (`https://veyra.pages.dev` or similar). Run `npm run deploy` again to publish
-updates. On Windows PowerShell use `npx.cmd`, because the default script policy blocks `npx.ps1`.
+On Windows PowerShell use `npx.cmd`, because the default script policy blocks `npx.ps1`. If the browser sign-in fails with
+"No CSRF value", sign in at dash.cloudflare.com first in the same browser, and turn off Brave Shields for that site.
 
-### Or automatic deploys from GitHub
+### Automatic deploys on every push
 
-1. Push the repository to GitHub.
-2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → pick the repo.
-3. Build command `npm run build`, output directory `dist`. Under *Environment variables* add `NODE_VERSION = 22`.
-4. Deploy. `public/_headers` and `public/_redirects` are applied automatically.
+`.github/workflows/deploy.yml` deploys whenever `main` changes, once two repository secrets exist:
+
+1. Cloudflare dashboard → **My Profile → API Tokens → Create Token** → template **Edit Cloudflare Workers** → create, then copy the token.
+2. GitHub → repository **Settings → Secrets and variables → Actions → New repository secret**:
+   - `CLOUDFLARE_API_TOKEN`: the token from step 1.
+   - `CLOUDFLARE_ACCOUNT_ID`: shown by `npx.cmd wrangler@4 whoami`, or on the right-hand side of the Cloudflare dashboard.
+
+Until both are set, the workflow skips itself.
+
+### Custom domain
+
+Cloudflare dashboard → **Workers & Pages → veyra → Settings → Domains & Routes → Add → Custom domain**. If you set one, rebuild with
+`VEYRA_SITE_URL=https://your.domain` to emit a sitemap.
 
 ## Netlify
 
 **Add new site → Import an existing project** → pick the repo. `netlify.toml` sets the build command, output folder and Node version;
-`_headers` and `_redirects` are picked up from `dist/`.
+`_headers` is picked up from `dist/`.
 
 ## Vercel
 
