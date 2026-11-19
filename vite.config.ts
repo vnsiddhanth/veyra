@@ -52,7 +52,7 @@ function seoPlugin(): Plugin {
         const src = readFileSync(new URL('./src/tools/registry.ts', import.meta.url), 'utf8');
         const slugs = [...src.matchAll(/^\s+(?:tool|inspect)\('([a-z0-9-]+)'/gm)].map((m) => m[1]);
         const trimSlugs = [...src.matchAll(/slug: '([a-z0-9-]+)'/g)].map((m) => m[1]);
-        const paths = ['/', '/tools', '/editor', '/privacy', '/compatibility', '/benchmark', '/guide', ...[...new Set([...slugs, ...trimSlugs])].map((s) => `/tools/${s}`)];
+        const paths = ['/', '/tools', '/editor', '/privacy', '/compatibility', '/benchmark', '/guide', '/feedback',...[...new Set([...slugs, ...trimSlugs])].map((s) => `/tools/${s}`)];
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${paths.map((p) => `  <url><loc>${site}${p}</loc></url>`).join('\n')}\n</urlset>\n`;
         this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: xml });
         robots += `Sitemap: ${site}/sitemap.xml\n`;

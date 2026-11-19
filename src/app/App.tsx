@@ -12,6 +12,7 @@ const CompatibilityPage = lazy(() => import('@/pages/CompatibilityPage'));
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const BenchmarkPage = lazy(() => import('@/pages/BenchmarkPage'));
 const GuidePage = lazy(() => import('@/pages/GuidePage'));
+const FeedbackPage = lazy(() => import('@/pages/FeedbackPage'));
 const DevFixturesPage = lazy(() => import('@/pages/DevFixturesPage'));
 
 /** Shown only if loading takes longer than 250 ms, so fast loads never flash a spinner. */
@@ -34,9 +35,14 @@ function RouteError() {
       <h1 className="text-xl font-semibold">Something went wrong</h1>
       <p className="text-sm text-muted">{message}</p>
       <p className="text-sm text-muted">Your projects are stored locally and were not affected.</p>
-      <Link to="/" className="text-sm text-accent underline">
-        Back to home
-      </Link>
+      <div className="flex justify-center gap-4 text-sm">
+        <Link to="/" className="text-accent underline">
+          Back to home
+        </Link>
+        <a href={`/feedback?type=bug&error=${encodeURIComponent(message)}`} className="text-accent underline">
+          Report this problem
+        </a>
+      </div>
     </div>
   );
 }
@@ -53,6 +59,7 @@ const router = createBrowserRouter([
       { path: '/privacy', element: withSuspense(<PrivacyPage />) },
       { path: '/benchmark', element: withSuspense(<BenchmarkPage />) },
       { path: '/guide', element: withSuspense(<GuidePage />) },
+      { path: '/feedback', element: withSuspense(<FeedbackPage />) },
       ...(import.meta.env.DEV ? [{ path: '/dev/fixtures', element: withSuspense(<DevFixturesPage />) }] : []),
       { path: '*', element: <NotFoundPage /> },
     ],

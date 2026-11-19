@@ -33,6 +33,13 @@ export function SourceDrop({ onFile, accept, label = 'Drop a video here', hint }
   );
 }
 
+/** Link to the Report a problem page, prefilled with this tool and the error. */
+function reportUrl(message: string, detail?: string): string {
+  const slug = /^\/tools\/([a-z0-9-]+)/.exec(window.location.pathname)?.[1] ?? (window.location.pathname.startsWith('/editor') ? 'editor' : 'general');
+  const error = detail ? `${message} (${detail})` : message;
+  return `/feedback?type=bug&tool=${slug}&error=${encodeURIComponent(error.slice(0, 500))}`;
+}
+
 export function ErrorBox({ error, children }: { error: MediaError | string; children?: ReactNode }) {
   const message = typeof error === 'string' ? error : error.message;
   const detail = typeof error === 'string' ? undefined : error.detail;
@@ -43,6 +50,9 @@ export function ErrorBox({ error, children }: { error: MediaError | string; chil
         <p>{message}</p>
         {detail && <p className="break-words font-mono text-xs opacity-80">{detail}</p>}
         {children}
+        <a href={reportUrl(message, detail)} className="inline-block text-xs font-medium underline underline-offset-2 hover:opacity-80">
+          Report this problem
+        </a>
       </div>
     </div>
   );

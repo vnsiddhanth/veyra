@@ -25,6 +25,7 @@ const NAV: [string, string][] = [
   ['/compatibility', 'Compatibility'],
   ['/privacy', 'Privacy'],
   ['/benchmark', 'Benchmark'],
+  ['/feedback', 'Report a problem'],
 ];
 
 /** Phone navigation: a menu button that opens every top-level page. */
@@ -119,6 +120,8 @@ export function SiteLayout() {
             <Link to="/#faq" className="hover:text-fg">FAQ</Link>
             <Link to="/#formats" className="hover:text-fg">Formats</Link>
             <Link to="/guide" className="hover:text-fg">Guide</Link>
+            <Link to="/feedback" className="hover:text-fg">Report a problem</Link>
+            <a href={`mailto:${BRAND.supportEmail}`} className="hover:text-fg">Contact</a>
             <a href="https://github.com/vnsiddhanth/veyra" target="_blank" rel="noopener noreferrer" className="hover:text-fg">
               Source code (MIT)
             </a>

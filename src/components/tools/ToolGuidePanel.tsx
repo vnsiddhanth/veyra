@@ -31,9 +31,14 @@ export function ToolGuidePanel({ tool, variant }: { tool: ToolDef; variant: 'asi
           </ul>
         </div>
       ) : null}
-      <Link to={`/guide#tool-${tool.slug}`} className="inline-block text-xs font-medium text-accent hover:underline">
-        All tool guides →
-      </Link>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium">
+        <Link to={`/guide#tool-${tool.slug}`} className="text-accent hover:underline">
+          All tool guides →
+        </Link>
+        <Link to={`/feedback?tool=${tool.slug}`} className="text-muted hover:text-fg hover:underline">
+          Something not working? Report it
+        </Link>
+      </div>
     </div>
   );
   if (variant === 'inline')
