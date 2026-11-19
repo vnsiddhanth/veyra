@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=chrome --project=msedge",
     "test:all": "npm run typecheck && npm test && playwright test",
-    "test:e2e:engines": "playwright test --project=firefox --project=webkit"
+    "test:e2e:engines": "playwright test --project=firefox --project=webkit",
+    "deploy": "npm run build && npx --yes wrangler@4 pages deploy dist --project-name veyra --branch main"
   },
   "dependencies": {
     "@mediabunny/mp3-encoder": "^1.66.0",

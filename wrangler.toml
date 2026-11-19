@@ -1,0 +1,5 @@
+# Cloudflare Pages project (static site). Headers and SPA fallback come from public/_headers and
+# public/_redirects, copied into dist/ by the build.
+name = "veyra"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-11-01"

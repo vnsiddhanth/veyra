@@ -22,6 +22,18 @@ The configs below already do both, plus a strict Content-Security-Policy and lon
 
 ## Cloudflare Pages (recommended — free, global CDN)
 
+### One command from your computer
+
+```powershell
+npx.cmd wrangler@4 login     # once: opens your browser to sign in to Cloudflare
+npm run deploy               # builds and uploads dist/ to the "veyra" Pages project
+```
+
+The first deploy creates the project and prints its address (`https://veyra.pages.dev` or similar). Run `npm run deploy` again to publish
+updates. On Windows PowerShell use `npx.cmd`, because the default script policy blocks `npx.ps1`.
+
+### Or automatic deploys from GitHub
+
 1. Push the repository to GitHub.
 2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → pick the repo.
 3. Build command `npm run build`, output directory `dist`. Under *Environment variables* add `NODE_VERSION = 22`.
