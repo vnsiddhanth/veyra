@@ -254,7 +254,7 @@ export function HomePage() {
           <IconShield size={22} className="mb-2 text-accent" />
           <h2 className="mb-2 text-lg font-semibold">Privacy you can verify</h2>
           <p className="text-sm leading-relaxed text-muted">
-            The site’s security policy only allows network requests to itself. There are no analytics or ad scripts. Open your browser’s network panel while you
+            The site’s security policy only allows requests to itself and a cookie-free visit counter. There are no ad or tracking scripts. Open your browser’s network panel while you
             edit: no media ever leaves your device.
           </p>
           <div className="mt-4 flex flex-wrap gap-4 text-sm font-medium">

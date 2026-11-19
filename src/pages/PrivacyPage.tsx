@@ -58,11 +58,15 @@ export default function PrivacyPage() {
       <StorageManager />
       <h2 className="pt-2 text-lg font-semibold text-fg">What we don’t do</h2>
       <ul className="list-disc space-y-1 pl-5">
-        <li>No analytics, tracking pixels, advertising scripts or third-party fonts.</li>
+        <li>No cookies, tracking pixels, advertising scripts or third-party fonts.</li>
         <li>No accounts, so no personal data to collect.</li>
         <li>
-          The production Content Security Policy sets <code className="font-mono text-sm text-fg">connect-src 'self'</code>, so the page cannot
-          send data to any other server.
+          We count visits with Cloudflare Web Analytics, which uses no cookies and does not identify you. It records page views, the page
+          that linked here, and your browser and country. Never your files or what you edit.
+        </li>
+        <li>
+          The production Content Security Policy only lets the page talk to this site and that visit counter, so your media cannot be
+          sent anywhere else.
         </li>
       </ul>
       <h2 className="pt-2 text-lg font-semibold text-fg">Optional features in the future</h2>
