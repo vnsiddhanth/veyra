@@ -7,7 +7,7 @@ const names = (page: Page) => page.getByRole('list', { name: /reorderable/ }).ge
 
 test('tool list: drag with the mouse, move with the keyboard, and sort', async ({ page }) => {
   await page.goto('/tools/merge-videos');
-  await page.getByRole('button', { name: 'Choose file' }).or(page.getByRole('button', { name: 'Add files' })).first().waitFor();
+  await page.getByRole('button', { name: 'Choose videos' }).waitFor();
   await page.locator('main input[type=file]').first().setInputFiles(['counter-720p30-5s.mp4', 'counter-480p24-6s.webm', 'counter-1080p60-3s.mp4'].map(fixture));
   await expect(page.getByRole('list', { name: /reorderable/ }).getByRole('listitem')).toHaveCount(3);
   expect(await names(page)).toEqual(['counter-720p30-5s.mp4', 'counter-480p24-6s.webm', 'counter-1080p60-3s.mp4']);
@@ -88,4 +88,29 @@ test('timeline Rearrange: drag the last clip to the front; others make room; one
   const undone = await page.evaluate((ids) => ids.map((id: string) => (window as any).__veyra.useProjectStore.getState().history.present.clips[id].start / 705_600_000), ids);
   expect(undone).toEqual([0, 5, 10]);
   void F;
+});
+
+test('merge page: files dropped anywhere on the page are added; unusable files are explained', async ({ page }) => {
+  await page.goto('/tools/merge-videos');
+  await page.getByRole('button', { name: 'Choose videos' }).waitFor();
+  // Drop two videos and one non-video on the page heading (outside the drop zone).
+  const dt = await page.evaluateHandle(async () => {
+    const d = new DataTransfer();
+    for (const n of ['counter-720p30-5s.mp4', 'counter-480p24-6s.webm']) {
+      const b = await (await fetch('/e2e/fixtures/' + n)).blob();
+      d.items.add(new File([b], n, { type: b.type }));
+    }
+    d.items.add(new File(['not a video'], 'notes.txt', { type: 'text/plain' }));
+    return d;
+  });
+  const h1 = page.getByRole('heading', { level: 1 });
+  await h1.dispatchEvent('dragenter', { dataTransfer: dt });
+  await h1.dispatchEvent('dragover', { dataTransfer: dt });
+  await h1.dispatchEvent('drop', { dataTransfer: dt });
+  await expect(page.getByRole('list', { name: /reorderable/ }).getByRole('listitem')).toHaveCount(3);
+  const alert = page.getByRole('alert').filter({ hasText: 'can’t be used' });
+  await expect(alert).toContainText('notes.txt');
+  await alert.getByRole('button', { name: 'Remove them' }).click();
+  await expect(page.getByRole('list', { name: /reorderable/ }).getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Merge videos' })).toBeEnabled();
 });

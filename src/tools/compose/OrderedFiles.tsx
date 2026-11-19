@@ -13,8 +13,33 @@ export function OrderedFiles({ list, label, unit = 'item' }: { list: List; label
   if (list.items.length === 0) return null;
   const total = list.ready.reduce((s, x) => s + (x.info?.duration ?? 0), 0);
   const byName = (a: { file: File }, b: { file: File }) => a.file.name.localeCompare(b.file.name, undefined, { numeric: true, sensitivity: 'base' });
+  const failed = list.items.filter((x) => x.status === 'error');
   return (
     <section className="space-y-2" aria-label={label}>
+      {failed.length > 0 && (
+        <div role="alert" className="rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+          <p className="font-medium">
+            {failed.length === 1 ? '1 file can’t be used' : `${failed.length} files can’t be used`} and will be skipped:
+          </p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            {failed.map((x) => (
+              <li key={x.id}>
+                <span className="font-medium">{x.file.name}</span> — {x.error}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-xs">
+            Older formats (AVI, WMV, FLV) and some phone codecs need converting first.{' '}
+            <a href="/tools/video-metadata" className="underline">
+              Check a file’s format
+            </a>{' '}
+            ·{' '}
+            <button type="button" className="underline" onClick={() => failed.forEach((x) => list.remove(x.id))}>
+              Remove them
+            </button>
+          </p>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
         <span className="mr-1 text-muted">
           {list.items.length} {unit}
@@ -45,7 +70,7 @@ export function OrderedFiles({ list, label, unit = 'item' }: { list: List; label
         getLabel={(x) => x.file.name}
         onMove={list.moveTo}
         renderItem={(it, { index }) => (
-          <div className="group rounded-md border border-line bg-surface p-1.5 text-xs hover:border-line-strong">
+          <div className={`group rounded-md border bg-surface p-1.5 text-xs ${it.status === 'error' ? 'border-danger/60' : 'border-line hover:border-line-strong'}`}>
             <div className="relative">
               <MediaThumb url={it.url} kind={it.info?.kind ?? (it.file.type.startsWith('image/') ? 'image' : 'video')} duration={it.info?.duration} name={it.file.name} />
               <span className="absolute left-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-2xs font-bold text-accent-fg" aria-hidden>

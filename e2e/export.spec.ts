@@ -48,7 +48,7 @@ test('export renders the timeline exactly: cuts, crossfade blend, title and audi
   await dialog.getByLabel('Format').selectOption('mp4');
   await dialog.getByLabel('File name').fill('timeline');
   await dialog.getByRole('button', { name: 'Export', exact: true }).click();
-  await expect(dialog.getByText('output verified')).toBeVisible({ timeout: 150_000 });
+  await expect(dialog.getByText('Done · output verified', { exact: true })).toBeVisible({ timeout: 150_000 });
   const [dl] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('link', { name: 'Download' }).click()]);
   const out = test.info().outputPath('timeline.mp4');
   await dl.saveAs(out);

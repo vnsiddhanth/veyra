@@ -101,7 +101,7 @@ function ImagesGif() {
   const [bg, setBg] = useState('#000000');
   return (
     <div className="space-y-4">
-      <AddFiles onFiles={list.add} accept={IMAGE_ACCEPT} label="Drop images here (PNG, JPEG, WebP…). Each becomes one frame, in the order shown." count={list.items.length} />
+      <AddFiles onFiles={list.add} accept={IMAGE_ACCEPT} label="Drop images here (PNG, JPEG, WebP…). Each becomes one frame, in the order shown." count={list.items.length} noun="images" />
       <OrderedFiles list={list} label="GIF frames" unit="image" />
       <Panel>
         <NumberField label="Width" unit="px" value={width} min={16} max={1280} onChange={setWidth} />

@@ -69,7 +69,7 @@ test('add soft subtitles muxes a WebVTT track without re-encoding', async ({ pag
   await page.locator('main input[type=file]').first().setInputFiles(fixture('sample.srt'));
   await expect(page.getByText('2 cues ready')).toBeVisible();
   await page.getByRole('button', { name: 'Add subtitle track' }).click();
-  await expect(page.getByText('output verified')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText('Done · output verified', { exact: true })).toBeVisible({ timeout: 60_000 });
   const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download' }).click()]);
   const out = test.info().outputPath('subbed.mp4');
   await dl.saveAs(out);

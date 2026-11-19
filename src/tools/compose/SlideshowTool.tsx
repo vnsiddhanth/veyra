@@ -81,7 +81,7 @@ export function SlideshowTool({ tool }: { tool: ToolDef }) {
 
   return (
     <div className="space-y-4">
-      <AddFiles onFiles={list.add} accept={IMAGE_ACCEPT} label={sequence ? 'Drop an image sequence (sorted by the order you add them)' : 'Drop photos here'} count={list.items.length} />
+      <AddFiles onFiles={list.add} accept={IMAGE_ACCEPT} label={sequence ? 'Drop an image sequence (sorted by the order you add them)' : 'Drop photos here'} count={list.items.length} noun="images" />
       <OrderedFiles list={list} label="Images" unit="image" />
       <Panel>
         <SelectField label="Video size" value={size} onChange={setSize} options={SIZES.map(([id, l]) => [id, l] as const)} />

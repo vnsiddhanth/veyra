@@ -13,7 +13,7 @@ const SRC2 = fixture('counter-480p24-6s.webm'); // 854×480, 24 fps, VP9/Opus
 test.describe.configure({ timeout: 120_000 });
 
 async function download(page: Page, name = 'Download', index = 0): Promise<string> {
-  await expect(page.getByText('output verified', { exact: false }).first()).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByText('Done · output verified', { exact: true }).first()).toBeVisible({ timeout: 90_000 });
   const link = page.getByRole('link', { name }).nth(index);
   const [dl] = await Promise.all([page.waitForEvent('download'), link.click()]);
   const out = test.info().outputPath(dl.suggestedFilename());

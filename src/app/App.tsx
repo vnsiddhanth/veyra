@@ -14,8 +14,14 @@ const BenchmarkPage = lazy(() => import('@/pages/BenchmarkPage'));
 const GuidePage = lazy(() => import('@/pages/GuidePage'));
 const DevFixturesPage = lazy(() => import('@/pages/DevFixturesPage'));
 
+/** Shown only if loading takes longer than 250 ms, so fast loads never flash a spinner. */
 function Loading() {
-  return <div className="flex h-full min-h-[40vh] items-center justify-center text-sm text-muted">Loading…</div>;
+  return (
+    <div role="status" aria-live="polite" className="flex h-full min-h-[40vh] items-center justify-center opacity-0 [animation:veyra-fade-in_.2s_ease-out_.25s_forwards]">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-accent" aria-hidden />
+      <span className="sr-only">Loading</span>
+    </div>
+  );
 }
 
 const withSuspense = (node: ReactNode) => <Suspense fallback={<Loading />}>{node}</Suspense>;

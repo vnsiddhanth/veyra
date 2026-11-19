@@ -40,7 +40,7 @@ test('from the home page to an exported edit using only on-screen guidance', asy
   await page.getByRole('button', { name: 'Export', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Export video' });
   await dialog.getByRole('button', { name: 'Export', exact: true }).click();
-  await expect(dialog.getByText('output verified')).toBeVisible({ timeout: 120_000 });
+  await expect(dialog.getByText('Done · output verified', { exact: true })).toBeVisible({ timeout: 120_000 });
   const [dl] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('link', { name: 'Download' }).click()]);
   const out = test.info().outputPath(dl.suggestedFilename());
   await dl.saveAs(out);

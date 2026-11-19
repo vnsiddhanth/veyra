@@ -154,3 +154,9 @@ p a.hover\:underline {
     transition-duration: 0.01ms !important;
   }
 }
+
+@keyframes veyra-fade-in {
+  to {
+    opacity: 1;
+  }
+}

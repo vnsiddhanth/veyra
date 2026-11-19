@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.3.0 — 2026-11-18 · Guides for every tool, redesign, deployable
+
+### Added
+- **A how-to for every tool (all 46)** in `src/tools/guides.ts`: when to use it, numbered steps that name the on-screen buttons, and tips.
+  - **Where it shows:** beside each tool (a sticky panel on wide screens, a collapsible panel on phones) and in a searchable, category-grouped section of `/guide`.
+  - **Deep links:** for example `/guide#tool-trim-video` opens and scrolls to that tool.
+  - **Test:** a unit test fails if any tool lacks a guide.
+- **Deployment:**
+  - SPA fallback (`public/_redirects`), `netlify.toml`, `vercel.json` and an nginx example (`deploy/nginx.conf`), all with the isolation and security headers.
+  - Long-term caching for hashed assets.
+  - `DEPLOYMENT.md` with step-by-step setups for Cloudflare Pages, Netlify, Vercel and self-hosting.
+- **Open-source files:** `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` (private vulnerability reporting), issue and pull-request templates, and README badges.
+- **Phone navigation menu** on the website.
+- **Drop files anywhere on a tool page** (or in the editor). A full-page highlight shows while dragging; previously only the drop zone accepted files and the browser opened anything dropped elsewhere.
+- **Multi-file tools** (merge, slideshow, GIF) start with a large drop area and a "Choose videos/images" button.
+- **Unusable files are explained:** a banner names each file and the reason (for example a codec this browser can't decode), with "Remove them".
+
+### Changed — UI/UX
+- **Homepage:**
+  - **Hero:** a clearer headline, a primary call to action, the promises checklist, and a CSS-only sketch of the editor.
+  - **Quick tools:** category tiles leading into "Most used".
+  - **Other sections:** a "How it works" band, an accurate features list (open source, the real editor), corrected formats and FAQ, and a closing call to action.
+  - **Stale claims removed:** "editor in development" and "AVI planned".
+- **Tools page:**
+  - **Filtering:** category chips with counts, synced to the URL (`?category=`, `?q=`), and `/` to focus search.
+  - **Grouped view:** category sections with one-line descriptions.
+  - **Simpler cards:** no more "Ready" badges or "ready only" filter, since every tool works.
+- **Tool cards:** category icon, hover lift and arrow, keyboard focus ring.
+- **Tool pages:** full breadcrumb, trust checklist, two-column layout with the guide, and a skeleton while the tool loads.
+- **Page loading:** a delayed spinner (no flash on fast loads) instead of "Loading…" text.
+- **Footer:** Guide and source-code links.
+- **Repository hygiene:** the local `.claude/` editor folder is no longer tracked.
+
 ## 1.2.0 — 2026-11-18 · Drag-to-reorder everywhere, hover previews, user guide
 
 ### Added

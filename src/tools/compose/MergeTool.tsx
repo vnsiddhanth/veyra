@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { FileDrop } from '@/components/ui/FileDrop';
 import { Button } from '@/components/ui/primitives';
+import { IconUpload } from '@/components/ui/icons';
 import { mediaEngine, type ConvertResult } from '@/media-engine';
 import { formatDuration } from '@/utils/format';
 import type { ToolDef } from '../registry';
@@ -51,17 +52,34 @@ export function FileList({ list, label }: { list: ReturnType<typeof useProbedFil
   );
 }
 
-export function AddFiles({ onFiles, accept, label, count }: { onFiles(f: File[]): void; accept: string; label: string; count: number }) {
+export function AddFiles({ onFiles, accept, label, count, noun = 'files' }: { onFiles(f: File[]): void; accept: string; label: string; count: number; noun?: string }) {
   return (
     <FileDrop onFiles={(entries) => onFiles(entries.map((e) => e.file))} multiple accept={accept}>
-      {({ dragging, open }) => (
-        <div className={`flex items-center gap-3 rounded-lg border border-dashed p-4 text-sm ${dragging ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface'}`}>
-          <span className="text-muted">{count ? `${count} file(s). Drop more to add them.` : label}</span>
-          <Button size="sm" variant={count ? 'secondary' : 'primary'} className="ml-auto" onClick={open}>
-            Add files
-          </Button>
-        </div>
-      )}
+      {({ dragging, open }) =>
+        count === 0 ? (
+          // Empty state: a large, obvious target (the whole page also accepts drops).
+          <div
+            className={`flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-14 text-center transition-colors ${dragging ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface'}`}
+          >
+            <IconUpload size={26} className="text-faint" />
+            <div>
+              <p className="text-[15px] font-medium">{dragging ? 'Drop to add' : label}</p>
+              <p className="mt-0.5 text-xs text-muted">Choose several at once, or drop them anywhere on this page. Your files stay on this device.</p>
+            </div>
+            <Button variant="primary" size="lg" onClick={open}>
+              Choose {noun}
+            </Button>
+          </div>
+        ) : (
+          <div className={`flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm transition-colors ${dragging ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface'}`}>
+            <IconUpload size={16} className="text-faint" />
+            <span className="text-muted">Drop more anywhere on the page, or</span>
+            <Button size="sm" variant="secondary" onClick={open}>
+              Add more {noun}
+            </Button>
+          </div>
+        )
+      }
     </FileDrop>
   );
 }
@@ -113,7 +131,7 @@ export function MergeTool({ tool }: { tool: ToolDef }) {
 
   return (
     <div className="space-y-4">
-      <AddFiles onFiles={list.add} accept={VIDEO_ACCEPT} label="Drop two or more videos here. They are joined in the order shown; drag to reorder." count={list.items.length} />
+      <AddFiles onFiles={list.add} accept={VIDEO_ACCEPT} label="Drop two or more videos here" count={list.items.length} noun="videos" />
       <OrderedFiles list={list} label="Videos to merge" unit="video" />
       <Panel>
         <SelectField label="Transition between clips" value={transition} onChange={setTransition} options={TRANSITIONS} />

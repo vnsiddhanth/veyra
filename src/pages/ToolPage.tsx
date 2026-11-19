@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, type ComponentType } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ToolCard } from '@/components/tools/ToolCard';
 import { IconShield } from '@/components/ui/icons';
+import { ToolGuidePanel } from '@/components/tools/ToolGuidePanel';
 import { Badge } from '@/components/ui/primitives';
 import { BRAND } from '@/config/brand';
 import { setPageMeta } from '@/utils/meta';
@@ -50,26 +51,47 @@ export default function ToolPage() {
   const related = relatedTools(tool);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <nav className="mb-4 text-xs text-muted" aria-label="Breadcrumb">
-        <Link to="/tools" className="hover:text-fg">
-          Tools
-        </Link>{' '}
-        / {CATEGORY_LABELS[tool.category]}
+        <ol className="flex items-center gap-1.5">
+          <li>
+            <Link to="/tools" className="hover:text-fg">
+              Tools
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li>
+            <Link to={`/tools?category=${tool.category}`} className="hover:text-fg">
+              {CATEGORY_LABELS[tool.category]}
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li aria-current="page" className="text-fg">
+            {tool.title}
+          </li>
+        </ol>
       </nav>
-      <header className="mb-6 space-y-2">
+      <header className="mb-6 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{tool.title}</h1>
-          {tool.status === 'available' ? <Badge tone="ok">Ready</Badge> : <Badge>In development · Phase {tool.phase}</Badge>}
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{tool.title}</h1>
+          {tool.status !== 'available' && <Badge>In development · Phase {tool.phase}</Badge>}
         </div>
-        <p className="max-w-2xl text-[15px] text-muted">{tool.summary}</p>
-        <p className="flex items-center gap-1.5 text-xs text-faint">
-          <IconShield size={14} /> Runs locally. Your file is never uploaded.
-        </p>
+        <p className="max-w-2xl text-[15px] leading-relaxed text-muted">{tool.summary}</p>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Guarantees">
+          {['Runs on your device', 'Never uploaded', 'No watermark', 'No sign-up'].map((x) => (
+            <li key={x} className="flex items-center gap-1.5">
+              <IconShield size={13} className="text-ok" /> {x}
+            </li>
+          ))}
+        </ul>
       </header>
 
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-4">
+          <ToolGuidePanel tool={tool} variant="inline" />
+
       {ENGINES[tool.engine] ? (
-        <Suspense fallback={<p className="text-sm text-muted">Loading tool…</p>}>
+        <Suspense fallback={<div className="h-56 animate-pulse rounded-lg border border-line bg-surface" role="status" aria-label="Loading tool" />}>
           <EngineView tool={tool} />
         </Suspense>
       ) : tool.engine === 'guide' ? (
@@ -118,6 +140,10 @@ export default function ToolPage() {
           </p>
         </div>
       )}
+
+        </div>
+        <ToolGuidePanel tool={tool} variant="aside" />
+      </div>
 
       {related.length > 0 && (
         <section className="mt-12">

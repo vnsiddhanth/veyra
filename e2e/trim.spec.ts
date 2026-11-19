@@ -13,7 +13,7 @@ async function trimViaUi(page: import('@playwright/test').Page, start: string, e
   await page.getByLabel('End time in seconds').press('Enter');
   await page.getByText(precision, { exact: true }).click();
   await page.getByRole('button', { name: 'Trim and export' }).click();
-  await expect(page.getByText('output verified', { exact: false })).toBeVisible();
+  await expect(page.getByText('Done · output verified', { exact: true })).toBeVisible();
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download' }).click()]);
   const out = test.info().outputPath(download.suggestedFilename());
   await download.saveAs(out);

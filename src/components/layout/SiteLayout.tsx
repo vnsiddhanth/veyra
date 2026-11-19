@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BRAND } from '@/config/brand';
 import { cn } from '@/utils/id';
 
@@ -17,6 +18,59 @@ export function Logo({ className }: { className?: string }) {
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn('rounded-md px-2.5 py-1.5 text-sm transition-colors', isActive ? 'text-fg' : 'text-muted hover:text-fg');
+
+const NAV: [string, string][] = [
+  ['/tools', 'Tools'],
+  ['/guide', 'Guide'],
+  ['/compatibility', 'Compatibility'],
+  ['/privacy', 'Privacy'],
+  ['/benchmark', 'Benchmark'],
+];
+
+/** Phone navigation: a menu button that opens every top-level page. */
+function MobileMenu() {
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target as Element).closest('#mobile-nav, [aria-controls="mobile-nav"]')) setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onDown);
+    };
+  }, [open]);
+  return (
+    <div className="relative sm:hidden">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="mobile-nav"
+        aria-label={open ? 'Close menu' : 'Open menu'}
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line text-fg"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+          {open ? <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /> : <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+        </svg>
+      </button>
+      {open && (
+        <nav id="mobile-nav" aria-label="Main" className="absolute right-0 top-11 z-40 w-56 rounded-lg border border-line bg-surface p-1.5 shadow-xl">
+          {NAV.map(([to, label]) => (
+            <NavLink key={to} to={to} className={({ isActive }) => cn('block rounded-md px-3 py-2.5 text-sm', isActive ? 'bg-accent-soft text-fg' : 'text-muted hover:bg-surface-2 hover:text-fg')}>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+}
 
 export function SiteLayout() {
   return (
@@ -39,9 +93,7 @@ export function SiteLayout() {
             </NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <NavLink to="/tools" className={cn(navClass({ isActive: false }), 'sm:hidden')}>
-              Tools
-            </NavLink>
+            <MobileMenu />
             <Link to="/editor" className="inline-flex h-9 items-center rounded-md bg-accent px-3.5 text-sm font-medium text-accent-fg hover:brightness-110">
               Open editor
             </Link>
@@ -66,6 +118,10 @@ export function SiteLayout() {
             <Link to="/privacy" className="hover:text-fg">Privacy</Link>
             <Link to="/#faq" className="hover:text-fg">FAQ</Link>
             <Link to="/#formats" className="hover:text-fg">Formats</Link>
+            <Link to="/guide" className="hover:text-fg">Guide</Link>
+            <a href="https://github.com/vnsiddhanth/veyra" target="_blank" rel="noopener noreferrer" className="hover:text-fg">
+              Source code (MIT)
+            </a>
           </nav>
         </div>
       </footer>

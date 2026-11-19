@@ -1,10 +1,12 @@
 # Veyra
 
+[![Engines](https://github.com/vnsiddhanth/veyra/actions/workflows/engines.yml/badge.svg)](https://github.com/vnsiddhanth/veyra/actions/workflows/engines.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A free, local-first video editor and set of video tools that run entirely in the browser.
 It has no uploads, no account, no watermark and no export limits. Media is processed on the user's device with WebCodecs and
 [Mediabunny](https://mediabunny.dev) in Web Workers.
 
-> **Status: 1.2.0. All nine roadmap phases are complete and verified in Chrome and Edge, plus speed ramps, Bezier easing and rotation stabilisation.**
+> **Status: 1.3.0. All nine roadmap phases are complete and verified in Chrome and Edge, plus speed ramps, Bezier easing and rotation stabilisation.**
 >
 > - **Standalone tools:** all 46 are available and produce validated outputs.
 > - **Editor:** a multitrack editor with an interactive timeline, a real-time program monitor, keyframes, effects, a mixer, subtitles and validated export.
@@ -50,6 +52,8 @@ Open **/compatibility** in any browser to see its detected capabilities.
 
 ## Deploying
 
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for one-click setups on Cloudflare Pages, Netlify and Vercel, and an nginx example. In short:
+
 Static hosting only. The host must send these headers (already in `public/_headers` for Netlify/Cloudflare Pages):
 
 ```
@@ -83,4 +87,4 @@ Other pages: `/benchmark` measures the device, `/compatibility` lists codec supp
 Veyra is open source under the [MIT licence](LICENSE). Dependencies keep their own licences (Mediabunny and the MP3 encoder are
 MPL-2.0; the bundled LAME encoder is LGPL): see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No GPL code is shipped.
 
-Contributions are welcome: open an issue or a pull request. Run `npm test` and `npm run test:e2e` before submitting.
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md), the [code of conduct](CODE_OF_CONDUCT.md) and the [security policy](SECURITY.md).

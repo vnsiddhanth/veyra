@@ -74,7 +74,7 @@ test('stabiliser recovers injected camera shake and renders a steadier video', a
   await page.getByRole('button', { name: 'Analyse shake' }).click();
   await expect(page.getByText(/Measured shake up to/)).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: 'Stabilize video' }).click();
-  await expect(page.getByText('output verified')).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText('Done · output verified', { exact: true })).toBeVisible({ timeout: 120_000 });
   const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download' }).click()]);
   const out = test.info().outputPath('stable.mp4');
   await dl.saveAs(out);

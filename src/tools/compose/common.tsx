@@ -43,9 +43,12 @@ export function useProbedFiles(require: 'video' | 'audio' | 'image' | 'any' = 'a
         mediaEngine.probe(file).result.then(
           ({ info }) => {
             let error: string | undefined;
-            if (require === 'video' && (info.video.length === 0 || !info.video[0]!.decodable)) error = info.video.length ? 'Video codec not decodable here' : 'No video track';
-            if (require === 'audio' && (info.audio.length === 0 || !info.audio[0]!.decodable)) error = info.audio.length ? 'Audio codec not decodable here' : 'No audio track';
-            if (require === 'image' && info.kind !== 'image') error = 'Not an image';
+            const codec = (c: string | null | undefined) => (c ? c.toUpperCase() : 'this');
+            if (require === 'video' && info.video.length === 0) error = 'Has no video picture (is it an audio file?)';
+            else if (require === 'video' && !info.video[0]!.decodable) error = `This browser can’t decode its ${codec(info.video[0]!.codec)} video. Try Chrome or Edge, or convert it first.`;
+            if (require === 'audio' && info.audio.length === 0) error = 'Has no sound track';
+            else if (require === 'audio' && !info.audio[0]!.decodable) error = `This browser can’t decode its ${codec(info.audio[0]!.codec)} audio.`;
+            if (require === 'image' && info.kind !== 'image') error = 'Not an image file';
             const url = error ? undefined : URL.createObjectURL(file);
             if (url) urls.current.add(url);
             setItems((xs) => xs.map((x) => (x.id === id ? { ...x, status: error ? 'error' : 'ready', info, error, url } : x)));

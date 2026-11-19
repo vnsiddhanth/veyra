@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ACCEPT_ATTRIBUTE } from '@/media-engine';
 import type { ImportEntry } from '@/state/media-actions';
 import { cn } from '@/utils/id';
@@ -46,6 +46,68 @@ export function entriesFromDrop(dt: DataTransfer): Promise<ImportEntry[]> {
   ).then((list) => list.filter((x): x is { file: File; handle: FileSystemFileHandle | undefined } => x !== null));
 }
 
+// ── Whole-page drop ───────────────────────────────────────────────────────
+// A file dropped anywhere on the page (not just on a drop zone) goes to the most recently mounted
+// FileDrop, instead of the browser navigating away to open the file. A full-page highlight shows
+// while files are dragged over the window.
+
+interface PageTarget {
+  deliver(entries: ImportEntry[]): void;
+  multiple: boolean;
+}
+const pageTargets: PageTarget[] = [];
+let pageInstalled = false;
+let pageDepth = 0;
+let overlay: HTMLDivElement | null = null;
+
+const hasFiles = (e: DragEvent) => !!e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files');
+
+function showOverlay(show: boolean) {
+  if (show && !overlay) {
+    overlay = document.createElement('div');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.className = 'pointer-events-none fixed inset-2 z-[90] flex items-center justify-center rounded-2xl border-4 border-dashed border-accent bg-accent/10 backdrop-blur-[1px]';
+    const label = document.createElement('div');
+    label.className = 'rounded-lg bg-accent px-5 py-3 text-base font-semibold text-accent-fg shadow-xl';
+    label.textContent = 'Drop to add your files';
+    overlay.appendChild(label);
+    document.body.appendChild(overlay);
+  } else if (!show && overlay) {
+    overlay.remove();
+    overlay = null;
+  }
+}
+
+function installPageDrop() {
+  if (pageInstalled || typeof window === 'undefined') return;
+  pageInstalled = true;
+  window.addEventListener('dragenter', (e) => {
+    if (!hasFiles(e) || pageTargets.length === 0) return;
+    pageDepth++;
+    showOverlay(true);
+  });
+  window.addEventListener('dragleave', (e) => {
+    if (!hasFiles(e)) return;
+    pageDepth = Math.max(0, pageDepth - 1);
+    if (pageDepth === 0) showOverlay(false);
+  });
+  window.addEventListener('dragover', (e) => {
+    if (hasFiles(e) && pageTargets.length) e.preventDefault(); // allow dropping anywhere
+  });
+  window.addEventListener('drop', (e) => {
+    pageDepth = 0;
+    showOverlay(false);
+    if (!hasFiles(e) || e.defaultPrevented) return; // a drop zone already handled it
+    const target = pageTargets[pageTargets.length - 1];
+    if (!target) return;
+    e.preventDefault();
+    void entriesFromDrop(e.dataTransfer!).then((entries) => {
+      const list = target.multiple ? entries : entries.slice(0, 1);
+      if (list.length) target.deliver(list);
+    });
+  });
+}
+
 interface FileDropProps {
   onFiles(entries: ImportEntry[]): void;
   multiple?: boolean;
@@ -59,6 +121,19 @@ export function FileDrop({ onFiles, multiple = true, accept = ACCEPT_ATTRIBUTE, 
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const depth = useRef(0);
+
+  // Register as the page-level drop target while mounted (latest mounted wins).
+  const onFilesRef = useRef(onFiles);
+  onFilesRef.current = onFiles;
+  useEffect(() => {
+    installPageDrop();
+    const t: PageTarget = { deliver: (entries) => onFilesRef.current(entries), multiple };
+    pageTargets.push(t);
+    return () => {
+      const i = pageTargets.indexOf(t);
+      if (i >= 0) pageTargets.splice(i, 1);
+    };
+  }, [multiple]);
 
   const open = useCallback(async () => {
     const entries = await pickFiles(inputRef.current, multiple);

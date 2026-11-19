@@ -1,0 +1,8 @@
+# Netlify: build settings. Security/isolation headers come from public/_headers,
+# the single-page-app fallback from public/_redirects.
+[build]
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

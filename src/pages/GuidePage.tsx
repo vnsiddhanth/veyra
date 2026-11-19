@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Kbd } from '@/components/ui/primitives';
 import { BRAND } from '@/config/brand';
 import { setPageMeta } from '@/utils/meta';
+import { ToolGuides } from '@/components/tools/ToolGuides';
 
 const SECTIONS: [string, string][] = [
   ['start', 'Start in one minute'],
@@ -13,7 +14,7 @@ const SECTIONS: [string, string][] = [
   ['look', 'Effects, text and animation'],
   ['audio', 'Sound'],
   ['export', 'Export'],
-  ['tools', 'Quick tools (no editor needed)'],
+  ['tools', 'Every tool, step by step'],
   ['help', 'If something goes wrong'],
 ];
 
@@ -255,14 +256,11 @@ export default function GuidePage() {
           />
         </Section>
 
-        <Section id="tools" title="Quick tools (no editor needed)">
+        <Section id="tools" title="Every tool, step by step">
           <p>
-            For one job — compress, convert, trim, merge, make a GIF — open{' '}
-            <Link to="/tools" className="text-accent">
-              Tools
-            </Link>
-            , drop a file, choose a setting, and download. Each tool page explains its own options.
+            Each quick tool does one job and needs no editor. Find yours below — every guide also appears on the tool’s own page, next to the tool.
           </p>
+          <ToolGuides />
         </Section>
 
         <Section id="help" title="If something goes wrong">

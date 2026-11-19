@@ -27,3 +27,17 @@ describe('tool registry', () => {
     expect(relatedTools(t).every((r) => r.slug !== t.slug)).toBe(true);
   });
 });
+
+import { TOOL_GUIDES } from './guides';
+
+describe('tool guides', () => {
+  it('every tool has a how-to guide with steps', () => {
+    for (const t of TOOLS) {
+      const g = TOOL_GUIDES[t.slug];
+      expect(g, `missing guide for ${t.slug}`).toBeDefined();
+      expect(g!.steps.length, t.slug).toBeGreaterThan(0);
+      expect(g!.when.length, t.slug).toBeGreaterThan(10);
+    }
+    expect(Object.keys(TOOL_GUIDES).sort()).toEqual(TOOLS.map((t) => t.slug).sort());
+  });
+});
