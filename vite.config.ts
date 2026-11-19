@@ -16,13 +16,14 @@ const isolationHeaders = {
 // repeat it with frame-ancestors, which meta tags cannot set). Not applied in dev: Vite's HMR uses inline scripts.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'wasm-unsafe-eval'",
+  // Cloudflare Web Analytics (cookie-free visit counter, injected by Cloudflare Pages)
+  "script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "media-src 'self' blob:",
   "font-src 'self'",
-  "connect-src 'self' blob:",
+  "connect-src 'self' blob: https://cloudflareinsights.com",
   "object-src 'none'",
   "base-uri 'self'",
 ].join('; ');
