@@ -18,6 +18,7 @@ const GROUPS: [string, [string, string][]][] = [
     'Editing',
     [
       ['S', 'Split at the playhead'],
+      ['F', 'Freeze the frame at the playhead (2 s)'],
       ['Delete', 'Delete selection'],
       ['Shift+Delete', 'Ripple delete (close the gap)'],
       [`${mod}+C / X / V`, 'Copy / cut / paste at the playhead'],

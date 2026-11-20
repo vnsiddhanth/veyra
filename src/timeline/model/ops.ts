@@ -197,7 +197,7 @@ export function trimClipStart(p: Project, clipId: string, newStart: Flicks): Pro
   const end = clipEnd(clip);
   let start = snap(p, newStart);
   // Bounded by source head (cannot reveal media before t=0 of the source).
-  const earliestBySource = Number.isFinite(assetSourceDuration(asset)) ? clip.start - Math.floor(clip.sourceIn / clip.speed) : -Infinity;
+  const earliestBySource = Number.isFinite(assetSourceDuration(asset)) && clip.speed > 0 ? clip.start - Math.floor(clip.sourceIn / clip.speed) : -Infinity; // a freeze frame (speed 0) can extend freely
   // Bounded by the previous clip on the track.
   const track = getTrack(p, clip.trackId);
   const idx = track.clipIds.indexOf(clipId);
@@ -218,7 +218,7 @@ export function trimClipEnd(p: Project, clipId: string, newEnd: Flicks): Project
   const asset = clip.assetId ? p.assets.find((a) => a.id === clip.assetId) : undefined;
   let end = snap(p, newEnd);
   const sourceDur = assetSourceDuration(asset);
-  const latestBySource = Number.isFinite(sourceDur) ? clip.start + Math.floor((sourceDur - clip.sourceIn) / clip.speed) : Infinity;
+  const latestBySource = Number.isFinite(sourceDur) && clip.speed > 0 ? clip.start + Math.floor((sourceDur - clip.sourceIn) / clip.speed) : Infinity;
   const track = getTrack(p, clip.trackId);
   const idx = track.clipIds.indexOf(clipId);
   const next = idx < track.clipIds.length - 1 ? p.clips[track.clipIds[idx + 1]!]! : null;

@@ -13,6 +13,24 @@ import { useEditorUi } from '../editor-ui-store';
 import { goToEnd, jumpToEdit, stepFrames } from '../timeline/commands';
 import { PreviewEngine, type PreviewStats } from './preview-engine';
 import { GetStarted } from '../GetStarted';
+import { GUIDE_OPTIONS, GuidesOverlay, SCOPE_OPTIONS, ScopesPanel, type GuideKind, type ScopeKind } from './MonitorOverlays';
+import type { ScopeData } from '@/render/scopes';
+
+function stored<T extends string>(key: string, fallback: T, allowed: readonly T[]): T {
+  try {
+    const v = localStorage.getItem(key) as T | null;
+    return v && allowed.includes(v) ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function store(key: string, v: string) {
+  try {
+    localStorage.setItem(key, v);
+  } catch {
+    /* private mode */
+  }
+}
 
 const QUALITY: [string, number][] = [
   ['Full', 1],
@@ -37,6 +55,11 @@ export function ProgramMonitor() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [stats, setStats] = useState<PreviewStats | null>(null);
   const [generation, setGeneration] = useState(0);
+  const [scope, setScope] = useState<ScopeKind>(() => stored('veyra.scope', 'off', SCOPE_OPTIONS.map(([k]) => k)));
+  const [guide, setGuide] = useState<GuideKind>(() => stored('veyra.guide', 'off', GUIDE_OPTIONS.map(([k]) => k)));
+  const [scopeData, setScopeData] = useState<ScopeData | null>(null);
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
   const projectId = project?.id;
   const aspect = project ? project.settings.width / project.settings.height : 16 / 9;
 
@@ -56,6 +79,7 @@ export function ProgramMonitor() {
     engine.onEnded = () => useEditorUi.getState().setPlaying(false);
     engine.onWarnings = setWarnings;
     engine.onStats = setStats;
+    engine.onScopes = setScopeData;
     engine.onCrash = (msg) => {
       useEditorUi.getState().notify(`Preview restarted after an error: ${msg}`);
       setGeneration((g) => g + 1);
@@ -65,6 +89,7 @@ export function ProgramMonitor() {
       engine.setProject(st, flicksToSeconds(projectDuration(st)));
       engine.setFiles(Object.fromEntries(Object.entries(filesRef.current).filter(([, f]) => !!f)) as Record<string, Blob>);
       engine.setQuality(qualityRef.current);
+      engine.setScopes(scopeRef.current !== 'off');
       engine.seek(useEditorUi.getState().playhead);
     }
     return () => {
@@ -86,6 +111,13 @@ export function ProgramMonitor() {
     engineRef.current?.setFiles(Object.fromEntries(Object.entries(files).filter(([, f]) => !!f)) as Record<string, Blob>);
     if (!engineRef.current?.isPlaying) engineRef.current?.seek(useEditorUi.getState().playhead);
   }, [files]);
+
+  useEffect(() => {
+    engineRef.current?.setScopes(scope !== 'off');
+    if (scope === 'off') setScopeData(null);
+    store('veyra.scope', scope);
+  }, [scope]);
+  useEffect(() => store('veyra.guide', guide), [guide]);
 
   useEffect(() => {
     engineRef.current?.setQuality(quality);
@@ -118,7 +150,10 @@ export function ProgramMonitor() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="relative flex min-h-0 flex-1 items-center justify-center bg-black p-2">
-        <div ref={hostRef} className="relative max-h-full max-w-full" style={{ aspectRatio: `${aspect}`, height: '100%' }} />
+        <div ref={hostRef} className="relative max-h-full max-w-full" style={{ aspectRatio: `${aspect}`, height: '100%' }}>
+          <GuidesOverlay kind={guide} aspect={aspect} />
+        </div>
+        <ScopesPanel kind={scope} data={scopeData} />
         {empty && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-auto p-3">
             <GetStarted project={project} />
@@ -171,7 +206,21 @@ export function ProgramMonitor() {
             Proxies
           </label>
         )}
-        <label className={`${Object.keys(proxies).length > 0 ? 'ml-2' : 'ml-auto'} flex items-center gap-1 text-2xs text-faint`}>
+        <select value={scope} onChange={(e) => setScope(e.target.value as ScopeKind)} className={`${Object.keys(proxies).length > 0 ? 'ml-2' : 'ml-auto'} h-6 rounded-sm border border-line bg-surface-2 px-1 text-2xs`} aria-label="Video scopes">
+          {SCOPE_OPTIONS.map(([k, l]) => (
+            <option key={k} value={k}>
+              {l}
+            </option>
+          ))}
+        </select>
+        <select value={guide} onChange={(e) => setGuide(e.target.value as GuideKind)} className="ml-1 h-6 rounded-sm border border-line bg-surface-2 px-1 text-2xs" aria-label="Framing guides">
+          {GUIDE_OPTIONS.map(([k, l]) => (
+            <option key={k} value={k}>
+              {l}
+            </option>
+          ))}
+        </select>
+        <label className="ml-2 flex items-center gap-1 text-2xs text-faint">
           Preview
           <select value={quality} onChange={(e) => setQuality(Number(e.target.value))} className="h-6 rounded-sm border border-line bg-surface-2 px-1" aria-label="Preview quality">
             {QUALITY.map(([l, v]) => (

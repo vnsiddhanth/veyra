@@ -260,7 +260,7 @@ function clip(v: unknown, path: string): Clip {
     start: int(o.start, `${path}.start`, 0),
     duration: int(o.duration, `${path}.duration`, 1),
     sourceIn: int(o.sourceIn, `${path}.sourceIn`, 0),
-    speed: num(o.speed ?? 1, `${path}.speed`, 0.01, 100),
+    speed: num(o.speed ?? 1, `${path}.speed`, 0, 100), // 0 = freeze frame
     reversed: bool(o.reversed ?? false, `${path}.reversed`),
     transform: {
       x: num(t.x, `${path}.transform.x`),
@@ -382,6 +382,7 @@ export function parseProject(input: unknown): Project {
       videoBitrate: ep.videoBitrate == null ? null : num(ep.videoBitrate, 'project.exportPrefs.videoBitrate', 1),
       audioBitrate: ep.audioBitrate == null ? null : num(ep.audioBitrate, 'project.exportPrefs.audioBitrate', 1),
       fileName: optStr(ep.fileName, 'project.exportPrefs.fileName'),
+      loudness: ep.loudness == null ? null : num(ep.loudness, 'project.exportPrefs.loudness', -40, -5),
     },
   };
   checkIntegrity(project);

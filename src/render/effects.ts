@@ -129,6 +129,24 @@ export const EFFECTS: EffectSpec[] = [
       n('duration', 'Duration', 0.1, 3, 0.5, 0.05, 's'),
     ],
   },
+  {
+    type: 'credits-roll',
+    label: 'Credits roll',
+    group: 'Text',
+    kind: 'text',
+    params: [
+      {
+        key: 'direction',
+        label: 'Direction',
+        type: 'select',
+        default: 'up',
+        options: [
+          { value: 'up', label: 'Roll up (end credits)' },
+          { value: 'left', label: 'Crawl left (one line)' },
+        ],
+      },
+    ],
+  },
   { type: 'mute-audio', label: 'Mute audio', group: 'Audio', kind: 'audio', params: [] },
   { type: 'preserve-pitch', label: 'Keep pitch when speed changes', group: 'Audio', kind: 'audio', params: [] },
   {

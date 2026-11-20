@@ -16,10 +16,12 @@ import {
   setInOut,
   setTransitionAfter,
   splitAt,
+  freezeFrame,
 } from '@/timeline/model/edit';
 import { clipEnd, projectDuration, removeClips } from '@/timeline/model/ops';
 import { frameDuration, secondsToFlicks, type Flicks } from '@/utils/time';
 import { useEditorUi } from '../editor-ui-store';
+import { createId } from '@/utils/id';
 
 const ui = () => useEditorUi.getState();
 const project = (): Project | null => selectProject(useProjectStore.getState());
@@ -46,6 +48,36 @@ export function splitAtPlayhead() {
     })
   )
     ui().selectClips(ids);
+}
+
+/** Freeze the frame under the playhead for 2 s: the selected video clip, else the top visible one there. */
+export function freezeFrameAtPlayhead() {
+  const p = project();
+  if (!p) return;
+  const t = ui().playhead;
+  const isVideo = (id: string) => {
+    const c = p.clips[id];
+    const a = c?.assetId ? p.assets.find((x) => x.id === c.assetId) : undefined;
+    return !!c && a?.kind === 'video' && c.start <= t && t < clipEnd(c) && c.speed > 0;
+  };
+  const target =
+    ui().selectedClipIds.find(isVideo) ??
+    p.tracks.filter((tr) => tr.kind === 'video' && !tr.hidden).flatMap((tr) => tr.clipIds).find(isVideo);
+  if (!target) {
+    ui().notify('Put the playhead over a video clip to freeze a frame.');
+    return;
+  }
+  let id = '';
+  if (
+    tryEdit((q) => {
+      const [r, fz] = freezeFrame(q, target, t, secondsToFlicks(2));
+      id = fz;
+      return r;
+    })
+  ) {
+    ui().selectClips([id]);
+    ui().notify('Added a 2-second freeze frame. Trim it to change its length.');
+  }
 }
 
 export function deleteSelection(ripple: boolean) {
@@ -149,6 +181,55 @@ export function addTitle() {
     })
   )
     ui().selectClips([id]);
+}
+
+const CREDITS_TEMPLATE = [
+  'A FILM BY',
+  'Your Name',
+  '',
+  'CAST',
+  'Lead — Actor Name',
+  'Supporting — Actor Name',
+  '',
+  'CREW',
+  'Director — Name',
+  'Cinematography — Name',
+  'Editor — Name',
+  'Sound — Name',
+  'Music — Name',
+  '',
+  'SPECIAL THANKS',
+  'Everyone who helped',
+  '',
+  'Edited with Veyra',
+].join('\n');
+
+/** End credits at the playhead: a 20 s title that rolls up at constant speed. Edit the text in the inspector. */
+export function addCredits() {
+  let id = '';
+  if (
+    tryEdit((p) => {
+      const [q, c] = addTextClip(p, ui().playhead, secondsToFlicks(20), CREDITS_TEMPLATE);
+      id = c;
+      const clip = q.clips[c]!;
+      const size = Math.round(p.settings.height / 22);
+      return {
+        ...q,
+        clips: {
+          ...q.clips,
+          [c]: {
+            ...clip,
+            name: 'Credits',
+            text: { ...clip.text!, fontSize: size, fontWeight: 500, align: 'center', lineHeight: 1.6, background: null },
+            effects: [...clip.effects.filter((e) => e.type !== 'text-animation'), { id: createId('fx'), type: 'credits-roll', enabled: true, params: { direction: 'up' } }],
+          },
+        },
+      };
+    })
+  ) {
+    ui().selectClips([id]);
+    ui().notify('Added rolling credits (20 s). Edit the names in the inspector; trim the clip to change the speed.');
+  }
 }
 
 export function selectAll() {

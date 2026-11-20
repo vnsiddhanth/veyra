@@ -6,6 +6,7 @@
 import type { Project } from '@/project/schema/types';
 import type { PreviewIn, PreviewOut } from '@/render/preview.worker';
 import { flicksToFrames, framesToFlicks, rateToNumber, type Flicks } from '@/utils/time';
+import type { ScopeData } from '@/render/scopes';
 
 export interface PreviewStats {
   /** Frames presented per second during playback. */
@@ -44,6 +45,7 @@ export class PreviewEngine {
   onWarnings: (w: string[]) => void = () => undefined;
   onStats: (s: PreviewStats) => void = () => undefined;
   onCrash: (message: string) => void = () => undefined;
+  onScopes: (data: ScopeData) => void = () => undefined;
 
   constructor(canvas: HTMLCanvasElement) {
     this.worker = new Worker(new URL('../../render/preview.worker.ts', import.meta.url), { type: 'module', name: 'preview' });
@@ -77,6 +79,11 @@ export class PreviewEngine {
 
   setFiles(files: Record<string, Blob>) {
     this.post({ kind: 'files', files });
+  }
+
+  /** Turn video scopes on or off; while on, the worker sends scope data with rendered frames. */
+  setScopes(on: boolean) {
+    this.post({ kind: 'scopes', on });
   }
 
   setQuality(scale: number) {
@@ -119,6 +126,9 @@ export class PreviewEngine {
         break;
       case 'warnings':
         this.onWarnings(m.warnings);
+        break;
+      case 'scopes':
+        this.onScopes(m.data);
         break;
       case 'probe':
         if (m.error) {

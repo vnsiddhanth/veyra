@@ -13,6 +13,7 @@ const SECTIONS: [string, string][] = [
   ['timeline', 'Edit on the timeline'],
   ['preview', 'Preview your work'],
   ['look', 'Effects, text and animation'],
+  ['film', 'Tools for filmmakers'],
   ['audio', 'Sound'],
   ['export', 'Export'],
   ['tools', 'Every tool, step by step'],
@@ -233,6 +234,35 @@ export default function GuidePage() {
           </ul>
         </Section>
 
+        <Section id="film" title="Tools for filmmakers">
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <strong>Video scopes.</strong> Under the program monitor, pick <strong>Waveform</strong>, <strong>RGB parade</strong>, <strong>Vectorscope</strong> or{' '}
+              <strong>Histogram</strong>. They read the exact frame on screen and update while it plays. The readout warns when highlights clip or blacks crush. The
+              vectorscope has 75 % colour-bar targets and a skin-tone line.
+            </li>
+            <li>
+              <strong>Framing guides.</strong> Show title and action safe areas, the rule of thirds, or a 2.39:1, 1.85:1, 4:3, 1:1 or 9:16 mask to frame for another
+              ratio. Guides only appear in the preview, never in the export.
+            </li>
+            <li>
+              <strong>Freeze frame.</strong> Put the playhead on a frame and press <Kbd>F</Kbd> (or <strong>Freeze</strong>). The frame holds for 2 seconds and
+              everything after it moves later so sound stays in sync. Trim the freeze to change how long it holds.
+            </li>
+            <li>
+              <strong>Rolling credits.</strong> Press <strong>+ Credits</strong> for a 20-second roll with a cast and crew template. Edit the names in the Inspector;
+              make the clip longer to roll slower. Any title can roll or crawl with the <strong>Credits roll</strong> effect.
+            </li>
+            <li>
+              <strong>Colour grading.</strong> Curves, colour balance, LUTs (.cube), film grain, vignette, masks and chroma key (green screen) are in the effects list.
+            </li>
+            <li>
+              <strong>Delivery loudness.</strong> In Export, set <strong>Loudness</strong> to −14 LUFS for YouTube or streaming, or −23 / −24 LUFS for broadcast and
+              festivals. The whole mix is measured first (EBU R128), then levelled with peaks kept under −1 dB. The result card shows what was measured.
+            </li>
+          </ul>
+        </Section>
+
         <Section id="audio" title="Sound">
           <ul className="list-disc space-y-1 pl-5">
             <li>Volume, pan and fades are in the Inspector; volume can be keyframed like anything else.</li>
@@ -250,6 +280,9 @@ export default function GuidePage() {
                 Press <strong>Export</strong> (or <Kbd>Ctrl</Kbd>+<Kbd>E</Kbd>).
               </>,
               <>Choose a format (MP4 plays everywhere), a size and a quality. Only options your browser can really make are shown.</>,
+              <>
+                Optional: set <strong>Loudness</strong> to the level your platform or festival asks for.
+              </>,
               <>
                 Press <strong>Export</strong>. When it says <strong>“output verified”</strong>, the file has been checked — press <strong>Download</strong>.
               </>,

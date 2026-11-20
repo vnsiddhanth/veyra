@@ -29,6 +29,7 @@ import type { Project } from '@/project/schema/types';
 import { projectDuration } from '@/timeline/model/ops';
 import { flicksToFrames, flicksToSeconds, framesToFlicks, rateToNumber, type Flicks } from '@/utils/time';
 import { AudioMixer } from './audio-mix';
+import { LoudnessMeter, PeakLimiter } from './loudness';
 import { Compositor, type LayerImage } from './compositor';
 import { audibleClips, resolveFrame, transitionsByClip } from './evaluate';
 import { MediaPool } from './sources';
@@ -46,6 +47,8 @@ export interface RenderSettings {
   range?: { start: Flicks; end: Flicks } | null;
   includeAudio?: boolean;
   keyFrameInterval?: number;
+  /** Normalise integrated loudness to this many LUFS (two passes; peaks limited to −1 dBFS). */
+  loudnessTarget?: number | null;
   fileName: string;
 }
 
@@ -102,6 +105,7 @@ export async function renderProject(input: RenderInput, jobId: string, onProgres
   const output = new Output({ format, target });
   const pool = new MediaPool(new Map(Object.entries(input.files)), W / p.settings.width);
   let mixer: AudioMixer | null = null;
+  let loudnessNote: string | null = null;
   let compositor: Compositor | null = null;
 
   try {
@@ -123,6 +127,36 @@ export async function renderProject(input: RenderInput, jobId: string, onProgres
       output.addAudioTrack(audioSource);
       mixer = new AudioMixer(p, pool, p.settings.sampleRate, flicksToSeconds(framesToFlicks(f0, rate)));
     }
+
+    // Loudness normalisation: measure the whole mix first, then export through gain + limiter.
+    let pullAudio: ((n: number) => Promise<[Float32Array, Float32Array]>) | null = mixer ? (n) => mixer!.next(n) : null;
+    let limiter: PeakLimiter | null = null;
+    if (mixer && s.loudnessTarget != null) {
+      const sr = p.settings.sampleRate;
+      const meter = new LoudnessMeter(sr);
+      const probe = new AudioMixer(p, pool, sr, flicksToSeconds(framesToFlicks(f0, rate)));
+      try {
+        const total = Math.round(duration * sr);
+        for (let done = 0; done < total; ) {
+          if (signal.aborted) throw new MediaError('cancelled', 'Cancelled.');
+          const n = Math.min(8192, total - done);
+          const [l, r] = await probe.next(n);
+          meter.add(l, r, n);
+          done += n;
+          if ((done & 0xffff) < 8192) onProgress((done / total) * 0.15);
+        }
+      } finally {
+        probe.close();
+      }
+      const measured = meter.integrated();
+      if (Number.isFinite(measured)) {
+        const gainDb = Math.max(-30, Math.min(30, s.loudnessTarget - measured));
+        limiter = new PeakLimiter((n) => mixer!.next(n), sr, gainDb, -1);
+        pullAudio = (n) => limiter!.next(n);
+        loudnessNote = `Measured ${measured.toFixed(1)} LUFS; gain ${gainDb >= 0 ? '+' : ''}${gainDb.toFixed(1)} dB to reach ${s.loudnessTarget} LUFS; peaks limited to −1 dBFS.`;
+      } else loudnessNote = 'The mix is silent, so loudness was not changed.';
+    }
+    const base = s.loudnessTarget != null && mixer ? 0.15 : 0; // progress share of the measuring pass
     await output.start();
 
     const byClip = transitionsByClip(p);
@@ -136,7 +170,7 @@ export async function renderProject(input: RenderInput, jobId: string, onProgres
       const until = Math.min(totalAudio, Math.round(untilSeconds * sr));
       while (audioDone < until) {
         const n = Math.min(BLOCK, totalAudio - audioDone);
-        const [l, r] = await mixer.next(n);
+        const [l, r] = await pullAudio!(n);
         const data = new Float32Array(n * 2);
         data.set(l.subarray(0, n), 0);
         data.set(r.subarray(0, n), n);
@@ -163,7 +197,7 @@ export async function renderProject(input: RenderInput, jobId: string, onProgres
         await videoSource.add(i / fps, 1 / fps);
       }
       await pumpAudio((i + 1) / fps);
-      if ((i & 3) === 0) onProgress((i / frameCount) * 0.95);
+      if ((i & 3) === 0) onProgress(base + (i / frameCount) * (0.95 - base));
     }
     await pumpAudio(duration);
     if (signal.aborted) throw new MediaError('cancelled', 'Cancelled.');
@@ -197,7 +231,7 @@ export async function renderProject(input: RenderInput, jobId: string, onProgres
       storage: scratch ? 'opfs' : 'memory',
       scratchName: scratch?.name ?? null,
       info,
-      checks,
+      checks: loudnessNote ? [...checks, { name: 'Loudness', ok: true, detail: loudnessNote }] : checks,
       dropped: warnings,
       elapsedMs: Math.round(performance.now() - started),
     };

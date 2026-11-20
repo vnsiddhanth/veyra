@@ -339,6 +339,21 @@ export class Compositor {
     const maxW = Math.max(...widths, 1);
     const totalH = lh * lines.length;
 
+    // Credits roll: the whole block travels at constant speed from just outside one edge to just
+    // outside the other over the clip's duration (project units; k converts to canvas pixels).
+    const roll = clip.effects.find((e) => e.enabled && e.type === 'credits-roll');
+    if (roll && clip.duration > 0) {
+      const prog = Math.min(1, Math.max(0, layer.local / clip.duration));
+      const sc = layer.scale * extraScale;
+      if (roll.params.direction === 'left') {
+        const span = (maxW / k) * sc;
+        ox += p.settings.width / 2 + span / 2 - prog * (p.settings.width + span);
+      } else {
+        const span = (totalH / k) * sc;
+        oy += p.settings.height / 2 + span / 2 - prog * (p.settings.height + span);
+      }
+    }
+
     // Subtitles sit near the bottom by default.
     const baseY = isSub && !clip.text ? p.settings.height * 0.5 - p.settings.height * 0.08 - totalH / (2 * k) : 0;
     ctx.translate(this.canvas.width / 2 + (layer.x + ox) * k + dx, this.canvas.height / 2 + (layer.y + baseY + oy) * k);

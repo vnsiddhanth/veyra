@@ -17,6 +17,7 @@ import { ConvertResultCard, ErrorBox, JobProgress } from '@/tools/shared/ToolPar
 import { useMediaJob } from '@/tools/shared/useMediaJob';
 import { formatBytes } from '@/utils/format';
 import { flicksToSeconds, formatTimecode, rateToNumber } from '@/utils/time';
+import { LOUDNESS_TARGETS } from '@/render/loudness';
 
 type Container = ExportPreferences['container'];
 
@@ -55,6 +56,7 @@ export function ExportDialog({ project, onClose }: { project: Project; onClose()
   const [kbps, setKbps] = useState<number>(Math.round((prefs.videoBitrate ?? 8_000_000) / 1000));
   const [range, setRange] = useState<'all' | 'inout'>(project.inPoint != null && project.outPoint != null ? 'inout' : 'all');
   const [name, setName] = useState(prefs.fileName ?? project.name);
+  const [loudness, setLoudness] = useState<number | null>(prefs.loudness ?? null);
   const [savedTo, setSavedTo] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => void probeCodecs().then(setCaps, () => setCaps(null)), []);
@@ -96,11 +98,12 @@ export function ExportDialog({ project, onClose }: { project: Project; onClose()
       videoBitrate: quality === 'custom' ? kbps * 1000 : (q.level ?? 'high'),
       audioBitrate: quality === 'small' ? 96_000 : quality === 'balanced' ? 160_000 : 256_000,
       range: rangeFl,
+      loudnessTarget: hasAudio ? loudness : null,
       fileName: name.trim() || 'export',
     };
     // Remember the choices with the project (no undo step).
     useProjectStore.getState().apply(
-      (p) => ({ ...p, exportPrefs: { ...p.exportPrefs, container, videoCodec: settings.videoCodec ?? null, audioCodec: settings.audioCodec ?? null, height, width, quality, videoBitrate: quality === 'custom' ? kbps * 1000 : null, fileName: name } }),
+      (p) => ({ ...p, exportPrefs: { ...p.exportPrefs, container, videoCodec: settings.videoCodec ?? null, audioCodec: settings.audioCodec ?? null, height, width, quality, videoBitrate: quality === 'custom' ? kbps * 1000 : null, fileName: name, loudness } }),
       { undoable: false },
     );
     setSavedTo(null);
@@ -203,6 +206,20 @@ export function ExportDialog({ project, onClose }: { project: Project; onClose()
                       </option>
                     ))}
                   </select>
+                </label>
+              )}
+              {hasAudio && (
+                <label className="block text-sm sm:col-span-2">
+                  <span className="mb-1 block text-xs text-muted">Loudness</span>
+                  <select className={field} value={loudness ?? 'off'} onChange={(e) => setLoudness(e.target.value === 'off' ? null : Number(e.target.value))} aria-label="Loudness">
+                    <option value="off">Leave as mixed</option>
+                    {LOUDNESS_TARGETS.map((t) => (
+                      <option key={t.lufs} value={t.lufs}>
+                        Normalise to {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-xs text-faint">Measures the whole mix first (EBU R128), then sets the level and keeps peaks under −1 dB.</span>
                 </label>
               )}
               {fmt.video && (

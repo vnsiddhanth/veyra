@@ -28,6 +28,8 @@ import {
   duplicateSelection,
   paste,
   splitAtPlayhead,
+  freezeFrameAtPlayhead,
+  addCredits,
   tryEdit,
 } from './commands';
 
@@ -484,11 +486,17 @@ function Toolbar({ project }: { project: Project }) {
       <Button size="sm" variant="ghost" onClick={splitAtPlayhead} title="Split at playhead (S)">
         Split
       </Button>
+      <Button size="sm" variant="ghost" onClick={freezeFrameAtPlayhead} title="Freeze the frame at the playhead for 2 s (F)">
+        Freeze
+      </Button>
       <Button size="sm" variant="ghost" onClick={() => deleteSelection(true)} disabled={!hasSel} title="Ripple delete (Shift+Delete)">
         Ripple delete
       </Button>
       <Button size="sm" variant="ghost" onClick={addTitle} title="Add a title at the playhead (T)">
         + Title
+      </Button>
+      <Button size="sm" variant="ghost" onClick={addCredits} title="Add rolling end credits at the playhead">
+        + Credits
       </Button>
       <Button size="sm" variant="ghost" onClick={addMarkerAtPlayhead} title="Add marker (M)">
         + Marker
@@ -639,7 +647,7 @@ function ClipBlock({
   const sourceIn = flicksToSeconds(clip.sourceIn);
   const span = flicksToSeconds(clip.duration) * clip.speed;
   const isText = !!clip.text || asset?.kind === 'subtitle';
-  const badges = [clip.speed !== 1 && `${Number(clip.speed.toFixed(2))}×`, clip.reversed && 'rev', clip.effects.some((e) => e.enabled && e.type !== 'mute-audio' && e.type !== 'preserve-pitch') && 'fx', Object.keys(clip.keyframes).length > 0 && '◆'].filter(Boolean);
+  const badges = [clip.speed === 0 ? 'freeze' : clip.speed !== 1 && `${Number(clip.speed.toFixed(2))}×`, clip.reversed && 'rev', clip.effects.some((e) => e.enabled && e.type !== 'mute-audio' && e.type !== 'preserve-pitch') && 'fx', Object.keys(clip.keyframes).length > 0 && '◆'].filter(Boolean);
   return (
     <div
       role="button"
@@ -775,6 +783,7 @@ function ClipMenu({ menu, project, onClose }: { menu: MenuState; project: Projec
   const asset = clip?.assetId ? project.assets.find((a) => a.id === clip.assetId) : undefined;
   const items: [string, string, () => void, boolean?][] = [
     ['Split at playhead', 'S', splitAtPlayhead],
+    ['Freeze frame here (2 s)', 'F', freezeFrameAtPlayhead, asset?.kind !== 'video'],
     ['Copy', 'Ctrl+C', () => copySelection()],
     ['Cut', 'Ctrl+X', () => copySelection(true)],
     ['Paste at playhead', 'Ctrl+V', paste, !useEditorUi.getState().clipboard],

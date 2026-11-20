@@ -9,6 +9,7 @@ import { AudioMixer } from './audio-mix';
 import { Compositor, type LayerImage } from './compositor';
 import { resolveFrame, transitionsByClip } from './evaluate';
 import { MediaPool } from './sources';
+import { computeScopes, type ScopeData } from './scopes';
 import { framesToFlicks } from '@/utils/time';
 
 export type PreviewIn =
@@ -21,14 +22,16 @@ export type PreviewIn =
   | { kind: 'audio-need'; gen: number; blocks: number }
   | { kind: 'audio-stop' }
   /** Test hook: average RGB of a 4×4 patch at fractional position (x, y) of the last frame. */
-  | { kind: 'probe'; x: number; y: number; id: number };
+  | { kind: 'probe'; x: number; y: number; id: number }
+  | { kind: 'scopes'; on: boolean };
 
 export type PreviewOut =
   | { kind: 'rendered'; frame: number; seq: number; ms: number }
   | { kind: 'audio'; gen: number; t0: number; left: Float32Array; right: Float32Array; sampleRate: number }
   | { kind: 'warnings'; warnings: string[] }
   | { kind: 'error'; message: string }
-  | { kind: 'probe'; id: number; rgb: number[]; error?: string };
+  | { kind: 'probe'; id: number; rgb: number[]; error?: string }
+  | { kind: 'scopes'; data: ScopeData };
 
 declare const self: {
   postMessage(message: PreviewOut, transfer?: Transferable[]): void;
@@ -49,6 +52,9 @@ let audioTime = 0;
 let audioRate = 48000;
 let audioBusy: Promise<void> = Promise.resolve();
 let lastWarnings = '';
+let scopesOn = false;
+let lastScopes = 0;
+let scopeCanvas: OffscreenCanvas | null = null;
 
 const AUDIO_BLOCK = 0.25; // seconds per audio message
 
@@ -100,6 +106,27 @@ async function renderFrame(frame: number, seq: number) {
   compositor.render(p, layers, images, frame);
   self.postMessage({ kind: 'rendered', frame, seq, ms: performance.now() - t0 });
   reportWarnings();
+  sendScopes(false);
+}
+
+/** Scopes from a 320-px-wide copy of the frame, at most ~10 times a second (always when forced). */
+function sendScopes(force: boolean) {
+  if (!scopesOn || !canvas || canvas.width < 2) return;
+  const now = performance.now();
+  if (!force && now - lastScopes < 100) return;
+  lastScopes = now;
+  const w = Math.min(320, canvas.width);
+  const h = Math.max(1, Math.round((canvas.height * w) / canvas.width));
+  scopeCanvas ??= new OffscreenCanvas(w, h);
+  if (scopeCanvas.width !== w || scopeCanvas.height !== h) {
+    scopeCanvas.width = w;
+    scopeCanvas.height = h;
+  }
+  const sctx = scopeCanvas.getContext('2d', { willReadFrequently: true });
+  if (!sctx) return;
+  sctx.drawImage(canvas, 0, 0, w, h);
+  const data = computeScopes(sctx.getImageData(0, 0, w, h).data, w, h);
+  self.postMessage({ kind: 'scopes', data }, [data.waveform.buffer, data.parade.buffer, data.vectorscope.buffer, data.histogram.buffer]);
 }
 
 async function pump() {
@@ -174,6 +201,10 @@ self.onmessage = (event: MessageEvent<PreviewIn>) => {
     case 'audio-stop':
       mixerGen = -1;
       stopAudio();
+      break;
+    case 'scopes':
+      scopesOn = m.on;
+      if (m.on) sendScopes(true);
       break;
     case 'probe': {
       // Always answer, so a caller never waits forever; report why if the read fails.

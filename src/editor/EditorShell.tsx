@@ -88,6 +88,8 @@ export function EditorShell() {
         useEditorUi.getState().setPlaying(true);
       } else if (e.key === 's' || e.key === 'S') {
         cmd.splitAtPlayhead();
+      } else if (e.key === 'f' || e.key === 'F') {
+        cmd.freezeFrameAtPlayhead();
       } else if (e.key === 'm' || e.key === 'M') {
         cmd.addMarkerAtPlayhead();
       } else if (e.key === 'i' || e.key === 'I') {

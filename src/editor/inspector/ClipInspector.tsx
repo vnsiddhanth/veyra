@@ -131,7 +131,12 @@ export function ClipInspector({ project, clip }: { project: Project; clip: Clip 
         <Row label="Duration">
           <span className="font-mono tabular">{formatTimecode(clip.duration, fr)}</span>
         </Row>
-        {clip.assetId && asset?.kind !== 'image' && asset?.kind !== 'subtitle' && (
+        {clip.speed === 0 && (
+          <p className="py-1 text-2xs text-muted">
+            Freeze frame: holds the frame at source {formatTimecode(clip.sourceIn, fr)}. Trim its edges to change how long it holds. Sound is muted.
+          </p>
+        )}
+        {clip.assetId && asset?.kind !== 'image' && asset?.kind !== 'subtitle' && clip.speed !== 0 && (
           <>
             <Row label="Source in">
               <span className="font-mono tabular">{formatTimecode(clip.sourceIn, fr)}</span>

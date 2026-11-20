@@ -51,6 +51,7 @@ export function createProject(name = 'Untitled project', settings: Partial<Proje
       videoBitrate: null,
       audioBitrate: null,
       fileName: null,
+      loudness: null,
     },
   };
 }

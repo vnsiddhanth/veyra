@@ -22,6 +22,7 @@ import {
   snapDelta,
   snapTargets,
   splitAt,
+  freezeFrame,
 } from './edit';
 import { clipEnd, insertClip, TimelineError } from './ops';
 
@@ -199,5 +200,37 @@ describe('rearrangeClip', () => {
   it('is a no-op when dropped where it already is', () => {
     const { p, a, b } = three();
     expect(rearrangeClip(p, a, b)).toBe(p);
+  });
+});
+
+describe('freezeFrame', () => {
+  it('splits, inserts a muted still of the exact frame and ripples later clips on every track', () => {
+    const { p, a, b, img } = base();
+    const [q, fz] = freezeFrame(p, a, S(1.5), S(2));
+    checkIntegrity(q);
+    const f = q.clips[fz]!;
+    expect(f.speed).toBe(0);
+    expect(f.start).toBe(S(1.5));
+    expect(f.duration).toBe(S(2));
+    // A starts at source 1 s; 1.5 s into it is source 2.5 s.
+    expect(f.sourceIn).toBe(S(2.5));
+    expect(f.effects.some((e) => e.type === 'mute-audio' && e.enabled)).toBe(true);
+    expect(q.clips[a]!.duration).toBe(S(1.5));
+    // The right half of A and clip B moved 2 s later; the image on V2 (starts at 1 s, before the freeze) stays.
+    expect(q.clips[b]!.start).toBe(S(5));
+    expect(q.clips[img]!.start).toBe(S(1));
+  });
+
+  it('a freeze frame can be trimmed longer and refuses speed changes', () => {
+    const { p, a } = base();
+    const [q, fz] = freezeFrame(p, a, 0, S(1));
+    expect(() => setClipSpeed(q, fz, 2)).toThrow(TimelineError);
+    expect(q.clips[fz]!.sourceIn).toBe(S(1));
+  });
+
+  it('rejects non-video clips and playheads outside the clip', () => {
+    const { p, a, img } = base();
+    expect(() => freezeFrame(p, img, S(2))).toThrow(TimelineError);
+    expect(() => freezeFrame(p, a, S(4))).toThrow(TimelineError);
   });
 });

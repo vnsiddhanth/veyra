@@ -9,6 +9,7 @@ import { createId } from '@/utils/id';
 import { frameDuration, quantizeToFrame, secondsToFlicks, type Flicks } from '@/utils/time';
 import { clipEnd, overlaps, splitClip, TimelineError, trackAccepts, trimClipEnd, trimClipStart } from './ops';
 import { assetSourceDuration } from '@/project/schema/factory';
+import { sourceAdvance } from '@/render/speed';
 
 const snapFrame = (p: Project, t: Flicks, mode: 'floor' | 'round' | 'ceil' = 'round') => quantizeToFrame(t, p.settings.frameRate, mode);
 const getClip = (p: Project, id: string): Clip => {
@@ -175,6 +176,7 @@ export function splitAt(p: Project, t: Flicks, ids?: readonly string[]): [Projec
 export function setClipSpeed(p: Project, id: string, speed: number): Project {
   const c = getClip(p, id);
   if (!(speed >= 0.05 && speed <= 16)) throw new TimelineError('Speed must be between 0.05× and 16×.');
+  if (c.speed === 0) throw new TimelineError('This is a freeze frame. Change its length by trimming it instead.');
   if (c.keyframes.speed?.length) throw new TimelineError('This clip has a speed ramp. Edit the ramp keyframes, or remove them to set a constant speed.');
   const span = c.duration * c.speed;
   const asset = c.assetId ? p.assets.find((a) => a.id === c.assetId) : undefined;
@@ -184,6 +186,51 @@ export function setClipSpeed(p: Project, id: string, speed: number): Project {
   if (duration <= 0) throw new TimelineError('The clip would be shorter than one frame.');
   if (overlaps(p, c.trackId, c.start, c.start + duration, new Set([id]))) throw new TimelineError('Not enough room after the clip for the slower speed. Move the next clip first.');
   return touch(pruneTransitions({ ...p, clips: { ...p.clips, [id]: { ...c, speed, duration } } }));
+}
+
+// ── freeze frame ──────────────────────────────────────────────────────────
+
+/**
+ * Freeze the frame of a video clip at `at` for `hold`: the clip is split there, a still (speed 0,
+ * sound muted) of that exact source frame is inserted, and everything from `at` onwards on every
+ * unlocked track moves later by `hold`, so picture and sound stay in sync. Returns the freeze clip id.
+ */
+export function freezeFrame(p: Project, clipId: string, at: Flicks, hold: Flicks = secondsToFlicks(2)): [Project, string] {
+  const c = getClip(p, clipId);
+  const asset = c.assetId ? p.assets.find((a) => a.id === c.assetId) : undefined;
+  if (!asset || asset.kind !== 'video') throw new TimelineError('Select a video clip to freeze a frame.');
+  if (c.reversed) throw new TimelineError('Freeze frames on reversed clips are not supported yet.');
+  if (c.speed === 0) throw new TimelineError('This clip is already a freeze frame.');
+  const t = snapFrame(p, at, 'floor');
+  if (t < c.start || t >= clipEnd(c)) throw new TimelineError('Put the playhead over the clip to freeze that frame.');
+  const len = snapFrame(p, hold, 'round');
+  if (len <= 0) throw new TimelineError('The freeze must be at least one frame long.');
+  const lockedIds = new Set(p.tracks.filter((tr) => tr.locked).map((tr) => tr.id));
+  if (lockedIds.has(c.trackId)) throw new TimelineError('The track is locked.');
+  // Exact source frame shown at t (start of that frame's interval).
+  const sourceAt = c.sourceIn + Math.round(sourceAdvance(c, t - c.start));
+
+  let q = p;
+  if (t > c.start) q = splitClip(q, c.id, t)[0];
+  // Ripple: everything starting at or after t on unlocked tracks moves later.
+  const clips: Record<string, Clip> = {};
+  for (const x of Object.values(q.clips)) clips[x.id] = !lockedIds.has(x.trackId) && x.start >= t ? { ...x, start: x.start + len } : x;
+  // Clips on other tracks that cross t keep playing through the freeze; only later clips move.
+  const freeze: Clip = {
+    ...structuredClone(c),
+    id: createId('clp'),
+    start: t,
+    duration: len,
+    sourceIn: sourceAt,
+    speed: 0,
+    keyframes: {},
+    effects: [...c.effects.filter((e) => e.type !== 'mute-audio').map((e) => ({ ...e, id: createId('fx') })), { id: createId('fx'), type: 'mute-audio', enabled: true, params: {} }],
+    name: `${c.name} (freeze)`,
+  };
+  clips[freeze.id] = freeze;
+  const markers = q.markers.map((m) => (m.t >= t ? { ...m, t: m.t + len } : m));
+  q = { ...q, clips, markers, tracks: rebuildTrackOrder(q, clips) };
+  return [touch(pruneTransitions(q)), freeze.id];
 }
 
 // ── clipboard ─────────────────────────────────────────────────────────────

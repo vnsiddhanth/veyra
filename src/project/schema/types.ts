@@ -154,6 +154,8 @@ export interface ExportPreferences {
   videoBitrate: number | null;
   audioBitrate: number | null;
   fileName: string | null;
+  /** Normalise loudness to this LUFS target on export; null = leave the mix as it is. */
+  loudness?: number | null;
 }
 
 export interface Project {
