@@ -12,7 +12,7 @@ const walk = (d) => {
     else if (n.endsWith('.jsonl')) for (const line of readFileSync(p, 'utf8').split('\n')) if (line.trim()) rows.push(JSON.parse(line));
   }
 };
-walk(root);
+if (statSync(root, { throwIfNoEntry: false })?.isDirectory()) walk(root);
 
 const by = (k) => rows.reduce((m, r) => (m.set(r[k], [...(m.get(r[k]) ?? []), r]), m), new Map());
 const browsers = [...new Set(rows.map((r) => r.project))].sort();
