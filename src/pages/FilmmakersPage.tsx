@@ -5,10 +5,9 @@ import { TOOLS } from '@/tools/registry';
 import { setPageMeta } from '@/utils/meta';
 
 /** Every finishing feature, grouped the way a post-production workflow runs. */
-const GROUPS: { id: string; tc: string; title: string; lede: string; items: [string, string, string?][] }[] = [
+const GROUPS: { id: string; title: string; lede: string; items: [string, string, string?][] }[] = [
   {
     id: 'cut',
-    tc: '00:01',
     title: 'Cutting',
     lede: 'A multitrack timeline with the edits you would expect from a desktop NLE.',
     items: [
@@ -23,7 +22,6 @@ const GROUPS: { id: string; tc: string; title: string; lede: string; items: [str
   },
   {
     id: 'picture',
-    tc: '00:02',
     title: 'Picture and grade',
     lede: 'Measure first, then grade. The program monitor shows scopes from the exact frame you are looking at.',
     items: [
@@ -38,7 +36,6 @@ const GROUPS: { id: string; tc: string; title: string; lede: string; items: [str
   },
   {
     id: 'sound',
-    tc: '00:03',
     title: 'Sound',
     lede: 'Clean dialogue and a mix that meets the delivery spec.',
     items: [
@@ -51,7 +48,6 @@ const GROUPS: { id: string; tc: string; title: string; lede: string; items: [str
   },
   {
     id: 'titles',
-    tc: '00:04',
     title: 'Titles and subtitles',
     lede: 'From the opening title to the last line of the credits.',
     items: [
@@ -62,7 +58,6 @@ const GROUPS: { id: string; tc: string; title: string; lede: string; items: [str
   },
   {
     id: 'deliver',
-    tc: '00:05',
     title: 'Delivery and hand-off',
     lede: 'Finish here, or send the edit on to a grading or sound suite.',
     items: [
@@ -94,7 +89,7 @@ export default function FilmmakersPage() {
       <section className="grain border-b border-line">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-14 pt-16 md:grid-cols-[1.3fr_1fr] md:pt-20">
           <div>
-            <p className="slate mb-5">For filmmakers</p>
+            <p className="slate mb-5">For Filmmakers</p>
             <h1 className="poster text-[clamp(3.6rem,10vw,7.5rem)]">Finish your short film <span className="text-accent">in the browser.</span></h1>
             <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted">
               Scopes for the grade, dialogue clean-up, delivery loudness, credits and a clean hand-off to Resolve. All of it runs on your own computer, so rushes and cuts
@@ -109,13 +104,13 @@ export default function FilmmakersPage() {
               </a>
             </div>
           </div>
-          <nav aria-label="On this page" className="self-end font-mono text-sm">
+          <nav aria-label="On this page" className="self-end text-sm">
             <ol className="divide-y divide-line border-y border-line">
-              {[['tools', '00:00', 'Quick film tools'], ...GROUPS.map((g) => [g.id, g.tc, g.title] as const), ['limits', '00:06', 'What it can’t do yet']].map(([id, tc, title]) => (
+              {[['tools', 'Quick film tools'], ...GROUPS.map((g) => [g.id, g.title] as const), ['limits', 'What it can’t do yet']].map(([id, title]) => (
                 <li key={id}>
-                  <a href={`#${id}`} className="flex gap-4 py-2.5 text-muted hover:text-fg">
-                    <span className="text-faint">{tc}</span>
+                  <a href={`#${id}`} className="flex items-center justify-between py-2.5 text-muted hover:text-fg">
                     {title}
+                    <span aria-hidden className="text-faint">↓</span>
                   </a>
                 </li>
               ))}
@@ -125,7 +120,7 @@ export default function FilmmakersPage() {
       </section>
 
       <section id="tools" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
-        <p className="slate mb-3">00:00 · One file in, one file out</p>
+        <p className="slate mb-3">One file in, one file out</p>
         <h2 className="poster text-5xl sm:text-6xl">Quick film tools</h2>
         <p className="mt-2 max-w-[60ch] text-muted">For a single job on a single file, no timeline needed.</p>
         <ul className="mt-8 grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
@@ -145,7 +140,7 @@ export default function FilmmakersPage() {
         <section key={g.id} id={g.id} className="scroll-mt-20 border-t border-line">
           <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 md:grid-cols-[1fr_2fr]">
             <div>
-              <p className="slate mb-3">{g.tc} · In the editor</p>
+              <p className="slate mb-3">In the editor</p>
               <h2 className="poster text-5xl">{g.title}</h2>
               <p className="mt-2 text-muted">{g.lede}</p>
             </div>
@@ -167,7 +162,7 @@ export default function FilmmakersPage() {
       <section id="limits" className="scroll-mt-20 border-t border-line bg-surface">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 md:grid-cols-[1fr_2fr]">
           <div>
-            <p className="slate mb-3">00:06 · Honestly</p>
+            <p className="slate mb-3">Limits</p>
             <h2 className="poster text-5xl">What it can’t do yet</h2>
             <p className="mt-2 text-muted">
               Better to know now than halfway through a cut. Missing something? <Link to="/feedback?type=idea" className="text-accent underline underline-offset-2">Ask for it</Link>.

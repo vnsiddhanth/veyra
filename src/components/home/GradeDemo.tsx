@@ -110,8 +110,8 @@ export function GradeDemo() {
   return (
     <div className="theme-dark overflow-hidden rounded-lg border border-line-strong bg-[#0b0a09] text-[#efe8dc] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]">
       <div className="flex items-center justify-between border-b border-white/10 px-3 py-2 font-mono text-[11px] text-white/50">
-        <span>PROGRAM · dusk_A001_C004</span>
-        <span className="tabular">00:00:01:18</span>
+        <span>Preview</span>
+        <span>Try a grade</span>
       </div>
       <div className="relative">
         <canvas ref={canvas} width={W} height={H} className="block aspect-video w-full" role="img" aria-label="A mountain range at dusk, graded live with the sliders below" />

@@ -13,7 +13,7 @@ const SECTIONS: [string, string][] = [
   ['timeline', 'Edit on the timeline'],
   ['preview', 'Preview your work'],
   ['look', 'Effects, text and animation'],
-  ['film', 'Tools for filmmakers'],
+  ['film', 'Tools for Filmmakers'],
   ['audio', 'Sound'],
   ['export', 'Export'],
   ['tools', 'Every tool, step by step'],
@@ -234,7 +234,7 @@ export default function GuidePage() {
           </ul>
         </Section>
 
-        <Section id="film" title="Tools for filmmakers">
+        <Section id="film" title="Tools for Filmmakers">
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <strong>Video scopes.</strong> Under the program monitor, pick <strong>Waveform</strong>, <strong>RGB parade</strong>, <strong>Vectorscope</strong> or{' '}

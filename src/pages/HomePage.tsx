@@ -43,9 +43,7 @@ export function HomePage() {
       <section className="grain relative overflow-hidden">
         <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 md:pt-16 lg:grid-cols-[1fr_1.08fr] lg:items-center lg:gap-14">
           <div>
-            <p className="slate mb-6 flex items-center gap-3">
-              <span className="inline-block h-2 w-2 rounded-full bg-accent" aria-hidden /> Now showing in your browser
-            </p>
+            <p className="slate mb-6">Free · open source · nothing uploaded</p>
             <h1 className="poster text-[clamp(4.2rem,13vw,9.5rem)] text-fg">
               Edit video.
               <span className="block text-accent">Keep it</span>
@@ -72,11 +70,11 @@ export function HomePage() {
 
       <div className="sprockets" aria-hidden />
 
-      {/* ── The cutting room ─────────────────────────────────────────────── */}
+      {/* ── The editor ─────────────────────────────────────────────────────── */}
       <section className="theme-dark bg-[#0b0a09] text-[#efe8dc]">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
           <div className="grid gap-6 md:grid-cols-[1fr_1fr] md:items-end">
-            <h2 className="poster text-[clamp(3rem,8vw,5.5rem)]">The cutting room</h2>
+            <h2 className="poster text-[clamp(3rem,8vw,5.5rem)]">The editor</h2>
             <p className="max-w-[46ch] text-lg leading-relaxed text-white/60">
               Multitrack timeline, frame-accurate cuts, keyframes, titles, colour, sound. A proper editor, not a template machine. This is a real screenshot.
             </p>
@@ -124,13 +122,13 @@ export function HomePage() {
 
       <div className="sprockets" aria-hidden />
 
-      {/* ── Starring: the tools as end credits ─────────────────────────────── */}
+      {/* ── All tools ──────────────────────────────────────────────────────── */}
       <section id="tools" className="theme-dark scroll-mt-20 bg-[#070605] text-[#efe8dc]">
         <div className="mx-auto max-w-5xl px-4 py-16 md:py-24">
           <div className="text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-white/50">Starring</p>
-            <h2 className="poster mt-3 text-[clamp(3.5rem,10vw,7rem)]">{TOOLS.length} tools</h2>
-            <p className="mt-3 font-mono text-xs uppercase tracking-[0.2em] text-white/50">in order of appearance · one job each · nothing uploaded</p>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-white/50">Quick tools</p>
+            <h2 className="poster mt-3 text-[clamp(3.5rem,10vw,7rem)]">All {TOOLS.length} tools</h2>
+            <p className="mt-3 font-mono text-xs uppercase tracking-[0.2em] text-white/50">one job each · nothing uploaded</p>
           </div>
 
           <label className="relative mx-auto mt-10 block max-w-sm">
@@ -238,10 +236,10 @@ export function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
           <div className="grid gap-10 md:grid-cols-[1fr_1.2fr]">
             <div>
-              <p className="slate mb-4">For filmmakers</p>
+              <p className="slate mb-4">For Filmmakers</p>
               <h2 className="poster text-[clamp(3rem,8vw,5.5rem)]">Enough to finish a short film</h2>
               <Link to="/filmmakers" className="mt-8 inline-flex h-11 items-center rounded-md border border-line-strong px-5 font-medium hover:bg-surface-2">
-                Everything for filmmakers →
+                Everything for Filmmakers →
               </Link>
             </div>
             <dl className="divide-y divide-line border-y border-line">
