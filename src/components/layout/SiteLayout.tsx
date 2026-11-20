@@ -150,7 +150,7 @@ export function SiteLayout() {
             />
           </div>
           <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-5 font-mono text-xs text-faint">
-            <span>Made by Vishnubhotla Siddhanth</span>
+            <span>© {new Date().getFullYear()} Veyra</span>
             <span>MIT licence</span>
             <span>No cookies · no accounts · no uploads</span>
           </div>
