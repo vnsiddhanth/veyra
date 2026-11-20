@@ -19,6 +19,7 @@
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/ibm-plex-sans": "^5.2.8",
+    "@fontsource/league-gothic": "^5.2.8",
     "@mediabunny/mp3-encoder": "^1.66.0",
     "gifenc": "^1.0.3",
     "mediabunny": "^1.66.0",

@@ -63,7 +63,7 @@ export function ToolsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="slate mb-3">Tools</p>
-          <h1 className="text-3xl font-semibold sm:text-4xl">Every tool, one job each.</h1>
+          <h1 className="poster text-[clamp(3.4rem,8vw,6rem)]">Every tool, <span className="text-accent">one job each.</span></h1>
           <p className="mt-1 max-w-2xl text-sm text-muted">
             {TOOLS.length} free tools. Each does one job, runs entirely in your browser and gives you a checked file — no upload, no watermark, no sign-up.{' '}
             <Link to="/guide#tools" className="text-accent hover:underline">
@@ -114,7 +114,7 @@ export function ToolsPage() {
               <section key={c} aria-labelledby={`cat-${c}`}>
                 <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
                   <span className="slate">{String(ci + 1).padStart(2, '0')}</span>
-                  <h2 id={`cat-${c}`} className="text-xl font-semibold">
+                  <h2 id={`cat-${c}`} className="poster text-4xl">
                     {CATEGORY_LABELS[c]}
                   </h2>
                   <p className="text-sm text-muted">{CATEGORY_BLURB[c]}</p>

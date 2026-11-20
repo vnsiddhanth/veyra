@@ -6,6 +6,7 @@
  */
 @theme {
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'League Gothic', 'Oswald', Impact, 'Arial Narrow', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
 
   --color-canvas: var(--c-canvas);
@@ -93,6 +94,25 @@
   --c-warn: #f0a73f;
   --c-danger: #f26b5e;
   color-scheme: dark;
+}
+
+/* Theme colours resolve where they are declared, so re-bind them inside always-dark regions. */
+.theme-dark {
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-surface-3: var(--c-surface-3);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-fg: var(--c-fg);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-accent: var(--c-accent);
+  --color-accent-fg: var(--c-accent-fg);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-ok: var(--c-ok);
+  --color-warn: var(--c-warn);
+  --color-danger: var(--c-danger);
 }
 
 html,
@@ -208,3 +228,72 @@ p a.hover\:underline {
 .veyra-static ul, .veyra-static ol { margin: 0 0 0.75rem; padding-left: 1.25rem; }
 .veyra-static ul { list-style: disc; }
 .veyra-static ol { list-style: decimal; }
+
+/* Poster display type: tall, condensed, uppercase. */
+.poster {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: 0.004em;
+  text-wrap: balance;
+}
+
+/* Movie-poster billing block: dense condensed caps with small connective words. */
+.billing {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  color: var(--c-muted);
+}
+.billing small {
+  font-size: 0.55em;
+  letter-spacing: 0.08em;
+  vertical-align: 0.35em;
+  margin: 0 0.25em;
+  color: var(--c-faint);
+}
+
+/* A strip of film with backlit sprocket holes, used as a section edge. */
+.sprockets {
+  height: 26px;
+  background-color: #070605;
+  background-image: repeating-linear-gradient(90deg, transparent 0 12px, rgba(239, 232, 220, 0.82) 12px 24px, transparent 24px 36px);
+  background-size: 100% 10px;
+  background-position: 0 50%;
+  background-repeat: no-repeat;
+}
+
+/* Range inputs in marketing demos. */
+.demo-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+}
+.demo-range::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--c-line-strong);
+}
+.demo-range::-moz-range-track {
+  height: 2px;
+  background: var(--c-line-strong);
+}
+.demo-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border-radius: 2px;
+  background: var(--c-accent);
+  border: 2px solid var(--c-canvas);
+}
+.demo-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--c-accent);
+  border: 2px solid var(--c-canvas);
+}

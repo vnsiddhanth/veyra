@@ -1,0 +1,16 @@
+import { chromium } from '@playwright/test';
+const [out, scheme = 'dark'] = process.argv.slice(2);
+const b = await chromium.launch({ channel: 'chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: scheme });
+await p.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
+await p.waitForTimeout(1200);
+await p.screenshot({ path: `${out}/hero-${scheme}.png` });
+await p.getByRole('button', { name: 'Golden hour' }).click();
+await p.waitForTimeout(600);
+await p.screenshot({ path: `${out}/hero-golden-${scheme}.png` });
+await p.screenshot({ path: `${out}/full-${scheme}.png`, fullPage: true });
+const m = await b.newPage({ viewport: { width: 390, height: 844 }, colorScheme: scheme });
+await m.goto('http://localhost:5173/', { waitUntil: 'networkidle' });
+await m.waitForTimeout(1000);
+await m.screenshot({ path: `${out}/mobile-${scheme}.png`, fullPage: true });
+await b.close();

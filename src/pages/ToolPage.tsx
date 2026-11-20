@@ -67,7 +67,7 @@ export default function ToolPage() {
       </nav>
       <header className="mb-8 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-3xl font-semibold sm:text-4xl">{tool.title}</h1>
+          <h1 className="poster text-[clamp(3rem,7vw,5rem)]">{tool.title}</h1>
           {tool.status !== 'available' && <Badge>In development · Phase {tool.phase}</Badge>}
         </div>
         <p className="max-w-2xl text-lg leading-relaxed text-muted">{tool.summary}</p>

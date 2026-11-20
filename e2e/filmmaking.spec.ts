@@ -370,3 +370,32 @@ test.describe('film tools', () => {
     expect(Math.abs(meta.duration - 5)).toBeLessThan(0.1);
   });
 });
+
+test('homepage grading demo regrades the frame and its scopes', async ({ page }) => {
+  await page.goto('/');
+  const frame = page.getByRole('img', { name: /graded live/ });
+  const wave = page.getByRole('img', { name: 'Waveform (luma) of the current frame' }).first();
+  await expect(wave).toBeVisible();
+  const lit = () =>
+    wave.evaluate((c: HTMLCanvasElement) => {
+      const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+      // Mean height of the lit trace: where the picture's brightness sits on the 0–100 scale.
+      let sum = 0;
+      let n = 0;
+      for (let y = 0; y < c.height; y++)
+        for (let x = 0; x < c.width; x++)
+          if (d[(y * c.width + x) * 4 + 1]! > 120) {
+            sum += c.height - y;
+            n++;
+          }
+      return n ? sum / n : 0;
+    });
+  await expect.poll(lit).toBeGreaterThan(20);
+  const before = await lit();
+  const centre = () => frame.evaluate((c: HTMLCanvasElement) => Array.from(c.getContext('2d')!.getImageData(c.width / 2, c.height / 2, 1, 1).data.slice(0, 3)));
+  const c0 = await centre();
+  await page.getByRole('button', { name: 'Overexposed' }).click();
+  await expect.poll(lit).toBeGreaterThan(before + 20); // brighter picture → trace rises
+  expect((await centre())[0]!).toBeGreaterThan(c0[0]!);
+  await expect(page.getByText(/Highlights clipping/)).toBeVisible();
+});

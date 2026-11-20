@@ -95,7 +95,7 @@ export default function FilmmakersPage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-14 pt-16 md:grid-cols-[1.3fr_1fr] md:pt-20">
           <div>
             <p className="slate mb-5">For filmmakers</p>
-            <h1 className="max-w-[16ch] text-4xl font-semibold leading-[1.05] sm:text-5xl md:text-6xl">Finish your short film in the browser.</h1>
+            <h1 className="poster text-[clamp(3.6rem,10vw,7.5rem)]">Finish your short film <span className="text-accent">in the browser.</span></h1>
             <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted">
               Scopes for the grade, dialogue clean-up, delivery loudness, credits and a clean hand-off to Resolve. All of it runs on your own computer, so rushes and cuts
               never sit on someone else’s server.
@@ -126,7 +126,7 @@ export default function FilmmakersPage() {
 
       <section id="tools" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <p className="slate mb-3">00:00 · One file in, one file out</p>
-        <h2 className="text-2xl font-semibold sm:text-3xl">Quick film tools</h2>
+        <h2 className="poster text-5xl sm:text-6xl">Quick film tools</h2>
         <p className="mt-2 max-w-[60ch] text-muted">For a single job on a single file, no timeline needed.</p>
         <ul className="mt-8 grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
           {film.map((t) => (
@@ -146,7 +146,7 @@ export default function FilmmakersPage() {
           <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 md:grid-cols-[1fr_2fr]">
             <div>
               <p className="slate mb-3">{g.tc} · In the editor</p>
-              <h2 className="text-2xl font-semibold">{g.title}</h2>
+              <h2 className="poster text-5xl">{g.title}</h2>
               <p className="mt-2 text-muted">{g.lede}</p>
             </div>
             <dl className="divide-y divide-line border-y border-line">
@@ -168,7 +168,7 @@ export default function FilmmakersPage() {
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-14 md:grid-cols-[1fr_2fr]">
           <div>
             <p className="slate mb-3">00:06 · Honestly</p>
-            <h2 className="text-2xl font-semibold">What it can’t do yet</h2>
+            <h2 className="poster text-5xl">What it can’t do yet</h2>
             <p className="mt-2 text-muted">
               Better to know now than halfway through a cut. Missing something? <Link to="/feedback?type=idea" className="text-accent underline underline-offset-2">Ask for it</Link>.
             </p>
