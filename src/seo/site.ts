@@ -131,6 +131,11 @@ export function pageInfo(path: string, site = ''): PageInfo | null {
       'Browser compatibility',
     ],
     '/benchmark': [`Device Benchmark — ${BRAND.name}`, 'Measure how fast your device encodes, decodes and exports video in the browser.', 'Device benchmark'],
+    '/filmmakers': [
+      `Free Video Editor for Filmmakers — No Upload | ${BRAND.name}`,
+      'Scopes, dialogue noise reduction, LUFS loudness, rolling credits, freeze frames and FCPXML hand-off to DaVinci Resolve. Free, in your browser, nothing uploaded.',
+      'Finish your short film in the browser',
+    ],
     '/feedback': [`Report a Problem — ${BRAND.name}`, `Report a bug, make a complaint or suggest an idea for ${BRAND.name}.`, 'Report a problem'],
   };
   const s = simple[path];
@@ -150,7 +155,7 @@ export function pageInfo(path: string, site = ''): PageInfo | null {
 
 /** Every public route, for the sitemap and static pages. */
 export function publicPaths(): string[] {
-  return ['/', '/tools', '/editor', '/guide', '/privacy', '/compatibility', '/benchmark', '/feedback', ...TOOLS.map((t) => `/tools/${t.slug}`)];
+  return ['/', '/tools', '/filmmakers', '/editor', '/guide', '/privacy', '/compatibility', '/benchmark', '/feedback', ...TOOLS.map((t) => `/tools/${t.slug}`)];
 }
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -186,6 +191,9 @@ export function staticBody(info: PageInfo): string {
       if (g.tips?.length) main += `<h2>Tips</h2><ul>${g.tips.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`;
     }
     main += `<h2>Related tools</h2>${toolList(relatedTools(tool))}`;
+  } else if (info.path === '/filmmakers') {
+    main += `<h2>Quick film tools</h2>${toolList(TOOLS.filter((t) => t.category === 'film'))}`;
+    main += '<h2>In the editor</h2><ul><li>Video scopes: waveform, RGB parade, vectorscope, histogram</li><li>Framing guides: safe areas, 2.39:1, 1.85:1, 4:3, 9:16</li><li>Dialogue noise reduction, EQ, compressor, auto-ducking</li><li>Delivery loudness to −14, −16, −23 or −24 LUFS</li><li>Freeze frame, speed ramps, rolling credits, LUTs, curves, chroma key</li><li>FCPXML and EDL hand-off to DaVinci Resolve, Premiere and Final Cut</li></ul>';
   } else if (info.path === '/' || info.path === '/tools') {
     if (info.path === '/') main += `<p><strong>${esc(PROMISE)}</strong> No account, no watermark, no file size limit set by us.</p><p><a href="/editor">Open the editor</a> or pick a tool:</p>`;
     main += byCategory();

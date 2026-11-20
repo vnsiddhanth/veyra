@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CATEGORY_ICON, ToolCard } from '@/components/tools/ToolCard';
+import { TOOL_GRID, ToolCard } from '@/components/tools/ToolCard';
 import { IconSearch } from '@/components/ui/icons';
 import { Kbd } from '@/components/ui/primitives';
 import { CATEGORY_LABELS, TOOLS, searchTools, type ToolCategory } from '@/tools/registry';
@@ -14,6 +14,7 @@ const CATEGORY_BLURB: Record<ToolCategory, string> = {
   edit: 'Cut, join, crop, resize, rotate, retime and steady your footage.',
   audio: 'Mute, extract, replace, mix — and remove silent gaps.',
   visual: 'Looks, text, watermarks, GIFs, frames and slideshows.',
+  film: 'Finishing tools for filmmakers: clean dialogue, delivery loudness, scope, credits, freezes.',
   subtitles: 'Write, fix, attach or burn in subtitles.',
   utility: 'See exactly what is inside a file.',
 };
@@ -61,7 +62,8 @@ export function ToolsPage() {
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">All tools</h1>
+          <p className="slate mb-3">Tools</p>
+          <h1 className="text-3xl font-semibold sm:text-4xl">Every tool, one job each.</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted">
             {TOOLS.length} free tools. Each does one job, runs entirely in your browser and gives you a checked file — no upload, no watermark, no sign-up.{' '}
             <Link to="/guide#tools" className="text-accent hover:underline">
@@ -94,31 +96,30 @@ export function ToolsPage() {
             aria-pressed={category === c}
             onClick={() => update({ category: c === 'all' ? null : c })}
             className={cn(
-              'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors',
+              'inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs font-medium transition-colors',
               category === c ? 'border-accent bg-accent text-accent-fg' : 'border-line bg-surface text-muted hover:border-line-strong hover:text-fg',
             )}
           >
             {c === 'all' ? 'All' : CATEGORY_LABELS[c]}
-            <span className={cn('tabular', category === c ? '' : 'text-faint')}>{c === 'all' ? TOOLS.length : counts[c]}</span>
+            <span className={cn('font-mono tabular', category === c ? '' : 'text-faint')}>{c === 'all' ? TOOLS.length : counts[c]}</span>
           </button>
         ))}
       </div>
 
       {grouped ? (
-        <div className="mt-8 space-y-10">
-          {categories.map((c) => {
-            const Icon = CATEGORY_ICON[c];
+        <div className="mt-10 space-y-12">
+          {categories.map((c, ci) => {
             const tools = TOOLS.filter((t) => t.category === c);
             return (
               <section key={c} aria-labelledby={`cat-${c}`}>
-                <div className="mb-3 flex items-center gap-2.5">
-                  <Icon size={18} className="text-accent" aria-hidden />
-                  <h2 id={`cat-${c}`} className="text-base font-semibold">
+                <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  <span className="slate">{String(ci + 1).padStart(2, '0')}</span>
+                  <h2 id={`cat-${c}`} className="text-xl font-semibold">
                     {CATEGORY_LABELS[c]}
                   </h2>
-                  <p className="hidden text-sm text-muted sm:block">— {CATEGORY_BLURB[c]}</p>
+                  <p className="text-sm text-muted">{CATEGORY_BLURB[c]}</p>
                 </div>
-                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className={TOOL_GRID}>
                   {tools.map((t) => (
                     <ToolCard key={t.slug} tool={t} />
                   ))}
@@ -134,7 +135,7 @@ export function ToolsPage() {
             {query && ` matching “${query}”`}
             {category !== 'all' && ` in ${CATEGORY_LABELS[category]}`}
           </p>
-          <div className="mt-2 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={`mt-2 ${TOOL_GRID}`}>
             {list.map((t) => (
               <ToolCard key={t.slug} tool={t} />
             ))}

@@ -13,6 +13,42 @@ const DROP = 'Drop your file on the page, or press Choose file.';
 const DOWNLOAD = 'When it says “output verified”, press Download. The file has been checked before you get it.';
 
 export const TOOL_GUIDES: Record<string, ToolGuide> = {
+  'remove-background-noise': {
+    when: 'Dialogue has hiss, hum, air conditioning or room noise under it.',
+    steps: ['Drop a video or audio recording on the page, or press Choose file.', 'Set the reduction (15 dB suits most recordings).', 'Press Remove noise.', DOWNLOAD],
+    tips: [
+      'The noise is learned from the first seconds of the file, so recordings that start with a moment of room tone clean up best.',
+      'If voices start to sound thin or watery, lower the reduction. It removes steady noise, not one-off sounds like a door slam.',
+    ],
+  },
+  'normalize-loudness': {
+    when: 'A platform, broadcaster or festival asks for a specific loudness, or your videos play at different volumes.',
+    steps: [DROP, 'Pick the target: −14 LUFS for YouTube and streaming, −23 LUFS for EBU broadcast and many festivals, −24 LUFS for US broadcast.', 'Press Normalize loudness.', DOWNLOAD],
+    tips: ['The whole file is measured first, then levelled; peaks stay under −1 dB so nothing clips. The result card shows the measured loudness and the change.'],
+  },
+  'cinematic-bars': {
+    when: 'You want the widescreen cinema look, or need to frame for a narrower ratio.',
+    steps: [DROP, 'Pick a ratio. The preview shows the bars exactly as they will be.', 'Press Add bars.', DOWNLOAD],
+    tips: ['The video keeps its original size, so it uploads and plays everywhere. 2.39:1 is the classic anamorphic look; 1.85:1 is flat widescreen.'],
+  },
+  'add-end-credits': {
+    when: 'Your film needs cast and crew credits at the end.',
+    steps: [DROP, 'Replace the template with your names. One line each; blank lines make gaps.', 'Choose after the video (on black) or over its last seconds, and how long the roll lasts.', 'Press Add credits.', DOWNLOAD],
+    tips: ['A longer roll moves slower and is easier to read. About 20 seconds suits a short film.'],
+  },
+  'freeze-frame': {
+    when: 'You want to hold a moment: a reaction, a title card, a dramatic pause.',
+    steps: [DROP, 'Play or step with ← / → to the exact frame.', 'Set how long to hold it.', 'Press Freeze this frame.', DOWNLOAD],
+    tips: ['Sound pauses during the freeze and continues with the picture afterwards, so it stays in sync.'],
+  },
+  'video-color-scopes': {
+    when: 'You want to check exposure and colour objectively before grading or delivering.',
+    steps: [DROP, 'Play or step through the video. The waveform, RGB parade, vectorscope and histogram follow the frame on screen.'],
+    tips: [
+      'Waveform near the top means highlights are clipping; piled at the bottom means crushed blacks. The readout shows the percentage of each.',
+      'On the vectorscope, skin tones should sit near the skin-tone line, whatever the person’s complexion.',
+    ],
+  },
   'compress-video': {
     when: 'Your video is too big to send, upload or store.',
     steps: [DROP, 'Pick how strong the compression is. “Balanced” suits most videos; “Strongest” gives the smallest file.', 'Optionally cap the resolution (for example 720p) to shrink it further.', 'Press Compress.', DOWNLOAD],

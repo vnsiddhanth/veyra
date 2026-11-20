@@ -17,6 +17,8 @@
     "deploy": "cross-env VEYRA_SITE_URL=https://veyraedit.pages.dev npm run build && npx --yes wrangler@4 pages deploy dist --project-name veyraedit --branch main --commit-dirty=true"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/ibm-plex-sans": "^5.2.8",
     "@mediabunny/mp3-encoder": "^1.66.0",
     "gifenc": "^1.0.3",
     "mediabunny": "^1.66.0",

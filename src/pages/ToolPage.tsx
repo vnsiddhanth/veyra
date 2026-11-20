@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, type ComponentType } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ToolCard } from '@/components/tools/ToolCard';
-import { IconShield } from '@/components/ui/icons';
 import { ToolGuidePanel } from '@/components/tools/ToolGuidePanel';
 import { Badge } from '@/components/ui/primitives';
 import { BRAND } from '@/config/brand';
@@ -28,6 +27,7 @@ const ENGINES: Partial<Record<ToolEngine, ComponentType<{ tool: ToolDef }>>> = {
   'subtitle-editor': named(() => import('@/tools/subtitles/SubtitleTools') as unknown as Promise<Record<'SubtitleEditorTool', ComponentType<{ tool: ToolDef }>>>, 'SubtitleEditorTool'),
   'soft-subtitles': named(() => import('@/tools/subtitles/SubtitleTools'), 'SoftSubtitlesTool'),
   stabilize: named(() => import('@/tools/compose/StabilizeTool') as unknown as Promise<Record<'StabilizeTool', ComponentType<{ tool: ToolDef }>>>, 'StabilizeTool'),
+  film: named(() => import('@/tools/film/FilmTools') as Promise<Record<'FilmTool', ComponentType<{ tool: ToolDef }>>>, 'FilmTool'),
   silence: named(() => import('@/tools/compose/SilenceTool') as Promise<Record<'SilenceTool', ComponentType<{ tool: ToolDef }>>>, 'SilenceTool'),
 };
 import { NotFoundPage } from './NotFoundPage';
@@ -46,7 +46,7 @@ export default function ToolPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <nav className="mb-4 text-xs text-muted" aria-label="Breadcrumb">
+      <nav className="mb-5 font-mono text-xs uppercase tracking-[0.06em] text-faint" aria-label="Breadcrumb">
         <ol className="flex items-center gap-1.5">
           <li>
             <Link to="/tools" className="hover:text-fg">
@@ -65,19 +65,15 @@ export default function ToolPage() {
           </li>
         </ol>
       </nav>
-      <header className="mb-6 space-y-3">
+      <header className="mb-8 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{tool.title}</h1>
+          <h1 className="text-3xl font-semibold sm:text-4xl">{tool.title}</h1>
           {tool.status !== 'available' && <Badge>In development · Phase {tool.phase}</Badge>}
         </div>
-        <p className="max-w-2xl text-[15px] leading-relaxed text-muted">{tool.summary}</p>
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Guarantees">
-          {['Runs on your device', 'Never uploaded', 'No watermark', 'No sign-up'].map((x) => (
-            <li key={x} className="flex items-center gap-1.5">
-              <IconShield size={13} className="text-ok" /> {x}
-            </li>
-          ))}
-        </ul>
+        <p className="max-w-2xl text-lg leading-relaxed text-muted">{tool.summary}</p>
+        <p className="font-mono text-xs text-faint" aria-label="Guarantees">
+          Runs on your device · never uploaded · no watermark · no sign-up
+        </p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -141,8 +137,8 @@ export default function ToolPage() {
 
       {related.length > 0 && (
         <section className="mt-12">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-faint">Related tools</h2>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          <h2 className="slate mb-4">Related tools</h2>
+          <div className="grid border-l border-t border-line sm:grid-cols-2 lg:grid-cols-4">
             {related.map((t) => (
               <ToolCard key={t.slug} tool={t} />
             ))}

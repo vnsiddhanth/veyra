@@ -5,8 +5,8 @@
  * the system theme. Components use the semantic tokens (bg-surface, text-muted...), never raw palette values.
  */
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
 
   --color-canvas: var(--c-canvas);
   --color-surface: var(--c-surface);
@@ -34,41 +34,42 @@
 }
 
 :root {
-  --c-canvas: #f7f7f5;
-  --c-surface: #ffffff;
-  --c-surface-2: #f1f1ee;
-  --c-surface-3: #e7e7e3;
-  --c-line: #e3e3de;
-  --c-line-strong: #cfcfc8;
-  --c-fg: #17181b;
-  --c-muted: #53565d;
-  --c-faint: #66696f;
-  --c-accent: #8f5d00;
+  /* Warm paper. */
+  --c-canvas: #f5f1ea;
+  --c-surface: #fffcf7;
+  --c-surface-2: #eee8de;
+  --c-surface-3: #e3dbce;
+  --c-line: #e0d8cb;
+  --c-line-strong: #c9bfb0;
+  --c-fg: #1b1814;
+  --c-muted: #574f46;
+  --c-faint: #685f55;
+  --c-accent: #b93c0b;
   --c-accent-fg: #ffffff;
-  --c-accent-soft: #fbf0d6;
-  --c-ok: #11663f;
-  --c-warn: #7a4c00;
-  --c-danger: #c23b3b;
+  --c-accent-soft: #fbe2d4;
+  --c-ok: #136a41;
+  --c-warn: #874a00;
+  --c-danger: #b3302a;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --c-canvas: #0d0e11;
-    --c-surface: #15171b;
-    --c-surface-2: #1c1f24;
-    --c-surface-3: #262a31;
-    --c-line: #262a31;
-    --c-line-strong: #353a43;
-    --c-fg: #e9eaec;
-    --c-muted: #a0a4ad;
-    --c-faint: #8d929c;
-    --c-accent: #f5b942;
-    --c-accent-fg: #15171b;
-    --c-accent-soft: #3a2f17;
-    --c-ok: #43c08a;
-    --c-warn: #e8a93a;
-    --c-danger: #ef6b6b;
+    --c-canvas: #0d0c0a;
+    --c-surface: #151311;
+    --c-surface-2: #1d1a17;
+    --c-surface-3: #29251f;
+    --c-line: #2a2621;
+    --c-line-strong: #3d3832;
+    --c-fg: #efe8dc;
+    --c-muted: #aca395;
+    --c-faint: #958c80;
+    --c-accent: #ff7033;
+    --c-accent-fg: #170a03;
+    --c-accent-soft: #3d1e10;
+    --c-ok: #5cc28c;
+    --c-warn: #f0a73f;
+    --c-danger: #f26b5e;
     color-scheme: dark;
   }
 }
@@ -76,21 +77,21 @@
 /* The editor workspace forces dark regardless of system theme. */
 :root[data-theme='dark'],
 .theme-dark {
-  --c-canvas: #0d0e11;
-  --c-surface: #15171b;
-  --c-surface-2: #1c1f24;
-  --c-surface-3: #262a31;
-  --c-line: #262a31;
-  --c-line-strong: #353a43;
-  --c-fg: #e9eaec;
-  --c-muted: #a0a4ad;
-  --c-faint: #8d929c;
-  --c-accent: #f5b942;
-  --c-accent-fg: #15171b;
-  --c-accent-soft: #3a2f17;
-  --c-ok: #43c08a;
-  --c-warn: #e8a93a;
-  --c-danger: #ef6b6b;
+  --c-canvas: #0d0c0a;
+  --c-surface: #151311;
+  --c-surface-2: #1d1a17;
+  --c-surface-3: #29251f;
+  --c-line: #2a2621;
+  --c-line-strong: #3d3832;
+  --c-fg: #efe8dc;
+  --c-muted: #aca395;
+  --c-faint: #958c80;
+  --c-accent: #ff7033;
+  --c-accent-fg: #170a03;
+  --c-accent-soft: #3d1e10;
+  --c-ok: #5cc28c;
+  --c-warn: #f0a73f;
+  --c-danger: #f26b5e;
   color-scheme: dark;
 }
 
@@ -105,7 +106,42 @@ body {
   color: var(--c-fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: 'cv11', 'ss01';
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Film-grain texture for large dark surfaces (pure CSS, no image request). */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Small mono label used for section markers and metadata ("01 — Tools"). */
+.slate {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-faint);
 }
 
 :focus-visible {

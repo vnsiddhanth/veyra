@@ -2,7 +2,7 @@
  * Every standalone tool. `status` is honest: a tool is 'available' only when its processing
  * pipeline is implemented and verified. Planned tools have a page that says so and when.
  */
-export type ToolCategory = 'compress' | 'convert' | 'edit' | 'audio' | 'visual' | 'subtitles' | 'utility';
+export type ToolCategory = 'compress' | 'convert' | 'edit' | 'audio' | 'visual' | 'film' | 'subtitles' | 'utility';
 
 export type ToolStatus = 'available' | 'planned';
 
@@ -24,6 +24,7 @@ export type ToolEngine =
   | 'subtitle-editor'
   | 'soft-subtitles'
   | 'stabilize'
+  | 'film'
   | 'guide'
   | 'none';
 
@@ -54,6 +55,7 @@ export const CATEGORY_LABELS: Record<ToolCategory, string> = {
   edit: 'Edit',
   audio: 'Audio',
   visual: 'Visual',
+  film: 'Film',
   subtitles: 'Subtitles',
   utility: 'Inspect & utilities',
 };
@@ -142,6 +144,13 @@ export const TOOLS: ToolDef[] = [
   tool('gif-maker', 'GIF maker', 'Build GIFs from video or images, with size control.', 'visual', 3, 'gif', ['animated'], {}),
   tool('slideshow-maker', 'Slideshow maker', 'Turn photos into a video with transitions, pan & zoom and music.', 'visual', 3, 'slideshow', ['photos to video'], {}),
   tool('images-to-video', 'Images to video', 'Create a video from an image sequence.', 'visual', 3, 'slideshow', ['timelapse'], {}),
+  // Film
+  tool('remove-background-noise', 'Remove background noise', 'Clean hiss, hum and room noise from dialogue in a video or audio file.', 'film', 9, 'film', ['denoise', 'noise reduction', 'hiss', 'hum', 'clean audio'], { popular: true, mode: 'denoise', action: 'Remove noise' }),
+  tool('normalize-loudness', 'Normalize loudness', 'Set audio to −14 LUFS for YouTube or −23 LUFS for broadcast and festivals.', 'film', 9, 'film', ['lufs', 'normalize audio', 'ebu r128', 'volume'], { mode: 'loudness', action: 'Normalize loudness' }),
+  tool('cinematic-bars', 'Add cinematic bars', 'Letterbox a video to 2.39:1, 1.85:1 or 4:3 with black bars.', 'film', 9, 'film', ['letterbox', 'black bars', 'anamorphic', 'widescreen'], { mode: 'bars', action: 'Add bars' }),
+  tool('add-end-credits', 'Add end credits', 'Roll cast and crew credits after or over the end of your video.', 'film', 9, 'film', ['credits', 'rolling credits', 'end titles'], { mode: 'credits', action: 'Add credits' }),
+  tool('freeze-frame', 'Freeze frame', 'Hold any frame for a few seconds, then let the video carry on.', 'film', 9, 'film', ['still', 'hold frame', 'pause'], { mode: 'freeze', action: 'Freeze this frame' }),
+  tool('video-color-scopes', 'Video color scopes', 'Check exposure and colour with a waveform, RGB parade, vectorscope and histogram.', 'film', 9, 'film', ['waveform', 'vectorscope', 'histogram', 'exposure', 'color grading'], { mode: 'scopes' }),
   // Subtitles
   tool('subtitle-editor', 'Subtitle editor', 'Edit SRT/VTT timing and text with a live preview.', 'subtitles', 6, 'subtitle-editor', ['srt', 'vtt', 'captions']),
   tool('add-subtitles', 'Add subtitles', 'Attach a soft (switchable) subtitle track to a video, without re-encoding.', 'subtitles', 6, 'soft-subtitles', ['captions']),

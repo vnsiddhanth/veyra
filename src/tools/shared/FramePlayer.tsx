@@ -7,6 +7,8 @@ export interface FramePlayerHandle {
   play(from?: number, until?: number): void;
   pause(): void;
   readonly time: number;
+  /** The underlying video element (for reading the displayed frame). */
+  readonly video: HTMLVideoElement | null;
 }
 
 interface FramePlayerProps {
@@ -82,6 +84,9 @@ export const FramePlayer = forwardRef<FramePlayerHandle, FramePlayerProps>(funct
       pause: () => video.current?.pause(),
       get time() {
         return timeRef.current;
+      },
+      get video() {
+        return video.current;
       },
     }),
     [seek, fps],

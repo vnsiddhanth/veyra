@@ -77,6 +77,9 @@ for (const tool of TOOLS) {
 
     if (INSPECTORS.has(tool.slug)) {
       await expect(page.locator('article')).toContainText(/1280|0:05|5\.0|AAC/i, { timeout: 30_000 });
+    } else if (tool.slug === 'video-color-scopes') {
+      await expect(page.getByRole('img', { name: 'Waveform (luma) of the current frame' })).toBeVisible();
+      await expect(page.getByText(/% clipped highlights/)).toBeVisible({ timeout: 20_000 });
     } else if (tool.slug === 'remove-overlay') {
       // A guide: overlays added in Veyra are removed in the editor, where the original is kept.
       await expect(page.getByRole('heading', { name: /remove an overlay you added in Veyra/i })).toBeVisible();

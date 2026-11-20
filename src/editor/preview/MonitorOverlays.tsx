@@ -202,6 +202,21 @@ function drawScope(canvas: HTMLCanvasElement, kind: ScopeKind, d: ScopeData) {
   ctx.stroke();
 }
 
+/** A scope drawn inline (not floating over a monitor), with its clipping readout. */
+export function ScopeView({ kind, data, className }: { kind: Exclude<ScopeKind, 'off'>; data: ScopeData | null; className?: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (ref.current && data) drawScope(ref.current, kind, data);
+  }, [kind, data]);
+  const label = SCOPE_OPTIONS.find(([k]) => k === kind)![1];
+  return (
+    <figure className={className}>
+      <canvas ref={ref} role="img" aria-label={`${label} of the current frame`} className={kind === 'vectorscope' ? 'mx-auto block aspect-square w-full max-w-[280px] bg-black' : 'block h-auto w-full bg-black'} />
+      <figcaption className="mt-1 font-mono text-2xs text-muted">{label}</figcaption>
+    </figure>
+  );
+}
+
 /** Scope display; `data` comes from the preview worker for the frame on screen. */
 export function ScopesPanel({ kind, data }: { kind: ScopeKind; data: ScopeData | null }) {
   const ref = useRef<HTMLCanvasElement>(null);

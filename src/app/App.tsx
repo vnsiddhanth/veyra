@@ -13,6 +13,7 @@ const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const BenchmarkPage = lazy(() => import('@/pages/BenchmarkPage'));
 const GuidePage = lazy(() => import('@/pages/GuidePage'));
 const FeedbackPage = lazy(() => import('@/pages/FeedbackPage'));
+const FilmmakersPage = lazy(() => import('@/pages/FilmmakersPage'));
 const DevFixturesPage = lazy(() => import('@/pages/DevFixturesPage'));
 
 /** Shown only if loading takes longer than 250 ms, so fast loads never flash a spinner. */
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
       { path: '/benchmark', element: withSuspense(<BenchmarkPage />) },
       { path: '/guide', element: withSuspense(<GuidePage />) },
       { path: '/feedback', element: withSuspense(<FeedbackPage />) },
+      { path: '/filmmakers', element: withSuspense(<FilmmakersPage />) },
       ...(import.meta.env.DEV ? [{ path: '/dev/fixtures', element: withSuspense(<DevFixturesPage />) }] : []),
       { path: '*', element: <NotFoundPage /> },
     ],

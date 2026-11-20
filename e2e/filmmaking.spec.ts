@@ -297,3 +297,76 @@ test('hand-off exports FCPXML and EDL of the timeline for DaVinci Resolve and Pr
   expect(edl).toContain('001  AX       B     C        00:00:00:00 00:00:01:00 01:00:00:00 01:00:01:00');
   expect(edl).toContain('002  AX       B     C        00:00:01:00 00:00:05:00 01:00:01:00 01:00:05:00');
 });
+
+test.describe('film tools', () => {
+  const SRC = fixture('counter-720p30-5s.mp4');
+  async function runTool(page: Page, slug: string, action: string, setup?: () => Promise<void>) {
+    await page.goto(`/tools/${slug}`);
+    await page.getByRole('button', { name: 'Choose file' }).first().waitFor();
+    await page.locator('main input[type=file]').first().setInputFiles(SRC);
+    await setup?.();
+    await page.getByRole('button', { name: action, exact: true }).click();
+    await expect(page.getByText('Done · output verified', { exact: true })).toBeVisible({ timeout: 120_000 });
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download' }).first().click()]);
+    const out = test.info().outputPath(dl.suggestedFilename());
+    await dl.saveAs(out);
+    return out;
+  }
+
+  test('cinematic bars keep the size and black out top and bottom', async ({ page }) => {
+    const out = await runTool(page, 'cinematic-bars', 'Add bars');
+    expect((await inspectInNode(out)).video).toMatchObject({ width: 1280, height: 720 });
+    await engineReady(page);
+    // 2.39:1 in 16:9 → bars of ~12.8 % (92 px) top and bottom; the picture between them is untouched.
+    const rows = await page.evaluate(async (b64) => {
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      const engine = (window as any).__veyra;
+      const { blob } = await engine.mediaEngine.extractFrame(new File([arr], 'o.mp4'), { timestamp: 1, format: 'png' }).result;
+      const bmp = await createImageBitmap(blob);
+      const c = new OffscreenCanvas(bmp.width, bmp.height);
+      const g = c.getContext('2d')!;
+      g.drawImage(bmp, 0, 0);
+      const at = (y: number) => {
+        const d = g.getImageData(0, y, bmp.width, 1).data;
+        let m = 0;
+        for (let i = 0; i < d.length; i += 4) m = Math.max(m, d[i]!, d[i + 1]!, d[i + 2]!);
+        return m;
+      };
+      return { top: at(40), bottom: at(bmp.height - 40), middle: at(Math.round(bmp.height / 2)), edge: at(100) };
+    }, readFileSync(out).toString('base64'));
+    expect(rows.top).toBeLessThan(20);
+    expect(rows.bottom).toBeLessThan(20);
+    expect(rows.edge).toBeGreaterThan(40); // just inside the 92 px bar, the picture shows
+    expect(rows.middle).toBeGreaterThan(40);
+  });
+
+  test('freeze frame tool adds the hold to the length', async ({ page }) => {
+    const out = await runTool(page, 'freeze-frame', 'Freeze this frame', async () => {
+      await page.locator('[tabindex="0"]').filter({ has: page.locator('video') }).focus();
+      for (let i = 0; i < 30; i++) await page.keyboard.press('ArrowRight');
+    });
+    expect(Math.abs((await inspectInNode(out)).duration - 7)).toBeLessThan(0.1);
+  });
+
+  test('end credits tool appends the roll after the video', async ({ page }) => {
+    const out = await runTool(page, 'add-end-credits', 'Add credits', async () => {
+      await page.getByLabel('Roll length').fill('8');
+      await page.getByLabel('Roll length').press('Enter');
+    });
+    expect(Math.abs((await inspectInNode(out)).duration - 13)).toBeLessThan(0.1);
+  });
+
+  test('loudness tool reports what it measured', async ({ page }) => {
+    await runTool(page, 'normalize-loudness', 'Normalize loudness');
+    await expect(page.getByText(/Measured .* LUFS; gain/)).toBeAttached();
+  });
+
+  test('noise removal tool renders a verified file', async ({ page }) => {
+    const out = await runTool(page, 'remove-background-noise', 'Remove noise');
+    const meta = await inspectInNode(out);
+    expect(meta.audio).not.toBeNull();
+    expect(Math.abs(meta.duration - 5)).toBeLessThan(0.1);
+  });
+});

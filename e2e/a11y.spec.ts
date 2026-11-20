@@ -19,6 +19,8 @@ for (const [name, path] of [
   ['benchmark', '/benchmark'],
   ['guide', '/guide'],
   ['report a problem', '/feedback'],
+  ['for filmmakers', '/filmmakers'],
+  ['film tool', '/tools/remove-background-noise'],
   ['projects', '/editor'],
 ] as const) {
   test(`a11y: ${name}`, async ({ page }) => {
@@ -26,6 +28,13 @@ for (const [name, path] of [
     await page.waitForLoadState('networkidle');
     await audit(page, name);
   });
+  if (path !== '/editor')
+    test(`a11y (dark): ${name}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      await audit(page, `${name} (dark)`);
+    });
 }
 
 test('a11y: editor workspace with a clip, and the export dialog', async ({ page }) => {

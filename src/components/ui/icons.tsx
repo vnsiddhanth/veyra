@@ -17,6 +17,14 @@ export const IconFilm = (p: P) => (
     <path d="M7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4" />
   </Svg>
 );
+/** Film slate (clapperboard). */
+export const IconClapper = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 10h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+    <path d="M4 10 3.3 6.6a1 1 0 0 1 .8-1.2l13.7-2.6a1 1 0 0 1 1.2.8L19.6 7z" />
+    <path d="m8.2 4.6 2.6 3.9M13.3 3.6l2.6 3.9" />
+  </Svg>
+);
 export const IconMusic = (p: P) => (
   <Svg {...p}>
     <path d="M9 18V5l11-2v13" />
