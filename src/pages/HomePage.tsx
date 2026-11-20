@@ -62,12 +62,6 @@ export function HomePage() {
                 Browse {TOOLS.length} tools
               </Link>
             </div>
-            {/* Movie-poster billing block. */}
-            <p className="billing mt-12 max-w-[34rem] text-[1.32rem]" aria-label="Credits">
-              Veyra <small>presents</small> a browser production <small>starring</small> {TOOLS.length} tools <small>and</small> a multitrack editor
-              <small>with</small> real scopes · dialogue noise reduction · EBU R128 loudness · 4K export <small>music by</small> WebCodecs <small>written and directed by</small>{' '}
-              Vishnubhotla Siddhanth <small>rated</small> MIT · no uploads · no watermark
-            </p>
           </div>
           <div>
             <GradeDemo />
