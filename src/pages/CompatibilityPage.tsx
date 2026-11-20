@@ -5,6 +5,7 @@ import { CAPABILITY_ROWS, detectApis } from '@/media-engine/capabilities/detect'
 import { storageEstimate } from '@/storage/media-store';
 import { formatBytes } from '@/utils/format';
 import { setPageMeta } from '@/utils/meta';
+import { pageInfo } from '@/seo/site';
 
 const VIDEO = ['avc', 'hevc', 'vp8', 'vp9', 'av1'];
 const AUDIO = ['aac', 'opus', 'mp3', 'vorbis', 'flac', 'pcm-s16'];
@@ -20,7 +21,7 @@ export default function CompatibilityPage() {
   const [storage, setStorage] = useState<Awaited<ReturnType<typeof storageEstimate>>>(null);
 
   useEffect(() => {
-    return setPageMeta('Browser compatibility — Veyra', 'Live check of which video and audio codecs your browser can decode and encode for in-browser editing.');
+    return setPageMeta(pageInfo('/compatibility')!.title, pageInfo('/compatibility')!.description);
     probeCodecs().then(setCodecs, (e: Error) => setCodecError(e.message));
     void storageEstimate().then(setStorage);
   }, []);

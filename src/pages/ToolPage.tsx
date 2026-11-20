@@ -31,21 +31,15 @@ const ENGINES: Partial<Record<ToolEngine, ComponentType<{ tool: ToolDef }>>> = {
   silence: named(() => import('@/tools/compose/SilenceTool') as Promise<Record<'SilenceTool', ComponentType<{ tool: ToolDef }>>>, 'SilenceTool'),
 };
 import { NotFoundPage } from './NotFoundPage';
+import { pageInfo } from '@/seo/site';
 
 export default function ToolPage() {
   const { slug = '' } = useParams();
   const tool = findTool(slug);
   useEffect(() => {
     if (!tool) return;
-    return setPageMeta(`${tool.title} — free, private, in your browser · ${BRAND.name}`, `${tool.summary} Free, no upload, no watermark, no account: runs entirely in your browser.`, {
-      '@context': 'https://schema.org',
-      '@type': 'SoftwareApplication',
-      name: `${tool.title} · ${BRAND.name}`,
-      applicationCategory: 'MultimediaApplication',
-      operatingSystem: 'Any (web browser)',
-      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-      description: tool.summary,
-    });
+    const p = pageInfo(`/tools/${tool.slug}`, window.location.origin)!;
+    return setPageMeta(p.title, p.description, p.jsonLd);
   }, [tool]);
   if (!tool) return <NotFoundPage />;
   const related = relatedTools(tool);

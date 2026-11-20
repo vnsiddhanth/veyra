@@ -8,3 +8,4 @@ playwright-report
 .claude/
 
 *.tsbuildinfo
+e2e/fixtures/heavy-4k.mp4

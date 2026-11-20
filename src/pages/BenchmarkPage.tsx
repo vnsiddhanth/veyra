@@ -5,6 +5,7 @@ import { mediaEngine, type BenchResult } from '@/media-engine';
 import { ErrorBox, JobProgress } from '@/tools/shared/ToolParts';
 import { useMediaJob } from '@/tools/shared/useMediaJob';
 import { setPageMeta } from '@/utils/meta';
+import { pageInfo } from '@/seo/site';
 
 const PRESETS: [string, number, number][] = [
   ['720p', 1280, 720],
@@ -18,7 +19,7 @@ export default function BenchmarkPage() {
   const [preset, setPreset] = useState('1080p');
   const [memory, setMemory] = useState<string | null>(null);
   useEffect(() => {
-    return setPageMeta(`Device benchmark · ${BRAND.name}`, 'Measure how fast your device encodes, decodes and exports video in the browser.');
+    return setPageMeta(pageInfo('/benchmark')!.title, pageInfo('/benchmark')!.description);
   }, []);
   const [, w, h] = PRESETS.find((p) => p[0] === preset)!;
   const r = job.state.status === 'done' ? job.state.result : null;

@@ -13,6 +13,11 @@ export function setPageMeta(title: string, description: string, jsonLd?: object)
     const el = document.querySelector<HTMLMetaElement>(`meta[property="${prop}"]`);
     if (el) el.content = prop === 'og:title' ? title : description;
   }
+  // The build writes per-page structured data and a canonical link for crawlers; once the app runs
+  // it owns them, so in-app navigation never leaves the first page's data behind.
+  document.querySelectorAll('script[type="application/ld+json"][data-static]').forEach((s) => s.remove());
+  const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (canonical) canonical.href = `${location.origin}${location.pathname}`;
   let script: HTMLScriptElement | null = null;
   if (jsonLd) {
     script = document.createElement('script');

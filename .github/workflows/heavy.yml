@@ -1,0 +1,53 @@
+# Heavy media: real 4K H.264 through the most memory-hungry tools in Firefox and Chrome, with the
+# browser's memory sampled throughout. Results appear in the run's summary and as an artifact.
+name: Heavy 4K (Firefox, Chrome)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['src/media-engine/**', 'src/render/**', 'e2e/heavy-4k.spec.ts', '.github/workflows/heavy.yml']
+
+concurrency:
+  group: heavy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  heavy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: firefox
+            proc: firefox
+          - project: chrome
+            proc: /opt/google/chrome/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Make a 30 s 4K H.264 test video (~40 Mbit/s, like a phone)
+        run: |
+          ffmpeg -hide_banner -loglevel error -f lavfi -i "testsrc2=size=3840x2160:rate=30:duration=30" \
+            -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=30" \
+            -c:v libx264 -preset veryfast -profile:v high -pix_fmt yuv420p -b:v 40M -maxrate 40M -bufsize 80M -g 60 \
+            -c:a aac -b:a 192k -movflags +faststart -shortest e2e/fixtures/heavy-4k.mp4
+          ls -lh e2e/fixtures/heavy-4k.mp4
+          free -m
+      - run: npx playwright install --with-deps ${{ matrix.project == 'chrome' && 'chrome' || 'firefox' }}
+      - name: 4K tools (${{ matrix.project }})
+        run: npx playwright test e2e/heavy-4k.spec.ts --project=${{ matrix.project }} --reporter=list
+        env:
+          HEAVY_PROC_MATCH: ${{ matrix.proc }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: heavy-4k-${{ matrix.project }}
+          path: test-results/
+          retention-days: 14

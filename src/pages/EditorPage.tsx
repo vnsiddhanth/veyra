@@ -1,3 +1,4 @@
+import { pageInfo } from '@/seo/site';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { EditorShell } from '@/editor/EditorShell';
@@ -28,7 +29,7 @@ export default function EditorPage() {
 
   useEffect(() => {
     if (!projectId) {
-      document.title = 'Editor — Veyra';
+      document.title = pageInfo('/editor')!.title;
       return;
     }
     let cancelled = false;

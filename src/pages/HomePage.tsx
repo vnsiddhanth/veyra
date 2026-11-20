@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CATEGORY_ICON, ToolCard } from '@/components/tools/ToolCard';
 import { IconCpu, IconLayers, IconSearch, IconShield, IconWand } from '@/components/ui/icons';
-import { BRAND } from '@/config/brand';
 import { CATEGORY_LABELS, TOOLS, searchTools, type ToolCategory } from '@/tools/registry';
 import { setPageMeta } from '@/utils/meta';
+import { FAQ, pageInfo } from '@/seo/site';
 
 const REPO = 'https://github.com/vnsiddhanth/veyra';
 
@@ -15,36 +15,7 @@ const FEATURES = [
   { icon: IconWand, title: 'Free and open source', body: 'No watermark, no account, no export limits, no paid tier. The full source is MIT-licensed on GitHub.' },
 ];
 
-const FAQ = [
-  {
-    q: 'Is it really free? What’s the catch?',
-    a: 'There is no paid plan, no watermark and no limit. Because the work happens on your device, running the site costs almost nothing — that is what keeps it free.',
-  },
-  {
-    q: 'Are my videos uploaded anywhere?',
-    a: 'No. The page reads files straight from your disk and processes them in your browser. Its security policy blocks it from sending data to other servers, and you can confirm that in your browser’s network panel.',
-  },
-  {
-    q: 'How large can my files be?',
-    a: 'There is no limit set by us. Large files are read in pieces rather than loaded into memory at once, and results are written to disk as they are made. Your device’s memory, storage and codecs set the practical limit.',
-  },
-  {
-    q: 'Which browser should I use?',
-    a: 'Recent Chrome or Edge support the most codecs and features. Firefox works too (it saves MP4 audio as Opus because it has no AAC encoder). The compatibility page shows exactly what your browser can do.',
-  },
-  {
-    q: 'What happens to my project if I close the tab?',
-    a: 'Projects save automatically in your browser. Your media stays where it is on your disk; in Chrome and Edge the editor reconnects with one click, in other browsers you pick the files again once.',
-  },
-  {
-    q: 'Can I see the code?',
-    a: `Yes. ${BRAND.name} is open source under the MIT licence. Read it, run it yourself or contribute on GitHub.`,
-  },
-  {
-    q: 'Which formats can I open?',
-    a: 'MP4, MOV, WebM, MKV, MPEG-TS, Ogg, MP3, WAV, M4A, FLAC, common images and SRT/VTT subtitles. Older formats like AVI, FLV and WMV are not supported — convert them first with a desktop tool.',
-  },
-];
+
 
 /** Decorative, CSS-only sketch of the editor (no images to load). */
 function EditorSketch() {
@@ -88,7 +59,10 @@ export function HomePage() {
   const results = useMemo(() => searchTools(query), [query]);
   const popular = TOOLS.filter((t) => t.popular);
   const categories = Object.keys(CATEGORY_LABELS) as ToolCategory[];
-  useEffect(() => setPageMeta(`${BRAND.name} — free, private video editor in your browser`, 'Free video editor and 46 video tools that run entirely in your browser. No uploads, no watermark, no account. Open source.'), []);
+  useEffect(() => {
+    const p = pageInfo('/')!;
+    return setPageMeta(p.title, p.description, p.jsonLd);
+  }, []);
 
   return (
     <div>

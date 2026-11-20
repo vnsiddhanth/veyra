@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Kbd } from '@/components/ui/primitives';
 import { BRAND } from '@/config/brand';
 import { setPageMeta } from '@/utils/meta';
+import { pageInfo } from '@/seo/site';
 import { ToolGuides } from '@/components/tools/ToolGuides';
 
 const SECTIONS: [string, string][] = [
@@ -70,7 +71,7 @@ function ReorderDemo() {
 }
 
 export default function GuidePage() {
-  useEffect(() => setPageMeta(`Guide · ${BRAND.name}`, `How to edit, reorder, preview and export video with ${BRAND.name}, step by step.`), []);
+  useEffect(() => setPageMeta(pageInfo('/guide')!.title, pageInfo('/guide')!.description), []);
   // The page is code-split, so the browser's own jump to #section happens before it exists.
   useEffect(() => {
     const id = decodeURIComponent(window.location.hash.slice(1));

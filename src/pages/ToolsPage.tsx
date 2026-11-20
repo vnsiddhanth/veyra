@@ -6,6 +6,7 @@ import { Kbd } from '@/components/ui/primitives';
 import { CATEGORY_LABELS, TOOLS, searchTools, type ToolCategory } from '@/tools/registry';
 import { cn } from '@/utils/id';
 import { setPageMeta } from '@/utils/meta';
+import { pageInfo } from '@/seo/site';
 
 const CATEGORY_BLURB: Record<ToolCategory, string> = {
   compress: 'Make files smaller for sending, sharing and storage.',
@@ -24,7 +25,7 @@ export function ToolsPage() {
   const category: ToolCategory | 'all' = categoryParam && categoryParam in CATEGORY_LABELS ? (categoryParam as ToolCategory) : 'all';
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => setPageMeta('All video tools — Veyra', 'Compress, convert, trim, merge, resize, add text, make GIFs and more — free video tools that run privately in your browser.'), []);
+  useEffect(() => setPageMeta(pageInfo('/tools')!.title, pageInfo('/tools')!.description), []);
   // "/" focuses search, as on most tool directories.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

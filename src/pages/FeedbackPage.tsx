@@ -5,6 +5,7 @@ import { TOOLS } from '@/tools/registry';
 import { CheckField, ChoiceGroup, SelectField } from '@/tools/shared/controls';
 import { Button } from '@/components/ui/primitives';
 import { setPageMeta } from '@/utils/meta';
+import { pageInfo } from '@/seo/site';
 
 type Kind = 'bug' | 'complaint' | 'idea' | 'other';
 
@@ -32,7 +33,7 @@ export default function FeedbackPage() {
   const [includeInfo, setIncludeInfo] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => setPageMeta('Report a problem — Veyra', 'Report a bug, make a complaint or suggest an idea for Veyra.'), []);
+  useEffect(() => setPageMeta(pageInfo('/feedback')!.title, pageInfo('/feedback')!.description), []);
 
   const info = useMemo(systemInfo, []);
   const whereLabel = where === 'general' ? 'General' : where === 'editor' ? 'Editor' : (TOOLS.find((t) => t.slug === where)?.title ?? where);
