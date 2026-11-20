@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { llmsTxt, pageInfo, publicPaths, staticBody } from './src/seo/site';
+import { llmsTxt, pageInfo, publicPaths, staticBody } from './src/seo/site.ts';
 
 // Cross-origin isolation is required for SharedArrayBuffer (multi-threaded WASM fallback).
 // Everything we load is same-origin, so `require-corp` costs nothing.

@@ -265,3 +265,35 @@ test('dialogue noise reduction lowers hiss between words, keeps the voice and st
   const best = [-1024, -768, -512, -256, -64, -1, 0, 1, 64, 256, 512, 768, 1024].reduce((a, b) => (corr(b) > corr(a) ? b : a), 0);
   expect(best).toBe(0);
 });
+
+test('hand-off exports FCPXML and EDL of the timeline for DaVinci Resolve and Premiere', async ({ page }) => {
+  await projectWithClip(page);
+  await page.evaluate(() => (window as any).__veyra.useEditorUi.getState().setPlayhead(705_600_000));
+  await page.getByRole('button', { name: 'Split', exact: true }).click();
+  await page.getByRole('button', { name: '+ Title' }).click();
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Export video' });
+  await dialog.getByText('Send the timeline to DaVinci Resolve, Premiere or Final Cut').click();
+  await dialog.getByLabel('Media folder').fill(String.raw`D:\Footage`);
+
+  const [x] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('button', { name: /Download FCPXML/ }).click()]);
+  expect(x.suggestedFilename()).toMatch(/\.fcpxml$/);
+  const xml = readFileSync(await x.path(), 'utf8');
+  expect(xml).toContain('<fcpxml version="1.9">');
+  expect(xml).toContain('src="file:///D:/Footage/counter-720p30-5s.mp4"');
+  expect((xml.match(/<asset-clip /g) ?? []).length).toBe(2); // the split clip
+  expect(xml).toMatch(/<title ref="r\d+" lane="\d+"/);
+  // The browser itself parses it as XML without errors.
+  const parsed = await page.evaluate((s) => {
+    const d = new DOMParser().parseFromString(s, 'application/xml');
+    return { error: !!d.querySelector('parsererror'), clips: d.querySelectorAll('spine > asset-clip').length };
+  }, xml);
+  expect(parsed).toEqual({ error: false, clips: 2 });
+  await expect(dialog.getByRole('status').filter({ hasText: 'Downloaded' })).toBeVisible();
+
+  const [e] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('button', { name: /Download EDL/ }).click()]);
+  const edl = readFileSync(await e.path(), 'utf8');
+  expect(edl).toMatch(/^TITLE: /);
+  expect(edl).toContain('001  AX       B     C        00:00:00:00 00:00:01:00 01:00:00:00 01:00:01:00');
+  expect(edl).toContain('002  AX       B     C        00:00:01:00 00:00:05:00 01:00:01:00 01:00:05:00');
+});

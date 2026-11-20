@@ -5,9 +5,9 @@
  *
  * Pure data only: relative imports, no DOM, no React (the Vite config imports this file).
  */
-import { BRAND } from '../config/brand';
-import { CATEGORY_LABELS, TOOLS, relatedTools, type ToolCategory, type ToolDef } from '../tools/registry';
-import { guideFor } from '../tools/guides';
+import { BRAND } from '../config/brand.ts';
+import { CATEGORY_LABELS, TOOLS, relatedTools, type ToolCategory, type ToolDef } from '../tools/registry.ts';
+import { guideFor } from '../tools/guides.ts';
 
 /** The promise people search for. Kept identical everywhere. */
 export const PROMISE = 'Your video is never uploaded: it is processed on your own device, in your browser.';

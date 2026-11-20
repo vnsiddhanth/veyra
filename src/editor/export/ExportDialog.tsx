@@ -18,6 +18,7 @@ import { useMediaJob } from '@/tools/shared/useMediaJob';
 import { formatBytes } from '@/utils/format';
 import { flicksToSeconds, formatTimecode, rateToNumber } from '@/utils/time';
 import { LOUDNESS_TARGETS } from '@/render/loudness';
+import { toEdl, toFcpxml } from '@/project/interchange';
 
 type Container = ExportPreferences['container'];
 
@@ -272,9 +273,81 @@ export function ExportDialog({ project, onClose }: { project: Project; onClose()
               )}
               {disabled && <span className="ml-3 text-xs text-muted">{disabled}</span>}
             </div>
+            <Handoff project={project} name={name.trim() || project.name} />
           </>
         )}
       </div>
     </div>
+  );
+}
+
+/** Send the timeline to DaVinci Resolve, Final Cut, Premiere or Avid as FCPXML or EDL. */
+function Handoff({ project, name }: { project: Project; name: string }) {
+  const [folder, setFolder] = useState(() => {
+    try {
+      return localStorage.getItem('veyra.mediaFolder') ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const [notes, setNotes] = useState<string[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const download = (kind: 'fcpxml' | 'edl') => {
+    try {
+      try {
+        localStorage.setItem('veyra.mediaFolder', folder);
+      } catch {
+        /* private mode */
+      }
+      const r = kind === 'fcpxml' ? toFcpxml(project, { mediaFolder: folder }) : toEdl(project);
+      const blob = new Blob([r.text], { type: kind === 'fcpxml' ? 'application/xml' : 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${name.replace(/[\\/:*?"<>|]+/g, '_')}.${kind}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+      setNotes(r.notes);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+  return (
+    <details className="mt-5 rounded-md border border-line p-3 text-sm">
+      <summary className="cursor-pointer font-medium">Send the timeline to DaVinci Resolve, Premiere or Final Cut</summary>
+      <div className="mt-3 space-y-3">
+        <p className="text-xs text-muted">
+          Exports the edit itself, not a video: cuts, tracks, dissolves, titles, markers and clip volume. Your media is not copied. The other editor links to your
+          original files.
+        </p>
+        <label className="block">
+          <span className="mb-1 block text-xs text-muted">Folder with your original media (optional)</span>
+          <input className="h-9 w-full rounded-md border border-line bg-surface-2 px-2 font-mono text-sm" value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="e.g. D:\Footage or /Users/you/Film" aria-label="Media folder" />
+          <span className="mt-1 block text-2xs text-faint">Browsers can’t see file paths. Type the folder so the other editor finds your files at once; otherwise it asks you to relink them by name.</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => download('fcpxml')}>Download FCPXML · DaVinci Resolve, Final Cut</Button>
+          <Button onClick={() => download('edl')}>Download EDL · Premiere, Avid, any editor</Button>
+        </div>
+        <p className="text-2xs text-faint">
+          In Resolve: File → Import → Timeline… and pick the .fcpxml. In Premiere: File → Import… and pick the .edl.
+        </p>
+        {error && <ErrorBox error={error} />}
+        {notes && (
+          <div role="status" className="rounded-md bg-surface-2 p-2.5 text-xs">
+            <p className="mb-1 font-medium">{notes.length ? 'Downloaded. Not carried over:' : 'Downloaded. Everything on the timeline was carried over.'}</p>
+            {notes.length > 0 && (
+              <ul className="list-disc space-y-0.5 pl-4 text-muted">
+                {notes.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+    </details>
   );
 }

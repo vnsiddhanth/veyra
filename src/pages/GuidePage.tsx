@@ -263,6 +263,12 @@ export default function GuidePage() {
               sound the same.
             </li>
             <li>
+              <strong>Finish in DaVinci Resolve, Premiere or Final Cut.</strong> In Export, open <strong>Send the timeline to…</strong>, optionally type the folder
+              where your original files are, and download <strong>FCPXML</strong> (Resolve: File → Import → Timeline; Final Cut: File → Import → XML) or{' '}
+              <strong>EDL</strong> (Premiere, Avid). Cuts, tracks, dissolves, titles, markers and clip volume carry over; effects, grades, keyframes and speed changes
+              do not, and the dialog lists exactly what was left out.
+            </li>
+            <li>
               <strong>Delivery loudness.</strong> In Export, set <strong>Loudness</strong> to −14 LUFS for YouTube or streaming, or −23 / −24 LUFS for broadcast and
               festivals. The whole mix is measured first (EBU R128), then levelled with peaks kept under −1 dB. The result card shows what was measured.
             </li>
