@@ -118,10 +118,10 @@ export function InspectTool({ tool }: { tool: ToolDef }) {
               <IconX />
             </button>
           </header>
-          {r.error ? (
-            <div className="flex items-start gap-2 p-4 text-sm text-danger">
+          {r.error || (r.info && missingFor(tool.focus, r.info)) ? (
+            <div role="alert" className="flex items-start gap-2 p-4 text-sm text-danger">
               <IconAlert className="mt-0.5 shrink-0" />
-              <span>{r.error}</span>
+              <span>{r.error ?? missingFor(tool.focus, r.info!)}</span>
             </div>
           ) : !r.info ? (
             <div className="space-y-2 p-4">
@@ -146,4 +146,12 @@ export function InspectTool({ tool }: { tool: ToolDef }) {
       ))}
     </div>
   );
+}
+
+/** What a focused inspector needs from a file; a message when the file does not have it. */
+function missingFor(focus: ToolDef['focus'], info: MediaInfo): string | null {
+  if (focus === 'frame-rate' && info.video.length === 0) return info.kind === 'image' ? 'This is a still image, so it has no frame rate.' : 'This file has no video track, so it has no frame rate.';
+  if (focus === 'resolution' && info.video.length === 0 && info.kind !== 'image') return 'This file has no picture, so it has no resolution.';
+  if (focus === 'audio' && info.audio.length === 0) return 'This file has no audio track.';
+  return null;
 }

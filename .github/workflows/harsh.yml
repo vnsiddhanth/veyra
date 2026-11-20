@@ -1,0 +1,80 @@
+# The harsh test: every tool × every fixture (good, odd, wrong-kind, broken), every option of every
+# tool, and abuse tests — in Chrome and Firefox against the production build. Run on demand.
+name: Harsh test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: bash e2e/harsh/make-fixtures.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: harsh-fixtures
+          path: e2e/fixtures/harsh/
+          retention-days: 3
+
+  run:
+    needs: fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chrome, firefox]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: harsh-fixtures
+          path: e2e/fixtures/harsh/
+      - run: npx playwright install --with-deps ${{ matrix.project == 'chrome' && 'chrome' || 'firefox' }}
+      - run: npm run build
+      - name: Serve the production build
+        run: |
+          npx vite preview --port 4173 --strictPort > preview.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:4173/ > /dev/null && break; sleep 1; done
+      - name: Harsh suite (${{ matrix.project }}, shard ${{ matrix.shard }}/8)
+        run: npx playwright test e2e/harsh --project=${{ matrix.project }} --shard=${{ matrix.shard }}/8 --workers=2 --reporter=list
+        env:
+          PW_BASE_URL: http://localhost:4173
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: harsh-results-${{ matrix.project }}-${{ matrix.shard }}
+          path: test-results/harsh/
+          retention-days: 14
+
+  report:
+    needs: run
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: harsh-results-*
+          path: results/
+      - run: node e2e/harsh/summarize.mjs results harsh-report.md && cat harsh-report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: harsh-report
+          path: harsh-report.md
+          retention-days: 30

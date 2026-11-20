@@ -79,7 +79,8 @@ export async function addSoftSubtitles(file: Blob, o: SoftSubtitleOptions, jobId
     // Subtitle tracks are not demuxed by our probe; check the codec tag is present in the file header area.
     const head = new Uint8Array(await outFile.slice(0, Math.min(outFile.size, 4 * 1024 * 1024)).arrayBuffer());
     const tail = new Uint8Array(await outFile.slice(Math.max(0, outFile.size - 4 * 1024 * 1024)).arrayBuffer());
-    const tag = o.container === 'mp4' ? 'wvtt' : 'S_TEXT/WEBVTT';
+    // MP4 'wvtt' sample entry; Matroska 'S_TEXT/WEBVTT'; WebM has its own codec ID 'D_WEBVTT/SUBTITLES'.
+    const tag = o.container === 'mp4' ? 'wvtt' : o.container === 'webm' ? 'D_WEBVTT/SUBTITLES' : 'S_TEXT/WEBVTT';
     const has = (buf: Uint8Array) => new TextDecoder('latin1').decode(buf).includes(tag);
     const subCheck: ValidationCheck = { name: 'Subtitle track', ok: has(head) || has(tail), detail: `WebVTT (${o.languageCode}) ${has(head) || has(tail) ? 'present' : 'missing'}` };
     checks.push(subCheck);
