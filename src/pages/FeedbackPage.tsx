@@ -69,7 +69,7 @@ export default function FeedbackPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Report a problem</h1>
         <p className="text-muted">
-          Something broken, annoying or missing? Tell me. I read every report. You can also email{' '}
+          Something broken, annoying or missing? Tell us. We read every report. You can also email{' '}
           <a href={`mailto:${BRAND.supportEmail}`} className="font-medium text-accent hover:underline">
             {BRAND.supportEmail}
           </a>{' '}
@@ -118,7 +118,7 @@ export default function FeedbackPage() {
           </div>
         )}
         <div className="space-y-2">
-          <CheckField label="Include browser details (helps me reproduce bugs)" checked={includeInfo} onChange={setIncludeInfo} hint="Browser version, screen size and feature support. Never your files or file names." />
+          <CheckField label="Include browser details (helps us reproduce bugs)" checked={includeInfo} onChange={setIncludeInfo} hint="Browser version, screen size and feature support. Never your files or file names." />
           {includeInfo && <pre className="whitespace-pre-wrap break-all rounded-md bg-surface-2 p-2.5 text-xs text-muted">{info}</pre>}
         </div>
 

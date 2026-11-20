@@ -223,7 +223,7 @@ export function HomePage() {
             ))}
             <li className="pl-8 pt-7">
               <p className="rounded-md border border-dashed border-line-strong p-4 text-sm leading-relaxed text-muted">
-                <span className="font-medium text-fg">Don’t take my word for it.</span> Open your browser’s developer tools, go to Network and edit a video. You’ll see the
+                <span className="font-medium text-fg">Don’t take our word for it.</span> Open your browser’s developer tools, go to Network and edit a video. You’ll see the
                 page load and a cookie-free visit counter, and no upload.
               </p>
             </li>
@@ -296,7 +296,7 @@ export function HomePage() {
             <p className="mt-4 text-muted">
               Something else?{' '}
               <Link to="/feedback?type=other" className="text-accent underline underline-offset-2">
-                Ask me
+                Ask us
               </Link>
               .
             </p>
@@ -312,26 +312,26 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── Maker's note ───────────────────────────────────────────────────── */}
+      {/* ── Why Veyra exists ─────────────────────────────────────────────────── */}
       <section className="grain border-t border-line">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-[1fr_2fr] md:py-24">
           <div>
-            <p className="slate mb-4">Why this exists</p>
-            <h2 className="poster text-[clamp(3rem,8vw,5.5rem)]">A note from the maker</h2>
+            <p className="slate mb-4">Why Veyra exists</p>
+            <h2 className="poster text-[clamp(3rem,8vw,5.5rem)]">Editing shouldn’t cost you your files</h2>
           </div>
           <div className="max-w-[60ch] space-y-5 text-lg leading-relaxed">
             <p>
-              I needed to trim a few screen recordings and join them into one demo. It took an evening and five websites: one wanted an account, one added a watermark, one
-              capped the file size, and every one of them uploaded my files first.
+              Trimming a few clips and joining them into one video shouldn’t take an evening and five websites. Yet most online editors ask you to sign up, stamp a
+              watermark on your work, cap your file size, and upload your footage before you can do anything.
             </p>
             <p className="text-muted">
-              Browsers can process video themselves now, so I built the tool I wanted: free, private, and good enough for real work. If something is missing or broken,{' '}
+              Browsers can process video on their own now. So we built Veyra to do exactly that: free, private, and good enough for real work, with your files never
+              leaving your computer. If something is missing or broken,{' '}
               <Link to="/feedback" className="text-accent underline underline-offset-2">
-                tell me
+                tell us
               </Link>
               .
             </p>
-            <p className="poster text-4xl text-accent">— Siddhanth</p>
             <div className="pt-2">
               <Link to="/editor" className="inline-flex h-12 items-center rounded-md bg-accent px-6 text-[15px] font-semibold text-accent-fg hover:brightness-110">
                 Open the editor
