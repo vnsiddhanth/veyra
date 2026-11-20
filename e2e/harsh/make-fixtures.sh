@@ -45,7 +45,7 @@ try v_vp8_vorbis.webm $F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:durati
 try v_av1_opus.webm $F -f lavfi -i "testsrc2=size=640x360:rate=30:duration=2" -f lavfi -i "$TONE:duration=2" -c:v libaom-av1 -cpu-used 8 -row-mt 1 -b:v 500k -c:a libopus -shortest v_av1_opus.webm
 try v_h264_aac.mkv $F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:duration=3" -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -shortest v_h264_aac.mkv
 try v_h264_aac.mov $F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:duration=3" -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -movflags +faststart -shortest v_h264_aac.mov
-try v_h264_aac.ts $F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:duration=3" -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -shortest v_h264_aac.ts
+try v_h264_aac.m2ts $F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:duration=3" -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -f mpegts -shortest v_h264_aac.m2ts
 try v_mjpeg.avi $F -f lavfi -i "testsrc2=size=640x360:rate=30:duration=2" -c:v mjpeg -q:v 5 v_mjpeg.avi
 
 echo "Audio"
