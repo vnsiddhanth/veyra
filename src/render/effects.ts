@@ -147,6 +147,13 @@ export const EFFECTS: EffectSpec[] = [
       },
     ],
   },
+  {
+    type: 'denoise',
+    label: 'Noise reduction (dialogue)',
+    group: 'Audio',
+    kind: 'audio',
+    params: [n('reduction', 'Reduction', 3, 30, 15, 1, 'dB')],
+  },
   { type: 'mute-audio', label: 'Mute audio', group: 'Audio', kind: 'audio', params: [] },
   { type: 'preserve-pitch', label: 'Keep pitch when speed changes', group: 'Audio', kind: 'audio', params: [] },
   {

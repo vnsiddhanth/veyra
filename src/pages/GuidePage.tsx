@@ -257,6 +257,12 @@ export default function GuidePage() {
               <strong>Colour grading.</strong> Curves, colour balance, LUTs (.cube), film grain, vignette, masks and chroma key (green screen) are in the effects list.
             </li>
             <li>
+              <strong>Dialogue noise reduction.</strong> Select a clip with sound, open <strong>+ Add audio effect</strong> and choose{' '}
+              <strong>Noise reduction (dialogue)</strong>. It learns the background hiss, hum or room tone from the clip itself and turns down only the frequencies that
+              are mostly noise, so voices stay natural. Start at 15 dB; go higher for very noisy recordings, lower if voices start to sound thin. Preview and export
+              sound the same.
+            </li>
+            <li>
               <strong>Delivery loudness.</strong> In Export, set <strong>Loudness</strong> to −14 LUFS for YouTube or streaming, or −23 / −24 LUFS for broadcast and
               festivals. The whole mix is measured first (EBU R128), then levelled with peaks kept under −1 dB. The result card shows what was measured.
             </li>
@@ -270,6 +276,7 @@ export default function GuidePage() {
               The <strong>Mixer</strong> (shown when nothing is selected) has a fader, <strong>M</strong>ute and <strong>S</strong>olo for every track.
             </li>
             <li>Add EQ, a compressor, or “Auto-duck under voice” to keep music under speech.</li>
+            <li>Clean up hiss, hum and room noise in dialogue with “Noise reduction (dialogue)”.</li>
           </ul>
         </Section>
 

@@ -182,3 +182,86 @@ test('rolling credits move up through the frame at constant speed', async ({ pag
   expect(await centreY(0.05)).toBeNull(); // starts below the frame
   expect(await centreY(19.95)).toBeNull(); // ends above it
 });
+
+/** Write a 48 kHz stereo 16-bit WAV. */
+function wav(l: Float32Array, r: Float32Array, sr = 48000): Buffer {
+  const n = l.length;
+  const b = Buffer.alloc(44 + n * 4);
+  b.write('RIFF', 0);
+  b.writeUInt32LE(36 + n * 4, 4);
+  b.write('WAVEfmt ', 8);
+  b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20);
+  b.writeUInt16LE(2, 22);
+  b.writeUInt32LE(sr, 24);
+  b.writeUInt32LE(sr * 4, 28);
+  b.writeUInt16LE(4, 32);
+  b.writeUInt16LE(16, 34);
+  b.write('data', 36);
+  b.writeUInt32LE(n * 4, 40);
+  for (let i = 0; i < n; i++) {
+    b.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(l[i]! * 32767))), 44 + i * 4);
+    b.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(r[i]! * 32767))), 46 + i * 4);
+  }
+  return b;
+}
+
+test('dialogue noise reduction lowers hiss between words, keeps the voice and stays in sync', async ({ page }) => {
+  test.setTimeout(180_000);
+  const SR = 48000;
+  const n = SR * 6;
+  const l = new Float32Array(n);
+  let seed = 42;
+  for (let i = 0; i < n; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const hiss = ((seed / 0x7fffffff) * 2 - 1) * 0.03;
+    const on = Math.floor(i / (0.5 * SR)) % 2 === 1; // voice 0.5–1.0 s, 1.5–2.0 s, …
+    const t = i / SR;
+    const v = on ? 0.3 * (0.6 * Math.sin(2 * Math.PI * 220 * t) + 0.3 * Math.sin(2 * Math.PI * 440 * t) + 0.1 * Math.sin(2 * Math.PI * 660 * t)) : 0;
+    l[i] = v + hiss;
+  }
+  const input = wav(l, l);
+
+  await page.goto('/editor');
+  await page.getByRole('button', { name: /New project|Create your first project/ }).first().click();
+  await engineReady(page);
+  await page.locator('aside[aria-label="Media library"] input[type=file]').setInputFiles({ name: 'dialogue.wav', mimeType: 'audio/wav', buffer: input });
+  const card = page.locator('aside[aria-label="Media library"] ul.grid > li').first();
+  await card.getByRole('button', { name: 'dialogue', exact: true }).click();
+  await card.getByRole('button', { name: 'Append to timeline' }).click();
+  await expect(page.locator('[data-clip]')).toHaveCount(1);
+  await page.locator('[data-clip]').first().click();
+  await page.getByLabel('Add audio effects').selectOption('denoise');
+  await expect(page.getByRole('group', { name: 'Noise reduction (dialogue) effect' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Export video' });
+  await dialog.getByLabel('Format').selectOption('wav');
+  await dialog.getByLabel('File name').fill('clean');
+  await dialog.getByRole('button', { name: 'Export', exact: true }).click();
+  await expect(dialog.getByText('Done · output verified', { exact: true })).toBeVisible({ timeout: 150_000 });
+  const [dl] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('link', { name: 'Download' }).click()]);
+  const out = test.info().outputPath('clean.wav');
+  await dl.saveAs(out);
+  const res = readWav(readFileSync(out));
+
+  const rms = (a: Float32Array, s: number, e: number) => {
+    let x = 0;
+    for (let i = Math.round(s * SR); i < Math.round(e * SR); i++) x += a[i]! * a[i]!;
+    return Math.sqrt(x / (Math.round(e * SR) - Math.round(s * SR)));
+  };
+  const db = (a: number, b: number) => 20 * Math.log10(a / b);
+  // Noise-only gap 2.1–2.4 s and voiced section 2.6–2.9 s (well inside, past the learning start).
+  const gapDrop = db(rms(res.l, 2.1, 2.4), rms(l, 2.1, 2.4));
+  const voiceChange = db(rms(res.l, 2.6, 2.9), rms(l, 2.6, 2.9));
+  expect(gapDrop).toBeLessThan(-10);
+  expect(Math.abs(voiceChange)).toBeLessThan(2);
+  // Sync: the output lines up with the input at lag 0 (not shifted by the processing window).
+  const corr = (lag: number) => {
+    let s = 0;
+    for (let i = Math.round(2.6 * SR); i < Math.round(2.9 * SR); i++) s += res.l[i + lag]! * l[i]!;
+    return s;
+  };
+  const best = [-1024, -768, -512, -256, -64, -1, 0, 1, 64, 256, 512, 768, 1024].reduce((a, b) => (corr(b) > corr(a) ? b : a), 0);
+  expect(best).toBe(0);
+});

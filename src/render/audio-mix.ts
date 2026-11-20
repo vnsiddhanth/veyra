@@ -14,6 +14,7 @@ import { effectNum } from './effects';
 import { hasSpeedRamp, rampedSpan, sourceAdvance } from './speed';
 import { audibleClips, clipGainAt, type AudioSourceClip } from './evaluate';
 import type { MediaPool } from './sources';
+import { AlignedDenoiser, noiseProfile } from './denoise';
 
 /** Longest clip span we reverse in memory (stereo 48 kHz float ≈ 23 MB per minute). */
 export const MAX_REVERSE_SECONDS = 600;
@@ -158,6 +159,10 @@ class Wsola {
   }
 }
 
+/** Noise profiles by clip state, so restarting preview does not re-analyse. */
+const PROFILE_CACHE = new Map<string, Float64Array>();
+const DENOISE_MIN = 4096;
+
 /** Decoded source audio for one clip, read forward through a sliding window. */
 class ClipAudioReader {
   private iter: AsyncGenerator<AudioSample> | null = null;
@@ -168,6 +173,9 @@ class ClipAudioReader {
   readonly eq: Biquad[] | null;
   readonly comp: Compressor | null;
   private readonly wsola: Wsola | null;
+  /** Dialogue noise reduction (set up by `prepare`). */
+  private denoiser: AlignedDenoiser | null = null;
+  readonly denoiseDb: number | null;
   /** Clip-relative output sample where time-stretching started (null until the first block). */
   private stretchOrigin: number | null = null;
 
@@ -176,6 +184,7 @@ class ClipAudioReader {
     private readonly track: InputAudioTrack,
     private readonly outRate: number,
     private readonly startSource: number,
+    withDenoise = true,
   ) {
     const fx = (type: string) => src.clip.effects.find((e) => e.enabled && e.type === type);
     const eq = fx('eq');
@@ -191,6 +200,46 @@ class ClipAudioReader {
     const pitch = fx('preserve-pitch');
     // Pitch preservation applies to constant speeds; ramps play like a tape (pitch follows speed).
     this.wsola = pitch && !src.clip.reversed && !hasSpeedRamp(src.clip) && Math.abs(src.clip.speed - 1) > 1e-3 ? new Wsola(src.clip.speed) : null;
+    const dn = withDenoise ? fx('denoise') : undefined;
+    this.denoiseDb = dn ? Math.max(0, Math.min(40, effectNum(dn, 'reduction', 15))) : null;
+  }
+
+  /**
+   * Learn the clip's noise profile (from its first seconds, so preview and export always agree) and
+   * enable noise reduction. Returns a warning when it cannot apply.
+   */
+  async prepare(): Promise<string | null> {
+    if (this.denoiseDb == null) return null;
+    if (this.wsola) return `Noise reduction is not applied to ${this.src.clip.name} while “keep pitch” changes its speed.`;
+    const clip = this.src.clip;
+    const key = JSON.stringify([clip.assetId, clip.sourceIn, clip.duration, clip.speed, clip.reversed, clip.audio, clip.keyframes.volume ?? null, clip.keyframes.speed ?? null, this.outRate]);
+    let profile = PROFILE_CACHE.get(key);
+    if (!profile) {
+      const scratch = new ClipAudioReader(this.src, this.track, this.outRate, flicksToSeconds(clip.sourceIn), false);
+      try {
+        if (clip.reversed) await scratch.loadReversed(flicksToSeconds(rampedSpan(clip)));
+        const cs = flicksToSeconds(clip.start);
+        const secs = Math.min(10, flicksToSeconds(clip.duration));
+        const total = Math.max(DENOISE_MIN, Math.round(secs * this.outRate));
+        const l = new Float32Array(total);
+        const r = new Float32Array(total);
+        const B = 4096;
+        for (let pos = 0; pos < total; pos += B) {
+          const n = Math.min(B, total - pos);
+          const blk: [Float32Array, Float32Array] = [new Float32Array(n), new Float32Array(n)];
+          await scratch.renderRaw(cs + pos / this.outRate, blk);
+          l.set(blk[0], pos);
+          r.set(blk[1], pos);
+        }
+        profile = noiseProfile(l, r);
+      } finally {
+        scratch.close();
+      }
+      if (PROFILE_CACHE.size > 32) PROFILE_CACHE.clear();
+      PROFILE_CACHE.set(key, profile);
+    }
+    this.denoiser = new AlignedDenoiser(profile, this.denoiseDb);
+    return null;
   }
 
   private static planar(s: AudioSample): Float32Array[] {
@@ -269,8 +318,31 @@ class ClipAudioReader {
     return 0;
   }
 
-  /** Fill `out` (stereo) for timeline seconds [t0, t0 + n/outRate). */
+  /** Fill `out` (stereo) for timeline seconds [t0, t0 + n/outRate), with the clip's audio effects. */
   async render(t0: number, out: [Float32Array, Float32Array]): Promise<boolean> {
+    const clip = this.src.clip;
+    if (this.denoiser) {
+      const n = out[0].length;
+      const cs = flicksToSeconds(clip.start);
+      const ce = flicksToSeconds(clipEnd(clip));
+      if (t0 + n / this.outRate <= cs || t0 >= ce) return false;
+      const start = Math.round(t0 * this.outRate);
+      const [l, r] = await this.denoiser.next(start, n, async (from, count) => {
+        const blk: [Float32Array, Float32Array] = [new Float32Array(count), new Float32Array(count)];
+        await this.renderRaw(from / this.outRate, blk);
+        return blk;
+      });
+      out[0].set(l);
+      out[1].set(r);
+    } else if (!(await this.renderRaw(t0, out))) return false;
+    if (this.wsola) return true; // the stretched path applies EQ/compression itself
+    if (this.eq) for (const f of this.eq) for (let ch = 0; ch < 2; ch++) f.process(out[ch as 0 | 1], ch);
+    this.comp?.process(out[0], out[1]);
+    return true;
+  }
+
+  /** Source audio with gain and pan, before EQ/compression/noise reduction. */
+  async renderRaw(t0: number, out: [Float32Array, Float32Array]): Promise<boolean> {
     const clip = this.src.clip;
     const n = out[0].length;
     const cs = flicksToSeconds(clip.start);
@@ -303,8 +375,6 @@ class ClipAudioReader {
       out[0][i] = this.sampleAt(st, 0) * this.gain * lg;
       out[1][i] = this.sampleAt(st, 1) * this.gain * rg;
     }
-    if (this.eq) for (const f of this.eq) for (let ch = 0; ch < 2; ch++) f.process(out[ch as 0 | 1], ch);
-    this.comp?.process(out[0], out[1]);
     return true;
   }
 
@@ -378,6 +448,8 @@ export class AudioMixer {
       const cs = flicksToSeconds(src.clip.start);
       const startSource = flicksToSeconds(src.clip.sourceIn + sourceAdvance(src.clip, secondsToFlicks(Math.max(0, this.time - cs))));
       const r = new ClipAudioReader(src, track, this.sampleRate, startSource);
+      const warn = await r.prepare();
+      if (warn) this.warnings.add(warn);
       if (src.clip.reversed) {
         const span = flicksToSeconds(rampedSpan(src.clip));
         if (span > MAX_REVERSE_SECONDS) {
