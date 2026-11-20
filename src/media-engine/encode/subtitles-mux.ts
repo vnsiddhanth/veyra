@@ -16,7 +16,7 @@ import {
 } from 'mediabunny';
 import { MediaError } from '../core/errors';
 import type { ConvertResult, ValidationCheck } from '../core/types';
-import { openInput } from '../import/probe';
+import { frameRateOf, mediaStart, openInput } from '../import/probe';
 import { CONTAINER_INFO, makeFormat, outputFileName, validateOutput } from './convert';
 import { createScratchFile, deleteScratchFile } from './output-store';
 
@@ -52,16 +52,19 @@ export async function addSoftSubtitles(file: Blob, o: SoftSubtitleOptions, jobId
     output.addSubtitleTrack(sSrc, { languageCode: o.languageCode, name: o.label });
     await output.start();
 
-    const duration = await input.computeDuration();
+    // Shift transport-stream timestamps so the video starts at 0, in line with the cues.
+    const t0 = await mediaStart(input);
+    const duration = (await input.computeDuration()) - t0;
     const copy = async (track: typeof v | NonNullable<typeof a>, src: EncodedVideoPacketSource | EncodedAudioPacketSource, weight: number, base: number) => {
       const sink = new EncodedPacketSink(track);
       const decoderConfig = await track.getDecoderConfig();
       let first = true;
       for await (const packet of sink.packets()) {
         if (signal.aborted) throw new MediaError('cancelled', 'Cancelled.');
-        await (src as EncodedVideoPacketSource).add(packet, first ? ({ decoderConfig } as EncodedVideoChunkMetadata) : undefined);
+        const p = t0 > 0 ? packet.clone({ timestamp: Math.max(0, packet.timestamp - t0) }) : packet;
+        await (src as EncodedVideoPacketSource).add(p, first ? ({ decoderConfig } as EncodedVideoChunkMetadata) : undefined);
         first = false;
-        if (duration > 0) onProgress(base + Math.min(1, packet.timestamp / duration) * weight);
+        if (duration > 0) onProgress(base + Math.min(1, p.timestamp / duration) * weight);
       }
       src.close();
     };
@@ -74,7 +77,7 @@ export async function addSoftSubtitles(file: Blob, o: SoftSubtitleOptions, jobId
     const outFile = scratch
       ? new File([await scratch.handle.getFile()], names.display, { type: CONTAINER_INFO[o.container].mime })
       : new File([(target as BufferTarget).buffer!], names.display, { type: CONTAINER_INFO[o.container].mime });
-    const fps = (await v.computeFrameRateMetrics({ targetPacketCount: 60 }).catch(() => null))?.bestGuessFrameRate ?? 30;
+    const fps = (await frameRateOf(v));
     const { checks, info } = await validateOutput(outFile, { expectVideo: true, expectAudio: !!a, expectedDuration: duration, frameDuration: 1 / fps, allowExpansion: false });
     // Subtitle tracks are not demuxed by our probe; check the codec tag is present in the file header area.
     const head = new Uint8Array(await outFile.slice(0, Math.min(outFile.size, 4 * 1024 * 1024)).arrayBuffer());

@@ -4,7 +4,7 @@
 import { AudioSampleSink, CanvasSink } from 'mediabunny';
 import { MediaError } from '../core/errors';
 import type { FrameOptions, FrameResult, WaveformData } from '../core/types';
-import { openInput } from '../import/probe';
+import { mediaStart, openInput } from '../import/probe';
 
 const MIME = { png: 'image/png', jpeg: 'image/jpeg', webp: 'image/webp' } as const;
 
@@ -20,8 +20,9 @@ export async function extractFrame(file: Blob, options: FrameOptions, signal: Ab
     const height = options.width ? Math.max(2, Math.round(width / aspect)) : track.displayHeight;
     // poolSize 0: the canvas is ours, not reused by the sink.
     const sink = new CanvasSink(track, { width, height, fit: 'fill', poolSize: 0 });
+    const t0 = await mediaStart(input);
     const first = await track.getFirstTimestamp();
-    const wrapped = await sink.getCanvas(Math.max(first, options.timestamp));
+    const wrapped = await sink.getCanvas(Math.max(first, options.timestamp + t0));
     if (signal.aborted) throw new MediaError('cancelled', 'Cancelled.');
     if (!wrapped) throw new MediaError('corrupt', 'No frame could be decoded at that time.');
     const canvas = wrapped.canvas as OffscreenCanvas;
@@ -31,7 +32,7 @@ export async function extractFrame(file: Blob, options: FrameOptions, signal: Ab
       // Browsers silently fall back to PNG for unsupported types (e.g. WebP in Safari).
       throw new MediaError('no-encoder', `This browser cannot encode ${options.format.toUpperCase()} images. Choose PNG or JPEG.`);
     }
-    return { blob, width, height, frameTimestamp: wrapped.timestamp };
+    return { blob, width, height, frameTimestamp: wrapped.timestamp - t0 };
   } finally {
     input.dispose();
   }
@@ -47,8 +48,9 @@ export async function computeWaveform(file: Blob, peaksPerSecond: number, onProg
     const track = await input.getPrimaryAudioTrack();
     if (!track) throw new MediaError('no-tracks', 'This file has no audio track.');
     if (!(await track.canDecode())) throw new MediaError('unsupported-codec', `This browser cannot decode ${track.codec ?? 'this'} audio.`);
-    const duration = await track.computeDuration();
-    const first = await track.getFirstTimestamp();
+    const t0 = await mediaStart(input);
+    const duration = (await track.computeDuration()) - t0;
+    const first = (await track.getFirstTimestamp()) - t0;
     const buckets = Math.max(1, Math.ceil((duration - Math.min(0, first)) * peaksPerSecond));
     const peaks = new Uint8Array(buckets);
     const sink = new AudioSampleSink(track);
@@ -59,7 +61,7 @@ export async function computeWaveform(file: Blob, peaksPerSecond: number, onProg
         const frames = sample.numberOfFrames;
         if (scratch.length < frames) scratch = new Float32Array(frames);
         const framesPerBucket = sample.sampleRate / peaksPerSecond;
-        const startFrame = Math.max(0, sample.timestamp) * sample.sampleRate;
+        const startFrame = Math.max(0, sample.timestamp - t0) * sample.sampleRate;
         for (let ch = 0; ch < sample.numberOfChannels; ch++) {
           sample.copyTo(scratch, { planeIndex: ch, format: 'f32-planar', frameCount: frames });
           for (let i = 0; i < frames; i++) {
@@ -69,7 +71,7 @@ export async function computeWaveform(file: Blob, peaksPerSecond: number, onProg
             if (v > peaks[b]!) peaks[b] = v;
           }
         }
-        if (duration > 0) onProgress(Math.min(1, (sample.timestamp + sample.duration) / duration));
+        if (duration > 0) onProgress(Math.min(1, (sample.timestamp - t0 + sample.duration) / duration));
       } finally {
         sample.close();
       }

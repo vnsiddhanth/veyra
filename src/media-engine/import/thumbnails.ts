@@ -1,7 +1,7 @@
 import { CanvasSink } from 'mediabunny';
 import { MediaError } from '../core/errors';
 import type { Thumbnail, ThumbnailOptions } from '../core/types';
-import { openInput } from './probe';
+import { mediaRange, openInput } from './probe';
 
 /**
  * Evenly spaced thumbnails. Uses CanvasSink with a small canvas pool so memory stays
@@ -21,9 +21,11 @@ export async function generateThumbnails(
     if (!(await track.canDecode())) {
       throw new MediaError('unsupported-codec', `This browser cannot decode ${track.codec ?? 'this'} video.`);
     }
+    const range = await mediaRange(input);
+    const t0 = range.start;
     const first = await track.getFirstTimestamp();
-    const end = options.end ?? (await track.computeDuration());
-    const start = Math.max(first, options.start ?? first);
+    const end = Math.min(range.end, options.end != null ? options.end + t0 : await track.computeDuration());
+    const start = Math.max(first, options.start != null ? options.start + t0 : first);
     const count = Math.max(1, Math.floor(options.count));
     const span = Math.max(0, end - start);
     // Sample at the centre of each segment so the first thumb isn't a black lead-in frame.
@@ -51,7 +53,7 @@ export async function generateThumbnails(
                 0.72,
               ),
             );
-      out.push({ timestamp: wrapped.timestamp, blob, width, height });
+      out.push({ timestamp: wrapped.timestamp - t0, blob, width, height });
       onProgress(i / count);
     }
     return out;

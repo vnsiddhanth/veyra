@@ -11,7 +11,7 @@
 import { expect, type Download, type Page } from '@playwright/test';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { ALL_FORMATS, BufferSource, Input } from 'mediabunny';
+import { ALL_FORMATS, BufferSource, EncodedPacketSink, Input } from 'mediabunny';
 import type { ToolDef } from '../../src/tools/registry';
 
 export const HARSH_DIR = join(import.meta.dirname, '..', 'fixtures', 'harsh');
@@ -168,7 +168,13 @@ export const SPECS: Record<string, ToolSpec> = {
 /** Should this fixture work in this tool? 'must' | 'may' | 'must-refuse'. */
 export function verdictFor(tool: string, f: Fx): 'must' | 'may' | 'must-refuse' {
   const spec = SPECS[tool]!;
-  if (f.expect === 'reject' || f.kind === 'broken') return 'must-refuse';
+  if (f.expect === 'reject') return 'must-refuse';
+  // Damaged-but-salvageable files (cut off part-way): a tool may use the readable part or refuse.
+  if (f.kind === 'broken') return f.expect === 'either' && spec.inputs !== 'images' && spec.inputs !== 'subtitle' && spec.inputs !== 'audio' ? 'may' : 'must-refuse';
+  // A PNG with an .mp4 name is still a PNG: image tools sniff content, so using it is fine.
+  if (/^x_png_named/.test(f.name) && (spec.inputs === 'images' || spec.inputs === 'picture' || spec.inputs === 'any-media')) return 'may';
+  // Muting a video that has no sound may be declined with a clear message (nothing to do).
+  if (tool === 'mute-video' && f.kind === 'video' && !f.hasAudio) return 'may';
   const fits =
     spec.inputs === 'video'
       ? f.kind === 'video' && !!f.hasVideo
@@ -275,7 +281,9 @@ export async function exercise(page: Page, slug: string, f: Fx, variant?: (page:
     }
 
     const run = spec.action ? page.getByRole('button', { name: spec.action }).first() : page.locator('main [data-run]').first();
-    await expect(run).toBeVisible({ timeout: 60_000 });
+    // A preparation step (e.g. "Analyse shake") may decline the file with an alert instead of offering a run button.
+    await expect(run.or(alertIn(page)).first()).toBeVisible({ timeout: 60_000 });
+    if (!(await run.isVisible()) && (await alertIn(page).count())) return done('refused', (await alertIn(page).first().innerText()).trim());
     // Files may still be probing or being analysed; give the button a chance to enable.
     await expect(run).toBeEnabled({ timeout: 20_000 }).catch(() => undefined);
     if (await run.isDisabled()) {
@@ -337,6 +345,22 @@ export async function probe(path: string) {
 
 const near = (a: number, b: number, tol: number) => Math.abs(a - b) <= tol;
 
+/** How much of a cut-off file is actually present (last packet whose bytes can be read). */
+export async function readableDuration(path: string, only?: 'audio' | 'video'): Promise<number> {
+  const input = new Input({ source: new BufferSource(readFileSync(path)), formats: ALL_FORMATS });
+  try {
+    let end = 0;
+    for (const t of await input.getTracks()) {
+      if (only && t.type !== only) continue;
+      const sink = new EncodedPacketSink(t);
+      for await (const k of sink.packets()) end = Math.max(end, k.timestamp + k.duration);
+    }
+    return end;
+  } finally {
+    input.dispose();
+  }
+}
+
 /** Strict checks of a successful run's files. Returns a list of problems (empty = good). */
 export async function checkOutputs(slug: string, f: Fx, o: Outcome, extra: Partial<ToolSpec> = {}): Promise<string[]> {
   const spec = { ...SPECS[slug]!, ...extra };
@@ -373,7 +397,14 @@ export async function checkOutputs(slug: string, f: Fx, o: Outcome, extra: Parti
       continue;
     }
     if (!(m.duration > 0)) problems.push(`duration ${m.duration}`);
-    const inDur = f.duration ?? 0;
+    // A cut-off source counts only up to where its data ends; output must not be padded past it.
+    // Audio pulled out of a video lasts as long as its soundtrack, which may stop before the picture.
+    const inDur =
+      (/^x_truncated/.test(f.name)
+        ? await readableDuration(fxPath(f))
+        : spec.video === 'none' && f.hasVideo && f.hasAudio
+          ? await readableDuration(fxPath(f), 'audio')
+          : f.duration) ?? 0;
     const fr = f.fps && f.fps > 0 ? f.fps : 30;
     const tol = Math.max(0.15, 3 / fr);
     if (spec.output === 'parts') {
@@ -393,7 +424,8 @@ export async function checkOutputs(slug: string, f: Fx, o: Outcome, extra: Parti
       const [w, h] = spec.size === 'same' ? [f.width, f.height] : spec.size(f.width, f.height);
       if (!near(m.video.width, w, 2) || !near(m.video.height, h, 2)) problems.push(`size ${m.video.width}×${m.video.height}, expected ${w}×${h}`);
     }
-    if (spec.fps && m.video?.fps && f.fps) {
+    // Frame rate is only measurable with several frames, and only meaningful for constant-rate sources.
+    if (spec.fps && m.video?.fps && f.fps && (f.duration ?? 0) > 0.5 && !/vfr/.test(f.name)) {
       const want = spec.fps(f.fps);
       if (!near(m.video.fps, want, 1.5)) problems.push(`frame rate ${m.video.fps.toFixed(2)}, expected ${want}`);
     }
@@ -402,7 +434,10 @@ export async function checkOutputs(slug: string, f: Fx, o: Outcome, extra: Parti
     if (o.outputs.length < 2) problems.push(`expected 2 parts, got ${o.outputs.length}`);
     let sum = 0;
     for (const p of o.outputs) sum += (await probe(p).catch(() => ({ duration: 0 }))).duration;
-    if (f.duration && !near(sum, f.duration, Math.max(0.2, 3 / (f.fps || 30)))) problems.push(`parts add up to ${sum.toFixed(3)} s, expected ${f.duration.toFixed(3)} s`);
+    // A cut can't fall inside a frame: each part may hold its last frame to that frame's natural end,
+    // which for variable-rate footage is up to ~1/12 s per frame (allow one slow frame per cut).
+    const perCut = /vfr/.test(f.name) ? 0.2 : 0;
+    if (f.duration && !near(sum, f.duration, Math.max(0.2, 3 / (f.fps || 30)) + perCut * (o.outputs.length - 1))) problems.push(`parts add up to ${sum.toFixed(3)} s, expected ${f.duration.toFixed(3)} s`);
   }
   return problems;
 }

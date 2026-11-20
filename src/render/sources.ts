@@ -54,7 +54,8 @@ export class ClipFrameStream {
 
   private timeOf(f: number): number {
     const t = framesToFlicks(f, this.project.settings.frameRate);
-    return clampSource(sourceTimeAt(this.clip, t, frameDuration(this.project.settings.frameRate)), this.asset);
+    // Source timestamps start at the media's own start time (non-zero for transport streams).
+    return clampSource(sourceTimeAt(this.clip, t, frameDuration(this.project.settings.frameRate)), this.asset) + (this.asset.info?.startTime ?? 0);
   }
 
   private start(from: number) {

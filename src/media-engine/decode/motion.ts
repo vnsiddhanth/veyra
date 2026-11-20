@@ -10,7 +10,7 @@
  */
 import { CanvasSink } from 'mediabunny';
 import { MediaError } from '../core/errors';
-import { openInput } from '../import/probe';
+import { frameRateOf, mediaRange, openInput } from '../import/probe';
 
 export interface MotionAnalysis {
   /** Analysis frame size. */
@@ -183,15 +183,17 @@ export async function analyzeMotion(file: Blob, width: number, onProgress: (p: n
     if (!(await track.canDecode())) throw new MediaError('unsupported-codec', 'This browser cannot decode the video.');
     const w = Math.max(32, Math.round(width / 2) * 2);
     const h = Math.max(32, Math.round((w * track.displayHeight) / track.displayWidth / 2) * 2);
-    const dur = await track.computeDuration();
-    const fps = (await track.computeFrameRateMetrics({ targetPacketCount: 120 }).catch(() => null))?.bestGuessFrameRate ?? 30;
+    const range = await mediaRange(input);
+    const t0 = range.start;
+    const dur = Math.min(await track.computeDuration(), range.end) - t0;
+    const fps = (await frameRateOf(track));
     const sink = new CanvasSink(track, { width: w, height: h, fit: 'fill', poolSize: 2 });
     const dx: number[] = [];
     const dy: number[] = [];
     const dr: number[] = [];
     const ts: number[] = [];
     let prev: Uint8Array | null = null;
-    for await (const wc of sink.canvases()) {
+    for await (const wc of sink.canvases(undefined, range.truncated ? range.end : undefined)) {
       if (signal.aborted) throw new MediaError('cancelled', 'Cancelled.');
       const ctx = (wc.canvas as OffscreenCanvas).getContext('2d', { willReadFrequently: true }) as OffscreenCanvasRenderingContext2D;
       const cur = toLuma(ctx.getImageData(0, 0, w, h).data, w, h);
@@ -199,9 +201,9 @@ export async function analyzeMotion(file: Blob, width: number, onProgress: (p: n
       dx.push(sx);
       dy.push(sy);
       dr.push(sr);
-      ts.push(wc.timestamp);
+      ts.push(wc.timestamp - t0);
       prev = cur;
-      if (dur > 0) onProgress(Math.min(0.99, wc.timestamp / dur));
+      if (dur > 0) onProgress(Math.min(0.99, (wc.timestamp - t0) / dur));
     }
     if (dx.length < 2) throw new MediaError('not-media', 'The video is too short to stabilise.');
     onProgress(1);

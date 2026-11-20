@@ -6,7 +6,7 @@ import { applyPalette, GIFEncoder, quantize } from 'gifenc';
 import { CanvasSink } from 'mediabunny';
 import { MediaError } from '../core/errors';
 import type { FileResult, FramesOptions, GifImagesOptions, GifOptions, ValidationCheck } from '../core/types';
-import { openInput } from '../import/probe';
+import { frameRateOf, mediaRange, openInput } from '../import/probe';
 import { createScratchFile, deleteScratchFile } from './output-store';
 import { readStoredZip, ZipWriter } from './zip';
 
@@ -70,7 +70,9 @@ export async function videoToGif(file: Blob, o: GifOptions, onProgress: (p: numb
     const track = await input.getPrimaryVideoTrack();
     if (!track) throw new MediaError('no-tracks', 'This file has no video track.');
     if (!(await track.canDecode())) throw new MediaError('unsupported-codec', 'This browser cannot decode the video.');
-    const dur = await track.computeDuration();
+    const range = await mediaRange(input);
+    const t0 = range.start;
+    const dur = Math.min(await track.computeDuration(), range.end) - t0;
     const start = Math.max(0, o.start ?? 0);
     const end = Math.min(dur, o.end ?? dur);
     const fps = Math.max(1, Math.min(50, o.fps));
@@ -82,7 +84,7 @@ export async function videoToGif(file: Blob, o: GifOptions, onProgress: (p: numb
     const w = Math.max(16, Math.round(o.width / 2) * 2);
     const h = Math.max(16, Math.round((w * track.displayHeight) / track.displayWidth / 2) * 2);
     const sink = new CanvasSink(track, { width: w, height: h, fit: 'fill', poolSize: 2 });
-    const times = Array.from({ length: count }, (_, i) => start + i / fps);
+    const times = Array.from({ length: count }, (_, i) => t0 + start + i / fps);
     const delay = Math.max(20, Math.round(1000 / fps / (o.speed ?? 1) / 10) * 10);
     const gif = GIFEncoder();
     let i = 0;
@@ -149,10 +151,13 @@ export async function extractFramesZip(file: Blob, o: FramesOptions, jobId: stri
     const track = await input.getPrimaryVideoTrack();
     if (!track) throw new MediaError('no-tracks', 'This file has no video track.');
     if (!(await track.canDecode())) throw new MediaError('unsupported-codec', 'This browser cannot decode the video.');
-    const dur = await track.computeDuration();
+    // Work in source timestamps (o.start/o.end count from the first frame).
+    const range = await mediaRange(input);
+    const t0 = range.start;
+    const dur = Math.min(await track.computeDuration(), range.end);
     const first = await track.getFirstTimestamp();
-    const start = Math.max(first, o.start);
-    const end = Math.min(dur, o.end);
+    const start = Math.max(first, o.start + t0);
+    const end = Math.min(dur, o.end + t0);
     if (!(end > start)) throw new MediaError('not-media', 'The range is empty.');
 
     let times: number[] | null = null;
@@ -164,7 +169,7 @@ export async function extractFramesZip(file: Blob, o: FramesOptions, jobId: stri
       const n = Math.max(1, Math.min(MAX_ZIP_FRAMES, Math.round(o.count ?? 10)));
       times = Array.from({ length: n }, (_, i) => start + ((end - start) * (i + 0.5)) / n);
     }
-    const expected = times ? times.length : Math.round((end - start) * ((await track.computeFrameRateMetrics({ targetPacketCount: 120 }).catch(() => null))?.bestGuessFrameRate ?? 30));
+    const expected = times ? times.length : Math.round((end - start) * (await frameRateOf(track)));
     if (expected > MAX_ZIP_FRAMES) throw new MediaError('too-large', `That is about ${expected} frames; the limit is ${MAX_ZIP_FRAMES}. Use an interval or a shorter range.`);
 
     const w = o.width ? Math.max(2, Math.round(o.width)) : track.displayWidth;
@@ -186,7 +191,7 @@ export async function extractFramesZip(file: Blob, o: FramesOptions, jobId: stri
       const blob = await (wc.canvas as OffscreenCanvas).convertToBlob({ type: mime, quality: o.quality ?? 0.92 });
       if (blob.type !== mime) throw new MediaError('no-encoder', `This browser cannot encode ${o.format.toUpperCase()} images. Choose PNG or JPEG.`);
       n++;
-      const ms = Math.round(wc.timestamp * 1000);
+      const ms = Math.round((wc.timestamp - t0) * 1000);
       await zip.add(`${base}_${String(n).padStart(digits, '0')}_${ms}ms.${o.format === 'jpeg' ? 'jpg' : o.format}`, new Uint8Array(await blob.arrayBuffer()));
       if (n > MAX_ZIP_FRAMES) throw new MediaError('too-large', `More than ${MAX_ZIP_FRAMES} frames. Use an interval or a shorter range.`);
       onProgress(Math.min(0.95, (n / Math.max(1, expected)) * 0.95));

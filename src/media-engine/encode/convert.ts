@@ -33,7 +33,7 @@ import {
 } from 'mediabunny';
 import { MediaError } from '../core/errors';
 import type { ConvertOptions, ConvertResult, OutputContainer, QualityLevel, ValidationCheck } from '../core/types';
-import { openInput, probeMedia } from '../import/probe';
+import { frameRateOf, mediaRange, openInput, probeMedia } from '../import/probe';
 import { createScratchFile, deleteScratchFile } from './output-store';
 
 export const CONTAINER_INFO: Record<OutputContainer, { ext: string; mime: string; audioOnly: boolean }> = {
@@ -111,7 +111,11 @@ export async function convertMedia(
   signal.addEventListener('abort', onAbort);
 
   try {
-    const sourceDuration = await input.computeDuration();
+    // Times in `options` count from the media's first frame; transport streams start later than 0.
+    // A cut-off file is converted up to where its data ends.
+    const range = await mediaRange(input);
+    const t0 = range.start;
+    const sourceDuration = range.end - t0;
     const sourceVideo = await input.getPrimaryVideoTrack();
     const sourceAudio = await input.getPrimaryAudioTrack();
     if (options.trim) {
@@ -156,7 +160,11 @@ export async function convertMedia(
       tracks: 'primary',
       video: videoOptions,
       audio: audioOptions,
-      trim: options.trim,
+      trim: options.trim
+        ? { start: options.trim.start + t0, end: Math.min(options.trim.end, sourceDuration) + t0 }
+        : range.truncated
+          ? { start: t0, end: range.end }
+          : undefined,
       copy:
         options.copy === 'never'
           ? false
@@ -194,8 +202,13 @@ export async function convertMedia(
       outFile = new File([buf], names.display, { type: meta.mime });
     }
 
-    const expectedDuration = options.trim ? Math.min(options.trim.end, sourceDuration) - options.trim.start : sourceDuration;
-    const fps = sourceVideo ? (await sourceVideo.computeFrameRateMetrics({ targetPacketCount: 120 }).catch(() => null))?.bestGuessFrameRate : undefined;
+    // Expect the length of the tracks we kept: audio pulled from a video whose soundtrack stops
+    // early is legitimately shorter than the video.
+    const kept = [!videoOptions.discard ? sourceVideo : null, !audioOptions.discard ? sourceAudio : null].filter((t) => !!t);
+    const keptEnds = await Promise.all(kept.map((t) => t!.computeDuration().catch(() => range.end)));
+    const keptDuration = keptEnds.length ? Math.min(sourceDuration, Math.max(...keptEnds) - t0) : sourceDuration;
+    const expectedDuration = options.trim ? Math.min(options.trim.end, keptDuration) - options.trim.start : keptDuration;
+    const fps = sourceVideo ? await frameRateOf(sourceVideo) : undefined;
     const { checks, info } = await validateOutput(outFile, {
       expectVideo: !!sourceVideo && !videoOptions.discard,
       expectAudio: !!sourceAudio && !audioOptions.discard,

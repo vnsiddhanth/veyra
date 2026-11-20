@@ -58,6 +58,11 @@ export interface MediaInfo {
   duration: number;
   /** Whether duration came from container metadata or a packet scan. */
   durationSource: 'metadata' | 'computed' | 'none';
+  /**
+   * Seconds at which the media's own timeline starts (MPEG-TS and broadcast captures often begin
+   * well after zero). Everything else in the app counts from here, so 0 means "first frame".
+   */
+  startTime?: number;
   bitrate: number | null;
   video: VideoTrackInfo[];
   audio: AudioTrackInfo[];

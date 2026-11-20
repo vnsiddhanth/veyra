@@ -67,7 +67,8 @@ export function addAssetToProject(p: Project, asset: Asset): Project {
   let settings = p.settings;
   const isFirstVideo = !p.assets.some((a) => a.kind === 'video') && Object.keys(p.clips).length === 0;
   if (isFirstVideo && asset.kind === 'video' && asset.info && asset.info.width > 0) {
-    const fps = asset.info.video[0]?.frameRate?.bestGuess;
+    const raw = asset.info.video[0]?.frameRate?.bestGuess;
+    const fps = raw && raw > 0 && raw <= 240 ? raw : undefined;
     settings = { ...settings, ...settingsFromMedia(asset.info.width, asset.info.height, fps ? fpsToRational(fps) : settings.frameRate) };
   }
   return { ...p, settings, assets: [...p.assets, asset] };

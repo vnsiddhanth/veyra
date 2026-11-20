@@ -176,6 +176,10 @@ class ClipAudioReader {
   /** Dialogue noise reduction (set up by `prepare`). */
   private denoiser: AlignedDenoiser | null = null;
   readonly denoiseDb: number | null;
+  /** Source start time (transport streams); reader times count from the first frame. */
+  private get offset(): number {
+    return this.src.asset?.info?.startTime ?? 0;
+  }
   /** Clip-relative output sample where time-stretching started (null until the first block). */
   private stretchOrigin: number | null = null;
 
@@ -256,10 +260,11 @@ class ClipAudioReader {
     const clip = this.src.clip;
     const s0 = flicksToSeconds(clip.sourceIn);
     const s1 = s0 + span;
+    const so = this.offset;
     const sink = new AudioSampleSink(this.track);
     const parts: { t: number; rate: number; data: Float32Array[] }[] = [];
-    for await (const s of sink.samples(s0, s1)) {
-      parts.push({ t: s.timestamp, rate: s.sampleRate, data: ClipAudioReader.planar(s) });
+    for await (const s of sink.samples(s0 + so, s1 + so)) {
+      parts.push({ t: s.timestamp - so, rate: s.sampleRate, data: ClipAudioReader.planar(s) });
       s.close();
     }
     if (!parts.length) return;
@@ -279,7 +284,7 @@ class ClipAudioReader {
     if (this.full) return;
     if (!this.iter) {
       const sink = new AudioSampleSink(this.track);
-      this.iter = sink.samples(Math.max(0, this.startSource - 0.05));
+      this.iter = sink.samples(Math.max(0, this.startSource - 0.05) + this.offset);
     }
     while (!this.exhausted) {
       const last = this.chunks[this.chunks.length - 1];
@@ -290,7 +295,7 @@ class ClipAudioReader {
         break;
       }
       const s = r.value;
-      this.chunks.push({ t0: s.timestamp, rate: s.sampleRate, data: ClipAudioReader.planar(s) });
+      this.chunks.push({ t0: s.timestamp - this.offset, rate: s.sampleRate, data: ClipAudioReader.planar(s) });
       s.close();
     }
   }
