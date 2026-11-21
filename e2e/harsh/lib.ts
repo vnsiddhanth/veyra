@@ -9,7 +9,7 @@
  *            garbage accepted.
  */
 import { expect, type Download, type Page } from '@playwright/test';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ALL_FORMATS, BufferSource, EncodedPacketSink, Input } from 'mediabunny';
 import type { ToolDef } from '../../src/tools/registry';
@@ -171,6 +171,8 @@ export function verdictFor(tool: string, f: Fx): 'must' | 'may' | 'must-refuse' 
   // A PNG with an .mp4 name is still a PNG: image tools and inspectors sniff content, so using it is fine.
   if (/^x_png_named/.test(f.name) && (spec.inputs === 'images' || spec.inputs === 'picture' || spec.inputs === 'any-media')) return 'may';
   if (f.expect === 'reject') return 'must-refuse';
+  // Images have no running time, so the duration calculator may decline them.
+  if (tool === 'duration-calculator' && f.kind === 'image') return 'may';
   // Damaged-but-salvageable files (cut off part-way): a tool may use the readable part or refuse.
   if (f.kind === 'broken') return f.expect === 'either' && spec.inputs !== 'images' && spec.inputs !== 'subtitle' && spec.inputs !== 'audio' ? 'may' : 'must-refuse';
   // Muting a video that has no sound may be declined with a clear message (nothing to do).
@@ -309,14 +311,37 @@ export async function exercise(page: Page, slug: string, f: Fx, variant?: (page:
     const n = await links.count();
     // Dozens of downloads in a row get throttled by the browser; check the first and last five.
     const picks = n > 20 ? [0, 1, 2, 3, 4, n - 5, n - 4, n - 3, n - 2, n - 1] : [...Array(n).keys()];
-    for (const i of picks) {
-      const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 30_000 }), links.nth(i).click()]);
-      outputs.push(await save(dl));
-    }
+    for (const i of picks) outputs.push(await downloadLink(page, links.nth(i)));
     if (!outputs.length) return done('fail', 'reported success but offered nothing to download');
     return { ...done('ok', n > picks.length ? `output produced (${picks.length} of ${n} files checked)` : 'output produced', outputs), sampled: n > picks.length };
   } catch (e) {
     return done('fail', `harness: ${e instanceof Error ? e.message.split('\n')[0] : String(e)}`);
+  }
+}
+
+/**
+ * Save what a Download link points to. Some browser builds show certain types (e.g. WebP in
+ * Playwright's Firefox) instead of downloading them; then read the file straight from the link.
+ */
+async function downloadLink(page: Page, link: ReturnType<Page['locator']>): Promise<string> {
+  try {
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 30_000 }), link.click()]);
+    return await save(dl);
+  } catch (e) {
+    const href = await link.getAttribute('href');
+    if (!href) throw e;
+    const b64 = await page.evaluate(async (u) => {
+      const bytes = new Uint8Array(await (await fetch(u)).arrayBuffer());
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(bin);
+    }, href);
+    const name = (await link.getAttribute('download')) || 'output';
+    const dir = join(process.cwd(), 'test-results', 'harsh-outputs');
+    mkdirSync(dir, { recursive: true });
+    const p = join(dir, `${Date.now()}-${saveSeq++}-${name}`);
+    writeFileSync(p, Buffer.from(b64, 'base64'));
+    return p;
   }
 }
 
