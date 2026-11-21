@@ -13,7 +13,7 @@ import { useSource } from '../shared/useSource';
 
 export function splitPoints(duration: number, mode: 'every' | 'parts' | 'at', every: number, parts: number, at: string): number[] {
   let cuts: number[] = [];
-  if (mode === 'every') for (let t = every; t < duration - 0.05; t += every) cuts.push(t);
+  if (mode === 'every' && every > 0) for (let t = every; t < duration - 0.05; t += every) cuts.push(t);
   else if (mode === 'parts') for (let i = 1; i < parts; i++) cuts.push((duration * i) / parts);
   else
     cuts = at

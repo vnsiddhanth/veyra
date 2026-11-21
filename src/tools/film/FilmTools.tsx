@@ -193,14 +193,15 @@ function CreditsTool() {
   const [video, setVideo] = useState<RenderContainer>('mp4');
   if (source.status !== 'ready') return <SourceGate source={source} open={open} clear={clear} accept={VIDEO_ACCEPT} />;
   const info = source.info;
-  const over = place === 'over' && seconds < info.duration;
+  const over = place === 'over';
   const run = () => {
     const comp = Composition.fromVideo(info);
     const asset = comp.asset(source.file, info, 'video', source.file.name);
     const v = comp.track('video');
     const tx = comp.track('text', 'top');
     const dur = comp.q(info.duration, 'floor');
-    const len = comp.q(seconds);
+    // Over the video, the roll can't be longer than the video itself (it would push the start before 0).
+    const len = over ? Math.min(comp.q(seconds), dur) : comp.q(seconds);
     comp.clip(v, { assetId: asset.id, start: 0, duration: dur });
     comp.clip(tx, {
       assetId: null,
@@ -301,35 +302,67 @@ function ScopesTool() {
   const [now, setNow] = useState(0);
   const canvas = useRef<HTMLCanvasElement | null>(null);
 
-  const analyse = useCallback(() => {
-    const v = player.current?.video;
-    if (!v || v.readyState < 2 || !v.videoWidth) return;
-    const w = Math.min(480, v.videoWidth);
-    const h = Math.max(1, Math.round((v.videoHeight * w) / v.videoWidth));
+  // Some files (e.g. MPEG-TS) decode fine but the browser's <video> element can't show them;
+  // then each frame is decoded by the media engine instead.
+  const [decodeFrames, setDecodeFrames] = useState(false);
+
+  const measure = useCallback((img: CanvasImageSource, iw: number, ih: number) => {
+    const w = Math.min(480, iw);
+    const h = Math.max(1, Math.round((ih * w) / iw));
     canvas.current ??= document.createElement('canvas');
     const c = canvas.current;
     c.width = w;
     c.height = h;
     const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
-    ctx.drawImage(v, 0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
     setData(computeScopes(ctx.getImageData(0, 0, w, h).data, w, h));
   }, []);
 
+  const analyse = useCallback((): boolean => {
+    const v = player.current?.video;
+    if (!v || v.readyState < 2 || !v.videoWidth) return false;
+    measure(v, v.videoWidth, v.videoHeight);
+    return true;
+  }, [measure]);
+
   useEffect(() => {
+    setDecodeFrames(false);
     if (source.status !== 'ready') return;
     let raf = 0;
     let last = 0;
+    let shown = false;
+    const since = performance.now();
     const loop = (t: number) => {
       if (t - last > 120) {
         last = t;
-        analyse();
+        if (analyse()) shown = true;
+        else if (!shown && (t - since > 2500 || player.current?.video?.error)) return setDecodeFrames(true);
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [source.status, analyse]);
+
+  const file = source.status === 'ready' ? source.file : null;
+  const frameFps = source.status === 'ready' ? fpsOf(source.info) : 30;
+  useEffect(() => {
+    if (!decodeFrames || !file) return;
+    let live = true;
+    const job = mediaEngine.extractFrame(file, { timestamp: now + 0.5 / frameFps, format: 'png', width: 480 });
+    job.result
+      .then(async (r) => {
+        const bmp = await createImageBitmap(r.blob);
+        if (live) measure(bmp, bmp.width, bmp.height);
+        bmp.close();
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+      job.cancel();
+    };
+  }, [decodeFrames, file, now, frameFps, measure]);
 
   if (source.status !== 'ready') return <SourceGate source={source} open={open} clear={clear} accept={VIDEO_ACCEPT} />;
   const info = source.info;
@@ -355,6 +388,7 @@ function ScopesTool() {
         <ScopeView kind="vectorscope" data={data} className="rounded-lg border border-line bg-surface p-3" />
         <ScopeView kind="histogram" data={data} className="rounded-lg border border-line bg-surface p-3" />
       </div>
+      {decodeFrames && <p className="text-sm text-muted">This browser can't play this file directly, so the scopes are read frame by frame: step with ← / → instead of playing.</p>}
       <p className="text-sm text-muted">
         Scopes update as you play or step through the video. Nothing is rendered or saved; this tool only measures. To fix what you see, open the video in the editor and
         grade it with curves, colour balance or a LUT.

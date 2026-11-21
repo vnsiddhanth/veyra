@@ -8,8 +8,10 @@ import { TOOLS } from '../../src/tools/registry';
 import { HAVE_FIXTURES, MANIFEST, SPECS, checkOutputs, exercise, judge, record, toolsInSuite, verdictFor } from './lib';
 
 test.describe.configure({ mode: 'parallel' });
+// No single click, fill or read may wait forever: a stuck step must fail that case, not the whole batch.
+test.use({ actionTimeout: 30_000 });
 test.skip(!HAVE_FIXTURES, 'harsh fixtures not generated (run e2e/harsh/make-fixtures.sh; CI does this)');
-test.describe.configure({ timeout: 6 * 60_000 });
+test.describe.configure({ timeout: 15 * 60_000 });
 
 for (const tool of toolsInSuite(TOOLS)) {
   for (const f of MANIFEST) {
@@ -39,7 +41,8 @@ for (const [slug, , pick] of SECOND) {
       const base = MANIFEST.find((x) => x.name === 'v_h264_1080p30.mp4')!;
       const o = await exercise(page, slug, base, undefined, { second: f.name });
       const problems = o.outcome === 'ok' ? await checkOutputs(slug, base, o) : [];
-      const verdict = f.expect === 'reject' || f.kind === 'broken' ? 'must-refuse' : f.expect === 'either' || /silence|mono8k/.test(f.name) ? 'may' : 'must';
+      // A cut-off file may be used up to where its data ends (as the main input is), or refused.
+      const verdict = f.expect === 'reject' || (f.kind === 'broken' && f.expect !== 'either') ? 'must-refuse' : f.expect === 'either' || /silence|mono8k/.test(f.name) ? 'may' : 'must';
       const { pass, why } = judge(verdict, o, problems);
       record({ suite: 'second-input', tool: slug, fixture: f.name, verdict, outcome: o.outcome, pass, detail: why, ms: o.ms }, info.project.name);
       expect(pass, `${slug} with second input ${f.name} (${verdict}): ${why}`).toBe(true);

@@ -153,5 +153,6 @@ function missingFor(focus: ToolDef['focus'], info: MediaInfo): string | null {
   if (focus === 'frame-rate' && info.video.length === 0) return info.kind === 'image' ? 'This is a still image, so it has no frame rate.' : 'This file has no video track, so it has no frame rate.';
   if (focus === 'resolution' && info.video.length === 0 && info.kind !== 'image') return 'This file has no picture, so it has no resolution.';
   if (focus === 'audio' && info.audio.length === 0) return 'This file has no audio track.';
+  if (focus === 'duration' && info.kind === 'image') return 'This is a still image, so it has no duration.';
   return null;
 }

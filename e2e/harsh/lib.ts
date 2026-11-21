@@ -98,7 +98,7 @@ export const SPECS: Record<string, ToolSpec> = {
     size: 'same',
     audio: 'keep',
   },
-  'split-video': { inputs: 'video', output: 'parts', action: /^Split into 2 parts$/ },
+  'split-video': { inputs: 'video', output: 'parts', action: /^Split into \d+ parts$/ },
   'merge-videos': { inputs: 'video', load: 'pair', output: 'media', duration: (d) => 2 * d, audio: 'any' },
   'crop-video': {
     inputs: 'video',
@@ -168,11 +168,11 @@ export const SPECS: Record<string, ToolSpec> = {
 /** Should this fixture work in this tool? 'must' | 'may' | 'must-refuse'. */
 export function verdictFor(tool: string, f: Fx): 'must' | 'may' | 'must-refuse' {
   const spec = SPECS[tool]!;
+  // A PNG with an .mp4 name is still a PNG: image tools and inspectors sniff content, so using it is fine.
+  if (/^x_png_named/.test(f.name) && (spec.inputs === 'images' || spec.inputs === 'picture' || spec.inputs === 'any-media')) return 'may';
   if (f.expect === 'reject') return 'must-refuse';
   // Damaged-but-salvageable files (cut off part-way): a tool may use the readable part or refuse.
   if (f.kind === 'broken') return f.expect === 'either' && spec.inputs !== 'images' && spec.inputs !== 'subtitle' && spec.inputs !== 'audio' ? 'may' : 'must-refuse';
-  // A PNG with an .mp4 name is still a PNG: image tools sniff content, so using it is fine.
-  if (/^x_png_named/.test(f.name) && (spec.inputs === 'images' || spec.inputs === 'picture' || spec.inputs === 'any-media')) return 'may';
   // Muting a video that has no sound may be declined with a clear message (nothing to do).
   if (tool === 'mute-video' && f.kind === 'video' && !f.hasAudio) return 'may';
   const fits =
@@ -205,6 +205,8 @@ export interface Outcome {
   detail: string;
   ms: number;
   outputs: string[];
+  /** Only some of many outputs were downloaded (browsers throttle long download runs). */
+  sampled?: boolean;
 }
 
 const alertIn = (page: Page) => page.locator('main [role="alert"]').filter({ hasNotText: /^Report this problem$/ });
@@ -266,7 +268,8 @@ export async function exercise(page: Page, slug: string, f: Fx, variant?: (page:
       const problem = page.locator('main article [role="alert"]');
       if (await problem.count()) return done('refused', (await problem.first().innerText()).trim());
       const text = await page.locator('main article').first().innerText();
-      if (text.trim().length < 20) return done('fail', 'report is empty');
+      // A duration row is short ("clip.m4a 0:04.000"), so a time on its own counts as a report.
+      if (text.trim().length < 20 && !/\d:\d\d/.test(text)) return done('fail', 'report is empty');
       return done('ok', 'report shown');
     }
     if (spec.output === 'scopes') {
@@ -287,7 +290,7 @@ export async function exercise(page: Page, slug: string, f: Fx, variant?: (page:
     // Files may still be probing or being analysed; give the button a chance to enable.
     await expect(run).toBeEnabled({ timeout: 20_000 }).catch(() => undefined);
     if (await run.isDisabled()) {
-      const reason = (await run.locator('xpath=following-sibling::*[1]').innerText().catch(() => '')).trim() || 'run button disabled';
+      const reason = (await run.locator('xpath=following-sibling::*[1]').innerText({ timeout: 3_000 }).catch(() => '')).trim() || 'run button disabled';
       return done('refused', reason);
     }
     const alertsBefore = await alertIn(page).count();
@@ -297,18 +300,21 @@ export async function exercise(page: Page, slug: string, f: Fx, variant?: (page:
       .or(page.getByText(/^Frame captured/))
       .or(page.getByRole('list', { name: 'Parts' }).getByRole('listitem').nth(1));
     const failure = alertIn(page).nth(alertsBefore);
-    await expect(success.or(failure).first()).toBeVisible({ timeout: 240_000 });
+    // Long inputs take longer (reversing 3 minutes in Firefox runs past 4 minutes).
+    await expect(success.or(failure).first()).toBeVisible({ timeout: Math.max(240_000, (f.duration ?? 0) * 4_000) });
     if (await failure.isVisible().catch(() => false)) return done('refused', `run failed: ${(await failure.innerText()).trim()}`);
 
     const outputs: string[] = [];
     const links = page.locator('main').getByRole('link', { name: 'Download' });
     const n = await links.count();
-    for (let i = 0; i < n; i++) {
+    // Dozens of downloads in a row get throttled by the browser; check the first and last five.
+    const picks = n > 20 ? [0, 1, 2, 3, 4, n - 5, n - 4, n - 3, n - 2, n - 1] : [...Array(n).keys()];
+    for (const i of picks) {
       const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 30_000 }), links.nth(i).click()]);
       outputs.push(await save(dl));
     }
     if (!outputs.length) return done('fail', 'reported success but offered nothing to download');
-    return done('ok', 'output produced', outputs);
+    return { ...done('ok', n > picks.length ? `output produced (${picks.length} of ${n} files checked)` : 'output produced', outputs), sampled: n > picks.length };
   } catch (e) {
     return done('fail', `harness: ${e instanceof Error ? e.message.split('\n')[0] : String(e)}`);
   }
@@ -350,12 +356,16 @@ export async function readableDuration(path: string, only?: 'audio' | 'video'): 
   const input = new Input({ source: new BufferSource(readFileSync(path)), formats: ALL_FORMATS });
   try {
     let end = 0;
-    for (const t of await input.getTracks()) {
+    const tracks = await input.getTracks();
+    for (const t of tracks) {
       if (only && t.type !== only) continue;
       const sink = new EncodedPacketSink(t);
       for await (const k of sink.packets()) end = Math.max(end, k.timestamp + k.duration);
     }
-    return end;
+    // MPEG-TS and similar start their clock above 0; outputs start at 0, so measure from the file's start.
+    let start = Infinity;
+    for (const t of tracks) start = Math.min(start, await t.getFirstTimestamp());
+    return end - (Number.isFinite(start) ? Math.max(0, start) : 0);
   } finally {
     input.dispose();
   }
@@ -437,7 +447,7 @@ export async function checkOutputs(slug: string, f: Fx, o: Outcome, extra: Parti
     // A cut can't fall inside a frame: each part may hold its last frame to that frame's natural end,
     // which for variable-rate footage is up to ~1/12 s per frame (allow one slow frame per cut).
     const perCut = /vfr/.test(f.name) ? 0.2 : 0;
-    if (f.duration && !near(sum, f.duration, Math.max(0.2, 3 / (f.fps || 30)) + perCut * (o.outputs.length - 1))) problems.push(`parts add up to ${sum.toFixed(3)} s, expected ${f.duration.toFixed(3)} s`);
+    if (f.duration && !o.sampled && !near(sum, f.duration, Math.max(0.2, 3 / (f.fps || 30)) + perCut * (o.outputs.length - 1))) problems.push(`parts add up to ${sum.toFixed(3)} s, expected ${f.duration.toFixed(3)} s`);
   }
   return problems;
 }

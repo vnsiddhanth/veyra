@@ -71,11 +71,11 @@ export function AudioTrackTool({ tool }: { tool: ToolDef }) {
         <SourceGate source={audio.source} open={audio.open} clear={audio.clear} accept={AUDIO_ACCEPT} />
       )}
       <Panel>
-        <NumberField label="Start the audio at" unit="s" value={offset} min={0} max={vInfo.duration} step={0.1} onChange={setOffset} />
+        <NumberField label="Start the audio at" unit="s" value={offset} min={0} max={Math.max(0, Math.floor((vInfo.duration - 0.1) * 10) / 10)} step={0.1} onChange={setOffset} hint="The new audio must start before the video ends." />
         <CheckField label="Loop to fill the video" checked={loop} onChange={setLoop} />
         <NumberField label="Fade out at the end" unit="s" value={fadeOut} min={0} max={10} step={0.1} onChange={setFadeOut} />
         {!replace && vInfo.audio.length > 0 && <RangeField label="Original audio volume" value={origVol} min={0} max={2} step={0.05} onChange={setOrigVol} format={(v) => `${Math.round(v * 100)}%`} />}
-        <RangeField label={replace ? 'New audio volume' : 'Added audio volume'} value={newVol} min={0} max={2} step={0.05} onChange={setNewVol} format={(v) => `${Math.round(v * 100)}%`} />
+        <RangeField label={replace ? 'New audio volume' : 'Added audio volume'} value={newVol} min={0.05} max={2} step={0.05} onChange={setNewVol} format={(v) => `${Math.round(v * 100)}%`} />
         {!replace && vInfo.audio.length > 0 && <CheckField label="Lower the added audio while the video has sound (ducking)" checked={duck} onChange={setDuck} />}
         <RenderFormatField value={container} onChange={setContainer} />
         <p className="text-sm text-muted md:col-span-3">The output is as long as the video ({formatDuration(vInfo.duration, 1)}).</p>
