@@ -95,6 +95,8 @@ function expectationFor(slug: string, rawLabel: string, value: string, f: Fx): P
 for (const tool of toolsInSuite(TOOLS)) {
   const spec = SPECS[tool.slug]!;
   if (spec.output === 'report' || spec.output === 'scopes') continue;
+  // The subtitle editor has only free-text fields (cue times and text), which its own e2e tests cover.
+  if (tool.slug === 'subtitle-editor') continue;
   test(`options · ${tool.slug}`, async ({ page }, info) => {
     const base = fx(BASE[spec.inputs]);
     await loadFixture(page, tool.slug, base);
@@ -103,11 +105,14 @@ for (const tool of toolsInSuite(TOOLS)) {
       await page.locator('main input[type=file]').first().setInputFiles(`${process.cwd()}/e2e/fixtures/harsh/${spec.second}`);
       await page.waitForTimeout(800);
     }
-    // Controls appear only once the file is read; wait for the tool to be ready before looking.
-    const ready = spec.action ? page.getByRole('button', { name: spec.action }) : page.locator('main [data-run]');
-    await ready.first().waitFor({ timeout: 60_000 }).catch(() => undefined);
+    // Controls appear only once the file is read (and, for some tools, analysed): look until they show up.
+    await expect(page.getByText(/^Reading .+…$/)).toHaveCount(0, { timeout: 60_000 }).catch(() => undefined);
     await spec.prepare?.(page, base).catch(() => undefined);
-    const controls = await discover(page);
+    let controls: Control[] = [];
+    for (const until = Date.now() + 60_000; Date.now() < until; await page.waitForTimeout(500)) {
+      controls = await discover(page);
+      if (controls.length) break;
+    }
     const failures: string[] = [];
     const variants: { name: string; label: string; value: string; apply: (p: Page) => Promise<void> }[] = [];
     for (const c of controls) {
