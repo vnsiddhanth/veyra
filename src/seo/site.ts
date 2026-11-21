@@ -8,6 +8,7 @@
 import { BRAND } from '../config/brand.ts';
 import { CATEGORY_LABELS, TOOLS, relatedTools, type ToolCategory, type ToolDef } from '../tools/registry.ts';
 import { guideFor } from '../tools/guides.ts';
+import { FILM_KIT } from '../tools/film-kit.ts';
 
 /** The promise people search for. Kept identical everywhere. */
 export const PROMISE = 'Your video is never uploaded: it is processed on your own device, in your browser.';
@@ -192,7 +193,7 @@ export function staticBody(info: PageInfo): string {
     }
     main += `<h2>Related tools</h2>${toolList(relatedTools(tool))}`;
   } else if (info.path === '/filmmakers') {
-    main += `<h2>Quick film tools</h2>${toolList(TOOLS.filter((t) => t.category === 'film'))}`;
+    for (const g of FILM_KIT) main += `<h2>${esc(g.title)}</h2>${toolList(g.tools.flatMap((x) => TOOLS.filter((t) => t.slug === x.slug)))}`;
     main += '<h2>In the editor</h2><ul><li>Video scopes: waveform, RGB parade, vectorscope, histogram</li><li>Framing guides: safe areas, 2.39:1, 1.85:1, 4:3, 9:16</li><li>Dialogue noise reduction, EQ, compressor, auto-ducking</li><li>Delivery loudness to −14, −16, −23 or −24 LUFS</li><li>Freeze frame, speed ramps, rolling credits, LUTs, curves, chroma key</li><li>FCPXML and EDL hand-off to DaVinci Resolve, Premiere and Final Cut</li></ul>';
   } else if (info.path === '/' || info.path === '/tools') {
     if (info.path === '/') main += `<p><strong>${esc(PROMISE)}</strong> No account, no watermark, no file size limit set by us.</p><p><a href="/editor">Open the editor</a> or pick a tool:</p>`;

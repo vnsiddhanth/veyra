@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { pageInfo } from '@/seo/site';
+import { FILM_KIT } from '@/tools/film-kit';
 import { TOOLS } from '@/tools/registry';
 import { setPageMeta } from '@/utils/meta';
 
@@ -82,7 +83,12 @@ export default function FilmmakersPage() {
     const p = pageInfo('/filmmakers')!;
     return setPageMeta(p.title, p.description, p.jsonLd);
   }, []);
-  const film = TOOLS.filter((t) => t.category === 'film');
+  // Every single-file tool a filmmaker uses, grouped by workflow stage; unknown slugs are dropped.
+  const kit = FILM_KIT.map((g) => ({ ...g, tools: g.tools.flatMap((x) => {
+    const t = TOOLS.find((d) => d.slug === x.slug && d.status === 'available');
+    return t ? [{ tool: t, note: x.note ?? t.summary }] : [];
+  }) }));
+  const kitCount = kit.reduce((n, g) => n + g.tools.length, 0);
 
   return (
     <div>
@@ -100,13 +106,13 @@ export default function FilmmakersPage() {
                 Open the editor
               </Link>
               <a href="#tools" className="inline-flex h-11 items-center rounded-md border border-line-strong px-5 font-medium hover:bg-surface-2">
-                Quick film tools
+                All {kitCount} film tools
               </a>
             </div>
           </div>
           <nav aria-label="On this page" className="self-end text-sm">
             <ol className="divide-y divide-line border-y border-line">
-              {[['tools', 'Quick film tools'], ...GROUPS.map((g) => [g.id, g.title] as const), ['limits', 'What it can’t do yet']].map(([id, title]) => (
+              {[['tools', `Film tools (${kitCount})`], ...GROUPS.map((g) => [g.id, g.title] as const), ['limits', 'What it can’t do yet']].map(([id, title]) => (
                 <li key={id}>
                   <a href={`#${id}`} className="flex items-center justify-between py-2.5 text-muted hover:text-fg">
                     {title}
@@ -121,19 +127,41 @@ export default function FilmmakersPage() {
 
       <section id="tools" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <p className="slate mb-3">One file in, one file out</p>
-        <h2 className="poster text-5xl sm:text-6xl">Quick film tools</h2>
-        <p className="mt-2 max-w-[60ch] text-muted">For a single job on a single file, no timeline needed.</p>
-        <ul className="mt-8 grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-          {film.map((t) => (
-            <li key={t.slug} className="bg-canvas">
-              <Link to={`/tools/${t.slug}`} className="group flex h-full flex-col p-5 hover:bg-surface">
-                <span className="font-medium group-hover:text-accent">{t.title}</span>
-                <span className="mt-1.5 text-sm leading-relaxed text-muted">{t.summary}</span>
-                <span className="mt-auto pt-4 font-mono text-xs text-faint group-hover:text-accent">Open tool →</span>
-              </Link>
-            </li>
+        <h2 className="poster text-5xl sm:text-6xl">Film tools</h2>
+        <p className="mt-2 max-w-[60ch] text-muted">
+          {kitCount} tools for single jobs on a single file, no timeline needed, in the order a film gets finished. Tools marked <span className="font-mono text-xs text-accent">Made for film</span> were built for filmmakers.
+        </p>
+        <nav aria-label="Film tool groups" className="mt-6 flex flex-wrap gap-2">
+          {kit.map((g) => (
+            <a key={g.id} href={`#${g.id}`} className="rounded-full border border-line px-3 py-1 text-sm text-muted hover:border-line-strong hover:text-fg">
+              {g.title} <span className="font-mono text-xs text-faint">{g.tools.length}</span>
+            </a>
           ))}
-        </ul>
+        </nav>
+        <div className="mt-10 space-y-12">
+          {kit.map((g) => (
+            <div key={g.id} id={g.id} className="scroll-mt-20">
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <h3 className="text-xl font-semibold">{g.title}</h3>
+                <p className="text-sm text-muted">{g.lede}</p>
+              </div>
+              <ul className="mt-4 grid overflow-hidden rounded-lg border-l border-t border-line sm:grid-cols-2 lg:grid-cols-3">
+                {g.tools.map(({ tool: t, note }) => (
+                  <li key={t.slug} className="border-b border-r border-line bg-canvas">
+                    <Link to={`/tools/${t.slug}`} className="group flex h-full flex-col p-5 hover:bg-surface">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium group-hover:text-accent">{t.title}</span>
+                        {t.category === 'film' && <span className="rounded border border-accent/40 px-1.5 py-px font-mono text-[10px] uppercase tracking-wide text-accent">Made for film</span>}
+                      </span>
+                      <span className="mt-1.5 text-sm leading-relaxed text-muted">{note}</span>
+                      <span className="mt-auto pt-4 font-mono text-xs text-faint group-hover:text-accent">Open tool →</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
 
       {GROUPS.map((g) => (
