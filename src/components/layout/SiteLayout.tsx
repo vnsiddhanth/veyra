@@ -1,17 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BRAND } from '@/config/brand';
 import { TOOLS } from '@/tools/registry';
 import { cn } from '@/utils/id';
 
+/** Hexagon ring (six sides) on a 100-unit grid, pointy top. */
+const HEX = '50,7.5 86.81,28.75 86.81,71.25 50,92.5 13.19,71.25 13.19,28.75';
+
 export function Logo({ className }: { className?: string }) {
+  // Unique per instance (header and footer both render the logo); url(#…) needs a plain id.
+  const gid = `logo-g-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   return (
     <Link to="/" className={cn('flex items-center gap-2 text-fg', className)} aria-label={`${BRAND.name} home`}>
-      {/* A frame with sprocket notches and a play cut: the mark reads at 16 px. */}
-      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
-        <rect x="2" y="5" width="28" height="22" rx="4" className="fill-fg" />
-        <path d="M2 10h3M2 16h3M2 22h3M27 10h3M27 16h3M27 22h3" stroke="var(--c-canvas)" strokeWidth="2" />
-        <path d="M13 11.5v9l7.5-4.5z" fill="var(--c-accent)" />
+      {/* A hexagon holding a forward-pointing V (play and fast-forward). Brand assets live in brand/. */}
+      <svg width="24" height="24" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id={gid} x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" style={{ stopColor: 'var(--c-logo-1)' }} />
+            <stop offset="1" style={{ stopColor: 'var(--c-logo-2)' }} />
+          </linearGradient>
+        </defs>
+        <polygon points={HEX} fill="none" stroke={`url(#${gid})`} strokeWidth="9" strokeLinejoin="round" />
+        <path d="M39 30 L63 50 L39 70" fill="none" stroke="currentColor" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M27 40 L39 50 L27 60" fill="none" stroke={`url(#${gid})`} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <span className="text-[17px] font-semibold tracking-[-0.02em]">{BRAND.name}</span>
     </Link>
