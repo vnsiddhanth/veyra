@@ -51,6 +51,9 @@
   --c-ok: #136a41;
   --c-warn: #874a00;
   --c-danger: #b3302a;
+  /* Logo gradient (blue to soft pink). */
+  --c-logo-1: #3d6fe0;
+  --c-logo-2: #d9679b;
   color-scheme: light;
 }
 
@@ -71,6 +74,8 @@
     --c-ok: #5cc28c;
     --c-warn: #f0a73f;
     --c-danger: #f26b5e;
+    --c-logo-1: #6fa8ff;
+    --c-logo-2: #f2a7c8;
     color-scheme: dark;
   }
 }
@@ -93,6 +98,8 @@
   --c-ok: #5cc28c;
   --c-warn: #f0a73f;
   --c-danger: #f26b5e;
+  --c-logo-1: #6fa8ff;
+  --c-logo-2: #f2a7c8;
   color-scheme: dark;
 }
 
