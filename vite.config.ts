@@ -14,6 +14,30 @@ const isolationHeaders = {
   'Cross-Origin-Embedder-Policy': 'require-corp',
 };
 
+/**
+ * Vite answers cached module requests with a bare 304 that carries none of `server.headers`. Chrome and
+ * Firefox reuse the cached response's headers; WebKit checks COEP on the 304 itself and refuses to load
+ * the module into a worker ("Worker load was blocked by Cross-Origin-Embedder-Policy"), so every media
+ * worker died on its second load. Stamp the isolation headers on every dev response before Vite's own
+ * middlewares run.
+ */
+const isolationEverywhere: Plugin = {
+  name: 'veyra-isolation-headers',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((_req, res, next) => {
+      for (const [k, v] of Object.entries(isolationHeaders)) res.setHeader(k, v);
+      next();
+    });
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use((_req, res, next) => {
+      for (const [k, v] of Object.entries(isolationHeaders)) res.setHeader(k, v);
+      next();
+    });
+  },
+};
+
 // Production CSP, injected as a <meta> so it holds on any static host (headers in public/_headers
 // repeat it with frame-ancestors, which meta tags cannot set). Not applied in dev: Vite's HMR uses inline scripts.
 const CSP = [
@@ -92,7 +116,7 @@ function seoPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), cspPlugin, seoPlugin()],
+  plugins: [isolationEverywhere, react(), tailwindcss(), cspPlugin, seoPlugin()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

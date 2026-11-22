@@ -3,7 +3,9 @@
  * in OPFS under /proxies, keyed by the source fingerprint, so they survive reloads and are shared by
  * every project using the same file. Export always reads the original media.
  */
-type Dir = FileSystemDirectoryHandle & { entries(): AsyncIterable<[string, FileSystemHandle]> };
+import type { WriterIn, WriterOut } from './opfs-writer.worker';
+
+type Dir =FileSystemDirectoryHandle & { entries(): AsyncIterable<[string, FileSystemHandle]> };
 
 async function dir(): Promise<Dir | null> {
   try {
@@ -14,7 +16,25 @@ async function dir(): Promise<Dir | null> {
   }
 }
 
-const nameFor = (fingerprint: string) => `${fingerprint.replace(/[^a-z0-9_-]/gi, '_').slice(0, 120)}.mp4`;
+/** No `createWritable()` on the page (Safari before 26): write with a sync access handle in a worker. */
+function writeInWorker(folder: string, name: string, blob: Blob): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const w = new Worker(new URL('./opfs-writer.worker.ts', import.meta.url), { type: 'module', name: 'opfs-writer' });
+    w.onmessage = (e: MessageEvent<WriterOut>) => {
+      w.terminate();
+      if (e.data.ok) resolve();
+      else reject(new DOMException(e.data.message, e.data.name));
+    };
+    w.onerror = (e) => {
+      e.preventDefault();
+      w.terminate();
+      reject(new Error(e.message || 'The storage worker stopped unexpectedly.'));
+    };
+    w.postMessage({ folder, name, blob } satisfies WriterIn);
+  });
+}
+
+const nameFor =(fingerprint: string) => `${fingerprint.replace(/[^a-z0-9_-]/gi, '_').slice(0, 120)}.mp4`;
 
 export async function getProxy(fingerprint: string): Promise<File | null> {
   const d = await dir();
@@ -36,8 +56,11 @@ export async function saveProxy(fingerprint: string, file: Blob): Promise<File |
   if (!d) return null;
   try {
     const h = await d.getFileHandle(nameFor(fingerprint), { create: true });
-    const w = await (h as unknown as { createWritable(): Promise<FileSystemWritableFileStream> }).createWritable();
-    await file.stream().pipeTo(w as unknown as WritableStream<Uint8Array>);
+    const writable = (h as unknown as { createWritable?: () => Promise<FileSystemWritableFileStream> }).createWritable;
+    if (typeof writable === 'function') {
+      const w = await writable.call(h);
+      await file.stream().pipeTo(w as unknown as WritableStream<Uint8Array>);
+    } else await writeInWorker('proxies', nameFor(fingerprint), file);
     return await h.getFile();
   } catch (e) {
     await d.removeEntry(nameFor(fingerprint)).catch(() => undefined);
