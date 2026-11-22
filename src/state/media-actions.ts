@@ -12,6 +12,7 @@ import { createId } from '@/utils/id';
 import { fpsToRational } from '@/utils/time';
 import { useLibraryStore } from './library-store';
 import { selectProject, useProjectStore } from './project-store';
+import { useEditorUi } from '@/editor/editor-ui-store';
 
 export interface ImportEntry {
   file: File;
@@ -296,9 +297,19 @@ export async function createProxy(asset: Asset): Promise<void> {
   job.onProgress((p) => lib().setProxyProgress(asset.id, p));
   try {
     const result = await job.result;
-    const stored = await saveProxy(asset.fingerprint, result.file);
-    await mediaEngine.releaseOutput(result);
-    if (stored) lib().setProxy(asset.id, stored);
+    const stored = await saveProxy(asset.fingerprint, result.file).catch((e: unknown) => {
+      console.warn('[veyra] could not store the proxy:', e);
+      return null;
+    });
+    if (stored) {
+      await mediaEngine.releaseOutput(result);
+      lib().setProxy(asset.id, stored);
+    } else {
+      // No usable on-device storage (full, or blocked as in Safari Private Browsing): keep the proxy
+      // for this session rather than throwing the work away. Its scratch file (if any) stays until dismissed.
+      lib().setProxy(asset.id, result.file);
+      useEditorUi.getState().notify('The proxy is kept for this session only: this browser would not let Veyra store it on the device.');
+    }
   } finally {
     lib().setProxyProgress(asset.id, null);
   }

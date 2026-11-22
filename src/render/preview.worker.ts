@@ -236,7 +236,7 @@ self.onmessage = (event: MessageEvent<PreviewIn>) => {
     case 'probe': {
       // Always answer, so a caller never waits forever; report why if the read fails.
       try {
-        if (!canvas) throw new Error('canvas not initialised');
+        if (!canvas) throw new Error(noCanvas ?? 'canvas not initialised');
         const ctx = (compositor?.ctx ?? canvas.getContext('2d')) as OffscreenCanvasRenderingContext2D | null;
         if (!ctx) throw new Error('2D context unavailable');
         const x = Math.min(canvas.width - 4, Math.max(0, Math.round(m.x * canvas.width)));

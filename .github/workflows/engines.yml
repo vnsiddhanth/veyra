@@ -50,7 +50,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.project }}
       - name: e2e (${{ matrix.project }})
-        run: npx playwright test ${{ matrix.project == 'webkit' && 'e2e/diag-webkit.spec.ts' || '' }} --project=${{ matrix.project }} --reporter=list,json
+        run: npx playwright test --project=${{ matrix.project }} --reporter=list,json
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: results-${{ matrix.project }}.json
       - uses: actions/upload-artifact@v4

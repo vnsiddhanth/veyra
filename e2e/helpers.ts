@@ -71,3 +71,19 @@ export function expectClose(a: number[], b: number[], tol = 3): void {
 
 /** Distance between two colours; used to show neighbouring frames are distinguishable. */
 export const colorDistance = (a: number[], b: number[]): number => Math.max(...a.map((v, i) => Math.abs(v - b[i]!)));
+
+/**
+ * Can this page use the Origin Private File System? Playwright's WebKit on macOS fails every OPFS call
+ * with "UnknownError" (as Safari Private Browsing does), so outputs live in memory and nothing persists.
+ */
+export async function opfsUsable(page: Page): Promise<boolean> {
+  return page.evaluate(async () => {
+    try {
+      const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('outputs', { create: true });
+      for await (const _ of (d as unknown as { keys(): AsyncIterable<string> }).keys()) break;
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}

@@ -1,7 +1,7 @@
 /** Phase 8: stabilisation accuracy, proxies, storage management and the device benchmark. */
 import { expect, test } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { chooseFile, engineReady, fixture, inspectInNode } from './helpers';
+import { chooseFile, engineReady, fixture, inspectInNode, opfsUsable } from './helpers';
 
 test.describe.configure({ timeout: 180_000 });
 
@@ -92,6 +92,12 @@ test('preview proxy is created, persisted and listed in storage', async ({ page 
   await card.getByRole('button', { name: 'counter-1080p60-3s', exact: true }).click();
   await card.getByRole('button', { name: /Create preview proxy/ }).click();
   await expect(card.getByTitle('Preview proxy', { exact: true })).toHaveText('proxy', { timeout: 60_000 });
+  // Without OPFS (Playwright WebKit on macOS, Safari Private Browsing) the proxy is kept for the session only.
+  if (!(await opfsUsable(page))) {
+    await expect(page.getByText(/kept for this session only/)).toBeVisible();
+    test.info().annotations.push({ type: 'note', description: 'OPFS unavailable: proxy kept in memory, persistence not checked' });
+    return;
+  }
   await page.goto('/privacy');
   const storage = page.getByLabel('Storage on this device');
   await expect(storage).toContainText(/Preview proxies\s*1 file/);

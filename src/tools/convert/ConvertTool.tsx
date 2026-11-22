@@ -533,9 +533,16 @@ export function ConvertTool({ tool }: { tool: ToolDef }) {
                 The smallest result is {formatBytes(r.file.size)}, still over {targetMb} MB. Trim the video or choose a larger target.
               </p>
             )}
+            {mode === 'compress' && r.file.size >= source.file.size && (
+              <p className="rounded-md border border-warn/40 bg-warn/10 p-2 text-sm text-warn">
+                This browser’s video encoder could not make this file smaller at {r.info.width}×{r.info.height}: the original is already compact.
+                Keep the original, or choose a lower maximum resolution.
+              </p>
+            )}
             {mode.startsWith('compress') && (
               <p className="text-sm text-muted">
-                {formatBytes(source.file.size)} → {formatBytes(r.file.size)} ({Math.round((1 - r.file.size / source.file.size) * 100)}% smaller)
+                {formatBytes(source.file.size)} → {formatBytes(r.file.size)} (
+                {r.file.size < source.file.size ? `${Math.round((1 - r.file.size / source.file.size) * 100)}% smaller` : `${Math.round((r.file.size / source.file.size - 1) * 100)}% larger`})
               </p>
             )}
             <ConvertResultCard result={r} onReset={job.reset} resetLabel="Change settings" />

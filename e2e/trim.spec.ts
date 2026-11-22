@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { colorDistance, chooseFile, engineReady, expectClose, fixture, framePixel, inspectInNode } from './helpers';
+import { colorDistance, chooseFile, engineReady, expectClose, fixture, framePixel, inspectInNode, opfsUsable } from './helpers';
 
 const SRC = fixture('counter-720p30-5s.mp4'); // 30 fps, 150 frames, key frame every 2 s, AAC stereo
 
@@ -56,27 +56,23 @@ for (const precision of ['Frame-accurate', 'Fast'] as const) {
 test('trim can be cancelled and leaves no output behind', async ({ page }) => {
   await page.goto('/tools/trim-video');
   await engineReady(page);
+  // Without OPFS (Playwright WebKit on macOS, Safari Private Browsing) outputs live in memory: there is
+  // no partial file to leave behind, so only the cancel itself is checked.
+  const opfs = await opfsUsable(page);
+  if (!opfs) test.info().annotations.push({ type: 'note', description: 'OPFS unavailable: output left-behind check skipped' });
   const bytes = readFileSync(fixture('counter-1080p60-3s.mp4')).toString('base64');
-  const outcome = await page.evaluate(async (b64) => {
+  const outcome = await page.evaluate(async ({ b64, opfs }) => {
     const bin = atob(b64);
     const arr = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     const file = new File([arr], 'big.mp4', { type: 'video/mp4' });
     const { mediaEngine } = (window as any).__veyra;
-    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('outputs', { create: true });
-    // WebKit's OPFS sometimes fails a directory listing with a transient UnknownError while a worker
-    // is closing a file in it; list again rather than report that as the job's outcome.
     const count = async () => {
-      for (let attempt = 0; ; attempt++) {
-        try {
-          let n = 0;
-          for await (const _ of (dir as any).keys()) n++;
-          return n;
-        } catch (e) {
-          if (attempt >= 4 || (e as DOMException).name !== 'UnknownError') throw e;
-          await new Promise((r) => setTimeout(r, 300));
-        }
-      }
+      if (!opfs) return 0;
+      const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('outputs', { create: true });
+      let n = 0;
+      for await (const _ of (dir as any).keys()) n++;
+      return n;
     };
     const before = await count();
     const job = mediaEngine.convert(file, { container: 'webm', copy: 'never', video: { codec: 'vp9' }, fileName: 'cancel-me' });
@@ -94,7 +90,7 @@ test('trim can be cancelled and leaves no output behind', async ({ page }) => {
     // Give the worker a moment to delete its partial file.
     await new Promise((r) => setTimeout(r, 1500));
     return { code, maxP, before, after: await count() };
-  }, bytes);
+  }, { b64: bytes, opfs });
   expect(outcome.code).toBe('cancelled');
   expect(outcome.maxP).toBeGreaterThan(0.1);
   expect(outcome.after).toBe(outcome.before);
