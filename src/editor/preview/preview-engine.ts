@@ -47,10 +47,22 @@ export class PreviewEngine {
   onCrash: (message: string) => void = () => undefined;
   onScopes: (data: ScopeData) => void = () => undefined;
 
+  /** Set when the canvas could not be transferred: the worker sends frames back and we paint them here. */
+  private readonly paint: HTMLCanvasElement | null = null;
+
   constructor(canvas: HTMLCanvasElement) {
     this.worker = new Worker(new URL('../../render/preview.worker.ts', import.meta.url), { type: 'module', name: 'preview' });
-    const off = canvas.transferControlToOffscreen();
-    this.post({ kind: 'init', canvas: off }, [off]);
+    let off: OffscreenCanvas | null = null;
+    try {
+      off = typeof canvas.transferControlToOffscreen === 'function' ? canvas.transferControlToOffscreen() : null;
+    } catch (e) {
+      console.warn('[veyra] cannot transfer the monitor canvas; painting frames on the page instead:', e);
+    }
+    if (off) this.post({ kind: 'init', canvas: off }, [off]);
+    else {
+      this.paint = canvas;
+      this.post({ kind: 'init', canvas: null });
+    }
     this.worker.onmessage = (e: MessageEvent<PreviewOut>) => this.onMessage(e.data);
     // A crashed worker (e.g. GPU/decoder failure, out of memory) cannot be revived with the same
     // transferred canvas; the monitor rebuilds itself with a fresh canvas and worker.
@@ -110,6 +122,7 @@ export class PreviewEngine {
     switch (m.kind) {
       case 'rendered': {
         this.busy = false;
+        if (m.bitmap) this.present(m.bitmap);
         this.lastShownSeq = m.seq;
         this.renderTimes.push(m.ms);
         if (this.renderTimes.length > 30) this.renderTimes.shift();
@@ -143,6 +156,18 @@ export class PreviewEngine {
         this.onWarnings([m.message]);
         break;
     }
+  }
+
+  private present(bitmap: ImageBitmap) {
+    const c = this.paint;
+    if (c) {
+      if (c.width !== bitmap.width || c.height !== bitmap.height) {
+        c.width = bitmap.width;
+        c.height = bitmap.height;
+      }
+      c.getContext('2d')?.drawImage(bitmap, 0, 0);
+    }
+    bitmap.close();
   }
 
   /** Wall-clock anchor, used when the audio clock is not running (no output device, blocked audio). */

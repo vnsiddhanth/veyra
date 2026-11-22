@@ -13,7 +13,12 @@ import { computeScopes, type ScopeData } from './scopes';
 import { framesToFlicks } from '@/utils/time';
 
 export type PreviewIn =
-  | { kind: 'init'; canvas: OffscreenCanvas }
+  /**
+   * `canvas` is the page's canvas, transferred. When the engine cannot transfer it (no
+   * `transferControlToOffscreen`), it is null: the worker draws into its own OffscreenCanvas and sends
+   * each frame back as an ImageBitmap for the page to paint.
+   */
+  | { kind: 'init'; canvas: OffscreenCanvas | null }
   | { kind: 'project'; project: Project }
   | { kind: 'files'; files: Record<string, Blob> }
   | { kind: 'quality'; scale: number }
@@ -26,7 +31,7 @@ export type PreviewIn =
   | { kind: 'scopes'; on: boolean };
 
 export type PreviewOut =
-  | { kind: 'rendered'; frame: number; seq: number; ms: number }
+  | { kind: 'rendered'; frame: number; seq: number; ms: number; bitmap?: ImageBitmap }
   | { kind: 'audio'; gen: number; t0: number; left: Float32Array; right: Float32Array; sampleRate: number }
   | { kind: 'warnings'; warnings: string[] }
   | { kind: 'error'; message: string }
@@ -39,6 +44,10 @@ declare const self: {
 };
 
 let canvas: OffscreenCanvas | null = null;
+/** True when the page could not hand over its canvas: frames go back as ImageBitmaps. */
+let present = false;
+/** Set when this engine has no way to draw off the main thread; every frame request answers with it. */
+let noCanvas: string | null = null;
 let compositor: Compositor | null = null;
 let project: Project | null = null;
 let files = new Map<string, Blob>();
@@ -83,7 +92,15 @@ function reportWarnings() {
 }
 
 async function renderFrame(frame: number, seq: number) {
-  if (!canvas || !project) return;
+  if (noCanvas) {
+    self.postMessage({ kind: 'error', message: noCanvas });
+    return;
+  }
+  if (!canvas || !project) {
+    // Always answer, so the page does not wait on this frame forever.
+    self.postMessage({ kind: 'rendered', frame, seq, ms: 0 });
+    return;
+  }
   const t0 = performance.now();
   resize();
   compositor ??= new Compositor(canvas);
@@ -104,7 +121,11 @@ async function renderFrame(frame: number, seq: number) {
     }),
   );
   compositor.render(p, layers, images, frame);
-  self.postMessage({ kind: 'rendered', frame, seq, ms: performance.now() - t0 });
+  if (present) {
+    // A copy, not transferToImageBitmap(): probes and scopes read the canvas after this.
+    const bitmap = await createImageBitmap(canvas);
+    self.postMessage({ kind: 'rendered', frame, seq, ms: performance.now() - t0, bitmap }, [bitmap]);
+  } else self.postMessage({ kind: 'rendered', frame, seq, ms: performance.now() - t0 });
   reportWarnings();
   sendScopes(false);
 }
@@ -154,7 +175,13 @@ self.onmessage = (event: MessageEvent<PreviewIn>) => {
   const m = event.data;
   switch (m.kind) {
     case 'init':
-      canvas = m.canvas;
+      present = !m.canvas;
+      canvas = m.canvas ?? (typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(2, 2) : null);
+      if (!canvas) {
+        noCanvas = 'This browser cannot draw the preview: it has no OffscreenCanvas in workers. Export still works where the browser supports it.';
+        self.postMessage({ kind: 'warnings', warnings: [noCanvas] });
+        break;
+      }
       compositor = new Compositor(canvas);
       break;
     case 'project':
