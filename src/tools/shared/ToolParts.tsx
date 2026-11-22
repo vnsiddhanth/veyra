@@ -208,17 +208,35 @@ export function FileResultCard({ result, onReset, resetLabel = 'Start over' }: {
 export function SourceHeader({ file, info, onChange, disabled }: { file: File; info: MediaInfo; onChange(): void; disabled?: boolean }) {
   const v = info.video[0];
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="min-w-0 truncate font-medium">{file.name}</span>
-      <span className="shrink-0 text-xs text-muted">
-        {v ? `${info.width}×${info.height} · ` : ''}
-        {formatDuration(info.duration, 2)}
-        {v?.frameRate ? ` · ${Number(v.frameRate.bestGuess.toFixed(3))} fps` : ''} · {formatBytes(file.size)}
-      </span>
-      <Button size="sm" variant="ghost" className="ml-auto" onClick={onChange} disabled={disabled}>
-        Change file
-      </Button>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-sm">
+        <span className="min-w-0 truncate font-medium">{file.name}</span>
+        <span className="shrink-0 text-xs text-muted">
+          {v ? `${info.width}×${info.height} · ` : ''}
+          {formatDuration(info.duration, 2)}
+          {v?.frameRate ? ` · ${Number(v.frameRate.bestGuess.toFixed(3))} fps` : ''} · {formatBytes(file.size)}
+        </span>
+        <Button size="sm" variant="ghost" className="ml-auto" onClick={onChange} disabled={disabled}>
+          Change file
+        </Button>
+      </div>
+      <FileNotes info={info} />
     </div>
+  );
+}
+
+/** Problems with the file itself (cut off, a track this browser can't decode). Variable frame rate is handled silently. */
+export function FileNotes({ info }: { info: MediaInfo }) {
+  const notes = info.warnings.filter((w) => !w.startsWith('Variable frame rate'));
+  if (!notes.length) return null;
+  return (
+    <>
+      {notes.map((w) => (
+        <p key={w} role="note" className="rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-sm text-fg">
+          {w}
+        </p>
+      ))}
+    </>
   );
 }
 

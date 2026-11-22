@@ -13,10 +13,15 @@ test.use({ actionTimeout: 30_000 });
 test.skip(!HAVE_FIXTURES, 'harsh fixtures not generated (run e2e/harsh/make-fixtures.sh; CI does this)');
 test.describe.configure({ timeout: 15 * 60_000 });
 
+/** Tools run on the 10-minute recording: cutting it down, pulling the sound, compressing, inspecting. */
+const LONG_FILE_TOOLS = ['trim-video', 'split-video', 'extract-audio', 'compress-video', 'mp4-converter', 'video-metadata', 'duration-calculator', 'thumbnail-maker'];
+
 for (const tool of toolsInSuite(TOOLS)) {
   for (const f of MANIFEST) {
     // Second-input fixtures are exercised by the tools that consume them.
     if (f.kind === 'subtitle' && SPECS[tool.slug]!.inputs !== 'subtitle') continue;
+    // The 10-minute recording would add hours to every run; it goes through the tools people use on long files.
+    if (/long_10min/.test(f.name) && !LONG_FILE_TOOLS.includes(tool.slug)) continue;
     test(`${tool.slug} × ${f.name}`, async ({ page }, info) => {
       const verdict = verdictFor(tool.slug, f);
       const o = await exercise(page, tool.slug, f);

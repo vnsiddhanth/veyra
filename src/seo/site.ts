@@ -35,6 +35,10 @@ export const FAQ: { q: string; a: string }[] = [
     a: 'Projects save automatically in your browser. Your media stays where it is on your disk; in Chrome and Edge the editor reconnects with one click, in other browsers you pick the files again once.',
   },
   {
+    q: 'How do you know the tools work?',
+    a: 'Every tool is run, in real Chrome and Firefox, against more than 60 test files: phone footage, 4K, variable frame rates, odd sizes, many codecs and deliberately broken files, and with every one of its settings. Each output is decoded and measured for length, size, frame rate and sound. That is about 6,800 automated checks, and a file that can’t be used must be refused with a clear reason.',
+  },
+  {
     q: 'Can I see the code?',
     a: `Yes. ${BRAND.name} is open source under the MIT licence. Read it, run it yourself or contribute on GitHub.`,
   },

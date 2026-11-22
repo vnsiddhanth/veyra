@@ -34,8 +34,18 @@ export interface Fx {
   channels?: number | null;
 }
 
-export const MANIFEST: Fx[] = HAVE_FIXTURES ? JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')) : [];
-export const fx = (name: string) => MANIFEST.find((f) => f.name === name)!;
+const ALL_FIXTURES: Fx[] = HAVE_FIXTURES ? JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')) : [];
+
+/**
+ * Quick mode (HARSH_QUICK=1): a representative slice of the fixtures — one of each container and codec
+ * family, the phone files, odd timing, no audio, an image, a subtitle and two broken files — and a capped
+ * settings sweep. About a tenth of the full run.
+ */
+export const QUICK = !!process.env.HARSH_QUICK;
+const QUICK_SET =
+  /^(v_h264_1080p30\.mp4|v_h264_aac\.mov|v_vp9_opus\.webm|v_h264_vfr\.mp4|v_h264_rotated90\.mp4|v_iphone_hdr_hevc\.mov|v_android_vfr60\.mp4|v_h264_noaudio\.mp4|v_h264_aac\.mts|a_aac\.m4a|a_pcm16\.wav|i_1080p\.png|s_good\.srt|x_truncated\.mp4|x_random\.mp4)$/;
+export const MANIFEST: Fx[] = QUICK ? ALL_FIXTURES.filter((f) => QUICK_SET.test(f.name)) : ALL_FIXTURES;
+export const fx = (name: string) => ALL_FIXTURES.find((f) => f.name === name)!;
 export const fxPath = (f: Fx | string) => join(HARSH_DIR, typeof f === 'string' ? f : f.name);
 
 /** Edge inputs where refusing politely is as acceptable as working. */

@@ -51,6 +51,21 @@ try v_h264_aac.mts $F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:duration=
 try v_h264_bdav.m2ts $F -f lavfi -i "$SRC:duration=3" -an -c:v libx264 -preset veryfast -pix_fmt yuv420p -f mpegts -mpegts_m2ts_mode 1 v_h264_bdav.m2ts
 try v_mjpeg.avi $F -f lavfi -i "testsrc2=size=640x360:rate=30:duration=2" -c:v mjpeg -q:v 5 v_mjpeg.avi
 
+echo "Phone and camera footage"
+# iPhone default: HEVC Main 10 with HLG (BT.2020) tags in a QuickTime .mov, shot portrait (pixels landscape + 90° rotation).
+$F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:duration=3" -c:v libx265 -preset ultrafast -tag:v hvc1 -pix_fmt yuv420p10le -x265-params "colorprim=bt2020:transfer=arib-std-b67:colormatrix=bt2020nc" -color_primaries bt2020 -color_trc arib-std-b67 -colorspace bt2020nc -c:a aac -ac 2 -shortest -f mov /tmp/iphone_hdr.mov
+try v_iphone_hdr_hevc.mov $F -display_rotation:v:0 -90 -i /tmp/iphone_hdr.mov -c copy v_iphone_hdr_hevc.mov
+# iPhone "Most Compatible": H.264 .mov, slightly variable frame rate around 29.97, portrait rotation.
+$F -f lavfi -i "$SRC:duration=3" -f lavfi -i "$TONE:duration=3" -vf "setpts='(N/29.97+0.004*sin(N))/TB'" -fps_mode vfr -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -shortest -f mov /tmp/iphone_h264.mov
+try v_iphone_h264_vfr.mov $F -display_rotation:v:0 -90 -i /tmp/iphone_h264.mov -c copy v_iphone_h264_vfr.mov
+# Android: 60 fps nominal with jittery frame intervals and dropped frames, mono 48 kHz, 270° rotation.
+$F -f lavfi -i "testsrc2=size=1280x720:rate=60:duration=3" -f lavfi -i "sine=frequency=500:sample_rate=48000:duration=3" -vf "select='not(eq(mod(n,7),3))',setpts='(N/55+0.003*mod(N,3))/TB'" -fps_mode vfr -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -ac 1 -shortest /tmp/android.mp4
+try v_android_vfr60.mp4 $F -display_rotation:v:0 90 -i /tmp/android.mp4 -c copy -movflags +faststart v_android_vfr60.mp4
+# Phone screen recording: tall odd aspect (886x1920), 60 fps with long frozen stretches, no audio.
+try v_screen_recording_vfr.mp4 $F -f lavfi -i "testsrc2=size=886x1920:rate=60:duration=4" -vf "setpts='if(lt(N,60),N/60,1+(N-60)/60+if(gt(N,120),1.5,0))/TB'" -fps_mode vfr -c:v libx264 -preset veryfast -pix_fmt yuv420p -movflags +faststart v_screen_recording_vfr.mp4
+# A long recording (10 minutes): tested on a handful of tools only, see fixtures.spec.ts.
+try v_h264_long_10min.mp4 $F -f lavfi -i "testsrc2=size=320x180:rate=25:duration=600" -f lavfi -i "$TONE:duration=600" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -b:a 48k -movflags +faststart -shortest v_h264_long_10min.mp4
+
 echo "Audio"
 try a_mp3_44k.mp3 $F -f lavfi -i "sine=frequency=440:sample_rate=44100:duration=4" -ac 2 -c:a libmp3lame -b:a 128k a_mp3_44k.mp3
 try a_aac.m4a $F -f lavfi -i "$TONE:duration=4" -ac 2 -c:a aac -b:a 128k a_aac.m4a

@@ -4,6 +4,15 @@ name: Harsh test
 
 on:
   workflow_dispatch:
+    inputs:
+      quick:
+        description: 'Quick run: 15 representative files and 4 settings per tool (about a tenth of the full run)'
+        type: boolean
+        default: false
+      tools:
+        description: 'Only these tools (comma-separated slugs, e.g. trim-video,crop-video); empty = all'
+        type: string
+        default: ''
 
 jobs:
   fixtures:
@@ -49,9 +58,17 @@ jobs:
           npx vite preview --port 4173 --strictPort > preview.log 2>&1 &
           for i in $(seq 1 60); do curl -sf http://localhost:4173/ > /dev/null && break; sleep 1; done
       - name: Harsh suite (${{ matrix.project }}, shard ${{ matrix.shard }}/8)
-        run: npx playwright test e2e/harsh --project=${{ matrix.project }} --shard=${{ matrix.shard }}/8 --workers=2 --reporter=list
+        run: |
+          GREP=()
+          if [ -n "$TOOLS" ]; then
+            # Test titles: "<tool> × <file>", "options · <tool>", "<tool> second input × <file>".
+            GREP=(-g "(^| )($(echo "$TOOLS" | tr -d ' ' | tr ',' '|'))( ×| second|$)")
+          fi
+          npx playwright test e2e/harsh --project=${{ matrix.project }} --shard=${{ matrix.shard }}/8 --workers=2 --reporter=list --pass-with-no-tests "${GREP[@]}"
         env:
           PW_BASE_URL: http://localhost:4173
+          HARSH_QUICK: ${{ inputs.quick && '1' || '' }}
+          TOOLS: ${{ inputs.tools }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

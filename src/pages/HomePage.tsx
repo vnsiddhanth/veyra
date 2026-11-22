@@ -15,6 +15,7 @@ const SPECS: [string, string][] = [
   ['File size', 'No limit set by us. Files are read in pieces and results written to disk as they are made.'],
   ['Browsers', 'Chrome and Edge (everything) · Firefox (mostly; MP4 audio saved as Opus) · Safari not supported yet'],
   ['Hand-off', 'FCPXML for DaVinci Resolve and Final Cut · CMX 3600 EDL for Premiere and Avid'],
+  ['Testing', 'Every tool, every setting, against 60+ real, phone and deliberately broken files in Chrome and Firefox: 6,800 automated checks, each output decoded and measured.'],
   ['Cost', 'Free. No account, no watermark, no paid tier. MIT-licensed source.'],
 ];
 

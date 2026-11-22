@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/primitives';
 import { mediaEngine, MediaError, type FrameResult } from '@/media-engine';
 import { formatBytes } from '@/utils/format';
 import { FramePlayer, formatFrameTime, type FramePlayerHandle } from '../shared/FramePlayer';
-import { ErrorBox, JobProgress, SourceDrop } from '../shared/ToolParts';
+import { ErrorBox, FileNotes, JobProgress, SourceDrop } from '../shared/ToolParts';
 import { useMediaJob } from '../shared/useMediaJob';
 import { useSource } from '../shared/useSource';
 
@@ -75,6 +75,7 @@ export function ThumbnailTool() {
           Change file
         </Button>
       </div>
+      <FileNotes info={source.info} />
       <FramePlayer ref={player} src={source.url} duration={source.info.duration} fps={fps} onTime={setNow} />
       <div className="flex flex-wrap items-end gap-3 rounded-lg border border-line bg-surface p-4 text-sm">
         <label>

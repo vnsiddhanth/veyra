@@ -5,7 +5,7 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 import { TOOLS } from '../../src/tools/registry';
-import { HAVE_FIXTURES, SPECS, checkOutputs, exercise, fx, judge, loadFixture, record, toolsInSuite, type Fx, type ToolSpec } from './lib';
+import { HAVE_FIXTURES, QUICK, SPECS, checkOutputs, exercise, fx, judge, loadFixture, record, toolsInSuite, type Fx, type ToolSpec } from './lib';
 
 test.describe.configure({ mode: 'parallel' });
 // No single click, fill or read may wait forever: a stuck step must fail that case, not the whole batch.
@@ -142,7 +142,9 @@ for (const tool of toolsInSuite(TOOLS)) {
           });
     }
     expect(variants.length, 'controls discovered').toBeGreaterThan(0);
-    for (const v of variants) {
+    // Quick mode: four variants spread across the tool's controls.
+    const run = QUICK && variants.length > 4 ? [0, 1, 2, 3].map((i) => variants[Math.round((i * (variants.length - 1)) / 3)]!) : variants;
+    for (const v of run) {
       const o = await exercise(page, tool.slug, base, v.apply);
       const extra = expectationFor(tool.slug, v.label, v.value, base);
       const problems = o.outcome === 'ok' ? await checkOutputs(tool.slug, base, o, extra) : [];

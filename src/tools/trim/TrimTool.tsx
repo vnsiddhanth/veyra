@@ -4,7 +4,7 @@ import { mediaEngine, type ConvertResult, type CopyPolicy, type OutputContainer 
 import { formatDuration } from '@/utils/format';
 import { cn } from '@/utils/id';
 import { FramePlayer, formatFrameTime, frameStart, type FramePlayerHandle } from '../shared/FramePlayer';
-import { ConvertResultCard, ErrorBox, JobProgress, SourceDrop } from '../shared/ToolParts';
+import { ConvertResultCard, ErrorBox, FileNotes, JobProgress, SourceDrop } from '../shared/ToolParts';
 import { useMediaJob } from '../shared/useMediaJob';
 import { useSource } from '../shared/useSource';
 
@@ -115,6 +115,7 @@ export function TrimTool() {
           Change file
         </Button>
       </div>
+      <FileNotes info={source.info} />
 
       <FramePlayer ref={player} src={source.url} duration={duration} fps={fps} onTime={setNow}>
         <Button size="sm" onClick={() => setStart(now)} title="Set start to the current frame (I)">
