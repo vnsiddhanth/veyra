@@ -27,15 +27,20 @@ jobs:
       - run: npm run build
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    # Playwright's WebKit is the Linux GTK port (not Safari) and its media stack crashes our decoders on CI;
-    # it runs for information but does not fail the workflow. Firefox must pass.
+    # WebKit runs on macOS, where it uses Apple's media frameworks like Safari does (the Linux GTK port has
+    # no WebCodecs, so nearly every media test fails there). It is still not Safari itself, so it runs for
+    # information and does not fail the workflow. Firefox must pass.
     continue-on-error: ${{ matrix.project == 'webkit' }}
     strategy:
       fail-fast: false
       matrix:
-        project: [firefox, webkit]
+        include:
+          - project: firefox
+            os: ubuntu-latest
+          - project: webkit
+            os: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
