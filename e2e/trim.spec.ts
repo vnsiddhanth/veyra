@@ -64,10 +64,19 @@ test('trim can be cancelled and leaves no output behind', async ({ page }) => {
     const file = new File([arr], 'big.mp4', { type: 'video/mp4' });
     const { mediaEngine } = (window as any).__veyra;
     const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('outputs', { create: true });
+    // WebKit's OPFS sometimes fails a directory listing with a transient UnknownError while a worker
+    // is closing a file in it; list again rather than report that as the job's outcome.
     const count = async () => {
-      let n = 0;
-      for await (const _ of (dir as any).keys()) n++;
-      return n;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          let n = 0;
+          for await (const _ of (dir as any).keys()) n++;
+          return n;
+        } catch (e) {
+          if (attempt >= 4 || (e as DOMException).name !== 'UnknownError') throw e;
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      }
     };
     const before = await count();
     const job = mediaEngine.convert(file, { container: 'webm', copy: 'never', video: { codec: 'vp9' }, fileName: 'cancel-me' });

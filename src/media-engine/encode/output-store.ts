@@ -35,12 +35,52 @@ export async function createScratchFile(name: string): Promise<ScratchFile | nul
   if (!dir) return null;
   try {
     const handle = await dir.getFileHandle(name, { create: true });
-    if (typeof (handle as { createWritable?: unknown }).createWritable !== 'function') return null;
-    const writable = await handle.createWritable();
-    return { name, handle, writable };
+    if (typeof (handle as { createWritable?: unknown }).createWritable === 'function') {
+      const writable = await handle.createWritable();
+      return { name, handle, writable };
+    }
+    // Safari before 26 has no createWritable(), but workers have sync access handles (Safari 15.2+).
+    const sync = await syncWritable(handle);
+    if (sync) return { name, handle, writable: sync };
+    await dir.removeEntry(name).catch(() => undefined);
+    return null;
   } catch {
     return null;
   }
+}
+
+type SyncHandle = { write(b: BufferSource, o: { at: number }): number; truncate(n: number): void; flush(): void; close(): void };
+type WriteChunk = { type: 'write'; data: BufferSource; position?: number } | BufferSource;
+
+/**
+ * A WritableStream over a synchronous access handle, accepting the same chunks Mediabunny's
+ * StreamTarget writes to a FileSystemWritableFileStream ({type: 'write', data, position}).
+ */
+async function syncWritable(handle: FileSystemFileHandle): Promise<FileSystemWritableFileStream | null> {
+  const create = (handle as unknown as { createSyncAccessHandle?: () => Promise<SyncHandle> }).createSyncAccessHandle;
+  if (typeof create !== 'function') return null;
+  const h = await create.call(handle);
+  h.truncate(0);
+  let pos = 0;
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    h.flush();
+    h.close();
+  };
+  const stream = new WritableStream<WriteChunk>({
+    write(chunk) {
+      if (chunk && typeof chunk === 'object' && 'type' in chunk) {
+        if (chunk.type !== 'write') throw new TypeError(`Unsupported write: ${String(chunk.type)}`);
+        if (chunk.position != null) pos = chunk.position;
+        pos += h.write(chunk.data, { at: pos });
+      } else pos += h.write(chunk, { at: pos });
+    },
+    close,
+    abort: close,
+  });
+  return stream as unknown as FileSystemWritableFileStream;
 }
 
 export async function deleteScratchFile(name: string): Promise<void> {

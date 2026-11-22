@@ -163,11 +163,16 @@ export function ConvertTool({ tool }: { tool: ToolDef }) {
     const o: ConvertOptions = { container, fileName: name, video: {}, audio: {} };
     const vcodec = videoCodec !== 'auto' && videoCodecs.includes(videoCodec) ? videoCodec : undefined;
     switch (mode) {
-      case 'compress':
-        o.video = { bitrate: quality, codec: vcodec, ...(targetSize ?? {}) };
+      case 'compress': {
+        // A retry (scale < 1) uses an explicit bitrate below the source's: some encoders (Safari's
+        // H.264) overshoot the quality presets on simple footage and would return a bigger file.
+        const srcVideoBps = info.duration > 0 ? (source.file.size * 8) / info.duration - (info.audio.length ? 128_000 : 0) : 0;
+        const vb = scale < 1 && srcVideoBps > 0 ? Math.max(80_000, Math.floor(srcVideoBps * scale)) : quality;
+        o.video = { bitrate: vb, codec: vcodec, ...(targetSize ?? {}) };
         o.audio = { bitrate: quality === 'very-low' ? 64_000 : 128_000 };
         o.copy = 'never';
         break;
+      }
       case 'compress-size': {
         const vb = Math.max(80_000, Math.floor((sizeBitrate ?? 500_000) * scale));
         const p = resolutionForBitrate(info, vb);
@@ -250,6 +255,14 @@ export function ConvertTool({ tool }: { tool: ToolDef }) {
   // Compress-to-size: encoders do not hit a bitrate exactly. If the result is over the limit,
   // retry with a proportionally lower bitrate (up to two times) instead of handing over a file that doesn't fit.
   useEffect(() => {
+    // Compress: never hand back a file bigger than the source; retry at an explicit, lower bitrate.
+    if (mode === 'compress' && job.state.status === 'done' && source.status === 'ready') {
+      if (job.state.result.file.size >= source.file.size && attempt.current < 2) {
+        attempt.current++;
+        run(0.6 ** attempt.current);
+      }
+      return;
+    }
     if (mode !== 'compress-size' || job.state.status !== 'done') return;
     const size = job.state.result.file.size;
     const limit = targetMb * 1_000_000;
@@ -506,7 +519,7 @@ export function ConvertTool({ tool }: { tool: ToolDef }) {
       <JobArea
         state={job.state}
         onCancel={job.cancel}
-        label={mode === 'compress-size' && attempt.current > 0 ? `Re-encoding smaller (attempt ${attempt.current + 1})` : 'Processing'}
+        label={(mode === 'compress-size' || mode === 'compress') && attempt.current > 0 ? `Re-encoding smaller (attempt ${attempt.current + 1})` : 'Processing'}
         action={tool.action ?? 'Convert'}
         disabledReason={disabledReason}
         onRun={() => {
